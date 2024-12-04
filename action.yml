@@ -1,0 +1,65 @@
+name: 'Quick K8s'
+description: 'Quickly deploy a k8s cluster on Github Actions hosted runners'
+inputs:
+  apiServerPort:
+    description: 'The port to use for the Kubernetes API server'
+    required: false
+    default: '6443'
+  apiServerAddress:
+    description: 'The address to use for the Kubernetes API server'
+    required: false
+    default: '0.0.0.0'
+  disableDefaultCni:
+    description: 'Disable the default CNI plugin'
+    required: false
+    default: 'true'
+  ipFamily:
+    description: 'The IP family to use for the Kubernetes API server'
+    required: false
+    default: 'dual'
+  defaultNodeImage:
+    description: 'The default node image to use for the Kubernetes cluster'
+    required: false
+    default: 'kindest/node:v1.31.2@sha256:18fbefc20a7113353c7b75b5c869d7145a6abd6269154825872dc59c1329912e'
+  numControlPlaneNodes:
+    description: 'The number of control plane nodes to use for the Kubernetes cluster'
+    required: false
+    default: '1'
+  numWorkerNodes:
+    description: 'The number of worker nodes to use for the Kubernetes cluster'
+    required: false
+    default: '1'
+
+runs:
+  using: 'composite'
+  env: 
+    KIND_VERSION: v0.25.0
+  steps:
+    # Based on the environment, we need to install the correct version of KinD
+    - name: Install KinD for Linux AMD64
+      run: |
+        curl -Lo kind https://kind.sigs.k8s.io/dl/{{ env.KIND_VERSION }}/kind-linux-amd64
+        chmod +x kind
+        sudo mv kind /usr/local/bin/
+      when: runner.os == 'Linux' && runner.arch == 'x64'
+
+    - name: Install KinD for Linux ARM64
+      run: |
+        curl -Lo kind https://kind.sigs.k8s.io/dl/{{ env.KIND_VERSION }}/kind-linux-arm64
+        chmod +x kind
+        sudo mv kind /usr/local/bin/
+      when: runner.os == 'Linux' && runner.arch == 'arm64'
+
+    - name: Install KinD for MacOS
+      run: |
+        curl -Lo kind https://kind.sigs.k8s.io/dl/{{ env.KIND_VERSION }}/kind-darwin-amd64
+        chmod +x kind
+        sudo mv kind /usr/local/bin/
+      when: runner.os == 'macOS'
+
+    # Create a new Kubernetes cluster using KinD
+    - name: Populate temporary config file for KinD
+      run: ./scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }}
+
+    - name: Create a new Kubernetes cluster using KinD
+      run: kind create cluster --config kind-config.yaml
