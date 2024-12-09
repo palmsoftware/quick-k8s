@@ -71,7 +71,7 @@ runs:
     # Create a new Kubernetes cluster using KinD
     - name: Populate temporary config file for KinD
       shell: bash
-      run: ./scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }}
+      run: ./${{ github.action_path }}/scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }}
 
     - name: Create a new Kubernetes cluster using KinD
       shell: bash
