@@ -11,8 +11,7 @@ IP_FAMILY=$4
 DEFAULT_NODE_IMAGE=$5
 CONTROL_PLANE_NODES=$6
 NUM_WORKER_NODES=$7
-
-FILE_NAME="kind-config.yaml"
+FILE_NAME=$8
 
 # Check if the file exists and delete it
 if [ -f ${FILE_NAME} ]; then
