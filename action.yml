@@ -44,6 +44,7 @@ runs:
     # Based on the environment, we need to install the correct version of KinD
     - name: Install KinD for Linux AMD64
       if: ${{ runner.os }} == 'Linux' && ${{ runner.arch }} == 'x64'
+      shell: bash
       run: |
         curl -Lo kind https://kind.sigs.k8s.io/dl/{{ inputs.kindVersion }}/kind-linux-amd64
         chmod +x kind
@@ -51,6 +52,7 @@ runs:
 
     - name: Install KinD for Linux ARM64
       if: ${{ runner.os }} == 'Linux' && ${{ runner.arch }} == 'arm64'
+      shell: bash
       run: |
         curl -Lo kind https://kind.sigs.k8s.io/dl/{{ inputs.kindVersion }}/kind-linux-arm64
         chmod +x kind
@@ -58,16 +60,20 @@ runs:
 
     - name: Install KinD for MacOS
       if: ${{ runner.os }} == 'macOS'
+      shell: bash
       run: |
         brew install kind
 
     # Create a new Kubernetes cluster using KinD
     - name: Populate temporary config file for KinD
+      shell: bash
       run: ./scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }}
 
     - name: Create a new Kubernetes cluster using KinD
+      shell: bash
       run: kind create cluster --config kind-config.yaml
 
     - name: Install calico CNI if default CNI is disabled
       if: ${{ inputs.disableDefaultCni }} == 'true'
+      shell: bash
       run: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/{{ inputs.calicoVersion }}/manifests/calico.yaml
