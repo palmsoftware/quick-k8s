@@ -34,6 +34,7 @@ runs:
   using: 'composite'
   env: 
     KIND_VERSION: v0.25.0
+    CALICO_VERSION: v3.29.1
   steps:
     # Based on the environment, we need to install the correct version of KinD
     - name: Install KinD for Linux AMD64
@@ -61,3 +62,9 @@ runs:
 
     - name: Create a new Kubernetes cluster using KinD
       run: kind create cluster --config kind-config.yaml
+
+    - name: Install calico CNI if default CNI is disabled
+      run: |
+        if [ ${{ inputs.disableDefaultCni }} == 'true' ]; then
+          kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/{{ env.CALICO_VERSION }}/manifests/calico.yaml
+        fi
