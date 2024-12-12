@@ -116,7 +116,9 @@ runs:
     - name: Install calico CNI if default CNI is disabled
       if: ${{ inputs.disableDefaultCni == 'true' }}
       shell: bash
-      run: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml;
+        ${{ github.action_path }}/scripts/deploy-multus.sh
       env:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
 

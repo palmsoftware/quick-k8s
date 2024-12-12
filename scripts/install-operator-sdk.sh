@@ -3,6 +3,12 @@ set -x
 
 OPERATOR_SDK_VERSION="v1.38.0"
 
+#check if operator-sdk is installed and install it if needed
+if [[ ! -z "$(which operator-sdk 2>/dev/null)" ]]; then
+	echo "operator-sdk was found in the path, no need to install it"
+  exit 0
+else
+
 #setting sudo
 sudo echo "setting sudo root"
 if [[ -n "$(which sw_vers 2>/dev/null)" ]]; then
