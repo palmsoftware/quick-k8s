@@ -45,6 +45,10 @@ inputs:
     description: 'The release level of OpenShift to use'
     required: false
     default: '4.17'
+  installOLM:
+    description: 'Install the Operator Lifecycle Manager'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -115,3 +119,8 @@ runs:
       run: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml
       env:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
+
+    - name: Install OLM
+      if: ${{ inputs.installOLM == 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/install-olm.sh
