@@ -37,6 +37,14 @@ inputs:
     description: 'The version of Calico to use'
     required: false
     default: 'v3.29.1'
+  bootstrapClients:
+    description: 'Bootstrap the runner with kubectl and oc clients'
+    required: false
+    default: 'true'
+  ocpReleaseLevel:
+    description: 'The release level of OpenShift to use'
+    required: false
+    default: '4.17'
 
 runs:
   using: 'composite'
@@ -80,6 +88,22 @@ runs:
     - name: Create a new Kubernetes cluster using KinD
       shell: bash
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
+
+    - name: Bootstrap the runner with kubectl and oc clients (amd64)
+      if: ${{ inputs.bootstrapClients == 'true' && runner.os == 'Linux' && runner.arch == 'x64' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL amd64
+      env:
+        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
+
+    - name: Bootstrap the runner with kubectl and oc clients (arm64)
+      if: ${{ inputs.bootstrapClients == 'true' && runner.os == 'Linux' && runner.arch == 'arm64' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL arm64
+      env:
+        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
 
     - name: Install calico CNI if default CNI is disabled
       if: ${{ inputs.disableDefaultCni == 'true' }}
