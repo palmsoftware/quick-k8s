@@ -85,6 +85,10 @@ runs:
       shell: bash
       run: cat ${{ github.action_path }}/kind-config.yaml
 
+    - name: Bootstrap the docker instance on the runner
+      shell: bash
+      run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
+
     - name: Create a new Kubernetes cluster using KinD
       shell: bash
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
