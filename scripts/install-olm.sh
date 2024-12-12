@@ -2,7 +2,6 @@
 OLM_VERSION="v0.28.0"
 echo "Installing OLM version $OLM_VERSION"
 
-
 #check if operator-sdk is installed and install it if needed
 if [[ -z "$(which operator-sdk 2>/dev/null)" ]]; then
 	echo "operator-sdk executable cannot be found in the path. Will try to install it."
