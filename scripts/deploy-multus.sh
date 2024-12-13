@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
+set -x
 
 CPU_ARCH="$(uname -m)"
 export CPU_ARCH
 echo "CPU_ARCH=$CPU_ARCH"
 
+SCRIPT_DIR=$(dirname "$0")
+
 MULTUS_GIT_URL="https://github.com/k8snetworkplumbingwg/multus-cni.git"
 WHEREABOUTS_GIT_URL="https://github.com/k8snetworkplumbingwg/whereabouts"
 MULTUS_VERSION="v4.1.4"
-WHEREABOUTS_VERSION="v0.8.0"
 echo "Deploying Multus"
 
 # Wait for all calico and multus daemonset pods to be running
@@ -50,8 +52,8 @@ kubectl -n kube-system wait --for=condition=ready -l name="cni-plugins" pod --ti
 rm -rf whereabouts
 
 # Install whereabouts at specific released version
-git clone $WHEREABOUTS_GIT_URL --depth 1 -b $WHEREABOUTS_VERSION
-sed 's/whereabouts:latest/whereabouts:$WHEREABOUTS_VERSION/g' whereabouts/doc/crds/daemonset-install.yaml -i
+git clone $WHEREABOUTS_GIT_URL --depth 1 -b v0.8.0
+sed 's/whereabouts:latest/whereabouts:v0.8.0/g' whereabouts/doc/crds/daemonset-install.yaml -i
 
 oc apply \
   -f whereabouts/doc/crds/daemonset-install.yaml \
@@ -67,7 +69,7 @@ create_nets() {
     mkdir -p ./temp
 
     # shellcheck disable=SC2001 # Useless echo.
-    IP_NUM=$(echo "$2" | sed 's/NUM/'"${NUM}"'/g') NET_NAME_NUM="$NET_NAME-$1-$NUM" "$SCRIPT_DIR"/mo ./config/k8s-cluster/multus.yaml >./temp/rendered-multus.yaml
+    IP_NUM=$(echo "$2" | sed 's/NUM/'"${NUM}"'/g') NET_NAME_NUM="$NET_NAME-$1-$NUM" "$SCRIPT_DIR"/mo ./$SCRIPT_DIR/multus.yaml >./temp/rendered-multus.yaml
     oc apply --filename ./temp/rendered-multus.yaml
     rm ./temp/rendered-multus.yaml
   done
@@ -78,5 +80,3 @@ create_nets "ipv4" "192.168.NUM.0/24"
 
 # IPv6
 create_nets "ipv6" "3ffe:ffff:0:NUM::/64"
-sleep 3
-
