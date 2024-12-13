@@ -6,6 +6,3 @@ curl -L https://github.com/operator-framework/operator-lifecycle-manager/release
 chmod +x install.sh
 ./install.sh $OLM_VERSION
 rm install.sh
-
-# # Wait for all OLM pods to be ready
-# kubectl wait --for=condition=ready pod --all=true -n olm --timeout="300s"
