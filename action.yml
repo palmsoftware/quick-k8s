@@ -118,7 +118,6 @@ runs:
       shell: bash
       run: |
         kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml;
-        ${{ github.action_path }}/scripts/deploy-multus.sh
       env:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
 
