@@ -49,6 +49,14 @@ inputs:
     description: 'Install the Operator Lifecycle Manager'
     required: false
     default: 'false'
+  removeDefaultStorageClass:
+    description: 'Remove the default storage class'
+    required: false
+    default: 'false'
+  removeControlPlaneTaint:
+    description: 'Remove the control plane taint'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -125,3 +133,15 @@ runs:
       if: ${{ inputs.installOLM == 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/install-olm.sh
+
+    - name: Remove the default storage class
+      if: ${{ inputs.removeDefaultStorageClass == 'true' }}
+      shell: bash
+      run: |
+        oc delete storageclass standard --ignore-not-found
+
+    - name: Remove the control plane taint
+      if: ${{ inputs.removeControlPlaneTaint == 'true' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/bootstrap-clients.sh
