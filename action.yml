@@ -37,10 +37,6 @@ inputs:
     description: 'The version of Calico to use'
     required: false
     default: 'v3.29.1'
-  bootstrapClients:
-    description: 'Bootstrap the runner with kubectl and oc clients'
-    required: false
-    default: 'true'
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
@@ -61,6 +57,11 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Write temporary docker file
+      run: |
+        mkdir -p /home/runner/.docker
+        touch /home/runner/.docker/config
+
     # Based on the environment, we need to install the correct version of KinD
     - name: Install KinD for Linux AMD64
       if: ${{ runner.os == 'Linux' && runner.arch == 'x64' }} 
@@ -106,7 +107,7 @@ runs:
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
 
     - name: Bootstrap the runner with kubectl and oc clients (amd64)
-      if: ${{ inputs.bootstrapClients == 'true' && runner.os == 'Linux' && runner.arch == 'x64' }}
+      if: ${{ runner.os == 'Linux' && runner.arch == 'x64' }}
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL amd64
@@ -114,7 +115,7 @@ runs:
         OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
 
     - name: Bootstrap the runner with kubectl and oc clients (arm64)
-      if: ${{ inputs.bootstrapClients == 'true' && runner.os == 'Linux' && runner.arch == 'arm64' }}
+      if: ${{ runner.os == 'Linux' && runner.arch == 'arm64' }}
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL arm64
@@ -144,4 +145,4 @@ runs:
       if: ${{ inputs.removeControlPlaneTaint == 'true' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/bootstrap-clients.sh
+        ${{ github.action_path }}/scripts/remove-control-plane-taint.sh
