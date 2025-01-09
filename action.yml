@@ -58,6 +58,7 @@ runs:
   using: 'composite'
   steps:
     - name: Write temporary docker file
+      shell: bash
       run: |
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
