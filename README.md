@@ -7,7 +7,7 @@ Basic Usage:
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.11
+    uses: palmsoftware/quick-k8s@v0.0.15
 ```
 
 With Flags (default values shown):
