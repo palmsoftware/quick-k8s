@@ -10,6 +10,8 @@ steps:
     uses: palmsoftware/quick-k8s@v0.0.15
 ```
 
+This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
+
 With Flags (default values shown):
 
 ```
