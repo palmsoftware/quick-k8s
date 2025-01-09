@@ -25,6 +25,8 @@ steps:
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       installOLM: false
+      removeDefaultStorageClass: false
+      removeControlPlaneTaint: false
 ```
 
 ## History
