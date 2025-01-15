@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-OPERATOR_SDK_VERSION="v1.38.0"
+OPERATOR_SDK_VERSION="v1.39.1"
 
 #check if operator-sdk is installed and install it if needed
 if [[ ! -z "$(which operator-sdk 2>/dev/null)" ]]; then
