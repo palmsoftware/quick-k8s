@@ -1,0 +1,31 @@
+---
+  name: Test Changes
+  
+  'on':
+    push:
+      branches: [main]
+    pull_request:
+      branches: [main]
+  
+  jobs:
+    run-ocp-x86:
+      runs-on: ubuntu-22.04
+      env:
+        SHELL: /bin/bash
+      steps:
+        - name: Checkout the code
+          uses: actions/checkout@v4
+
+        - name: Run the action
+          uses: ./
+
+    run-ocp-arm64:
+      runs-on: ubuntu-22.04-arm
+      env:
+        SHELL: /bin/bash
+      steps:
+        - name: Checkout the code
+          uses: actions/checkout@v4
+
+        - name: Run the action
+          uses: ./

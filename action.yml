@@ -107,19 +107,11 @@ runs:
       shell: bash
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
 
-    - name: Bootstrap the runner with kubectl and oc clients (amd64)
-      if: ${{ runner.os == 'Linux' && runner.arch == 'x64' }}
+    # - name: Bootstrap the runner with kubectl and oc clients (amd64)
+    - name: Bootstrap the runner with kubectl and oc clients
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL amd64
-      env:
-        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
-
-    - name: Bootstrap the runner with kubectl and oc clients (arm64)
-      if: ${{ runner.os == 'Linux' && runner.arch == 'arm64' }}
-      shell: bash
-      run: |
-        ${{ github.action_path }}/scripts/bootstrap-clients.sh $OCP_RELEASE_LEVEL arm64
+        sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest $OCP_RELEASE_LEVEL
       env:
         OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
 
