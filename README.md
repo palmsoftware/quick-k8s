@@ -7,7 +7,7 @@ Basic Usage:
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.15
+    uses: palmsoftware/quick-k8s@v0.0.18
 ```
 
 This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
@@ -17,7 +17,7 @@ With Flags (default values shown):
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v0.0.18
     with:
       apiServerPort: 6443
       apiServerAddress: 0.0.0.0

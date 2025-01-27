@@ -20,7 +20,7 @@ inputs:
   defaultNodeImage:
     description: 'The default node image to use for the Kubernetes cluster'
     required: false
-    default: 'kindest/node:v1.31.2@sha256:18fbefc20a7113353c7b75b5c869d7145a6abd6269154825872dc59c1329912e'
+    default: 'kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027'
   numControlPlaneNodes:
     description: 'The number of control plane nodes to use for the Kubernetes cluster'
     required: false
@@ -32,7 +32,7 @@ inputs:
   kindVersion:
     description: 'The version of KinD to use'
     required: false
-    default: 'v0.25.0'
+    default: 'v0.26.0'
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
