@@ -29,3 +29,14 @@
 
         - name: Run the action
           uses: ./
+
+    run-ocp-macos:
+      runs-on: macos-13
+      env:
+        SHELL: /bin/bash
+      steps:
+        - name: Checkout the code
+          uses: actions/checkout@v4
+
+        - name: Run the action
+          uses: ./
