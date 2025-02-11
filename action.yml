@@ -57,11 +57,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Write temporary docker file
+    - name: Write temporary docker file (Linux)
+      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
+
+    - name: Setup Docker on Mac
+      if: ${{ runner.os == 'macOS' }}
+      uses: douglascamata/setup-docker-macos-action@v1-alpha
 
     # Based on the environment, we need to install the correct version of KinD
     - name: Install KinD for Linux AMD64
@@ -99,7 +104,8 @@ runs:
       shell: bash
       run: cat ${{ github.action_path }}/kind-config.yaml
 
-    - name: Bootstrap the docker instance on the runner
+    - name: Bootstrap the docker instance on the runner (Linux)
+      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 

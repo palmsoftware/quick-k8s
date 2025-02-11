@@ -1,5 +1,9 @@
 # quick-k8s
-Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions
+Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
+
+## Requirements:
+
+Linux (ARM and x86) Runners and MacOS-13 runners are supported.  See [this](https://github.com/marketplace/actions/setup-docker-on-macos#arm64-processors-m1-m2-m3-series-used-on-macos-14-images-are-unsupported) for more information about when other Mac runners will be available.
 
 ## Usage:
 
@@ -7,7 +11,7 @@ Basic Usage:
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.18
+    uses: palmsoftware/quick-k8s@v0.0.19
 ```
 
 This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
@@ -17,7 +21,7 @@ With Flags (default values shown):
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.18
+    uses: palmsoftware/quick-k8s@v0.0.19
     with:
       apiServerPort: 6443
       apiServerAddress: 0.0.0.0
@@ -40,3 +44,4 @@ This action is essentially a wrapper around some tried and true best practices f
 ## References
 
 - [install-oc-tools.sh](./scripts/install-oc-tools.sh) was a script copied from [install-oc-tools](https://github.com/cptmorgan-rh/install-oc-tools) and slightly modified for `aarch64`.
+- [douglascamata/setup-docker-macos-action@v1-alpha](https://github.com/marketplace/actions/setup-docker-on-macos) is brought to help install Docker on MacOS.
