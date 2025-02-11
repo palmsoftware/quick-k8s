@@ -1,5 +1,8 @@
 name: 'Quick K8s'
 description: 'Quickly deploy a k8s cluster on Github Actions hosted runners'
+branding:
+  icon: 'box'
+  color: 'blue'
 inputs:
   apiServerPort:
     description: 'The port to use for the Kubernetes API server'
