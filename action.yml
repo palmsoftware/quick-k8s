@@ -23,7 +23,7 @@ inputs:
   defaultNodeImage:
     description: 'The default node image to use for the Kubernetes cluster'
     required: false
-    default: 'kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027'
+    default: 'kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f'
   numControlPlaneNodes:
     description: 'The number of control plane nodes to use for the Kubernetes cluster'
     required: false
@@ -35,7 +35,7 @@ inputs:
   kindVersion:
     description: 'The version of KinD to use'
     required: false
-    default: 'v0.26.0'
+    default: 'v0.27.0'
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
@@ -116,19 +116,24 @@ runs:
       shell: bash
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
 
-    # - name: Bootstrap the runner with kubectl and oc clients (amd64)
+    # - name: Bootstrap the runner with kubectl and oc clients
     - name: Bootstrap the runner with kubectl and oc clients
+      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
-        sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest $OCP_RELEASE_LEVEL
-      env:
-        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
+        sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest ${{ inputs.ocpReleaseLevel }}
+
+    - name: Install oc client on MacOS
+      if: ${{ runner.os == 'macOS' }}
+      shell: bash
+      run: |
+        brew install openshift-cli
 
     - name: Install calico CNI if default CNI is disabled
       if: ${{ inputs.disableDefaultCni == 'true' }}
       shell: bash
       run: |
-        kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml;
+        oc apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml;
       env:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
 
