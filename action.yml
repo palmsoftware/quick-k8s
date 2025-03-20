@@ -156,4 +156,4 @@ runs:
 
     - name: Wait for all pods to be ready
       shell: bash
-      run: ./scripts/wait-for-pods.sh
+      run: ${{ github.action_path }}/scripts/wait-for-pods.sh
