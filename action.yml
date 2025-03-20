@@ -153,3 +153,7 @@ runs:
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/remove-control-plane-taint.sh
+
+    - name: Wait for all pods to be ready
+      shell: bash
+      run: ./scripts/wait-for-pods.sh
