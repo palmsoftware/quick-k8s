@@ -56,6 +56,10 @@ inputs:
     description: 'Remove the control plane taint'
     required: false
     default: 'false'
+  waitForPodsReady:
+    description: 'Wait for all pods to be ready'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -155,5 +159,6 @@ runs:
         ${{ github.action_path }}/scripts/remove-control-plane-taint.sh
 
     - name: Wait for all pods to be ready
+      if: ${{ inputs.waitForPodsReady == 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
