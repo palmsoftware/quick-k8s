@@ -60,6 +60,30 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate KinD version input
+      shell: bash
+      run: |
+        if ! [[ "${{ inputs.kindVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
+          exit 1
+        fi
+
+    - name: Validate Calico version input
+      shell: bash
+      run: |
+        if ! [[ "${{ inputs.calicoVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
+          exit 1
+        fi
+
+    - name: Validate OpenShift release level input
+      shell: bash
+      run: |
+        if ! [[ "${{ inputs.ocpReleaseLevel }}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid OpenShift release level format: ${{ inputs.ocpReleaseLevel }}"
+          exit 1
+        fi
+
     - name: Write temporary docker file (Linux)
       if: ${{ runner.os == 'Linux' }}
       shell: bash
@@ -73,9 +97,10 @@ runs:
 
     # Based on the environment, we need to install the correct version of KinD
     - name: Install KinD for Linux AMD64
-      if: ${{ runner.os == 'Linux' && runner.arch == 'x64' }} 
+      if: ${{ runner.os == 'Linux' && runner.arch == 'x64' }}
       shell: bash
       run: |
+        echo "Downloading the latest KinD binary..."
         curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-linux-amd64
         chmod +x kind
         sudo mv kind /usr/local/bin/
@@ -97,6 +122,15 @@ runs:
       shell: bash
       run: |
         brew install kind
+
+    - name: Add error handling for KinD installation
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        if ! command -v kind &> /dev/null; then
+          echo "KinD installation failed. Exiting."
+          exit 1
+        fi
 
     # Create a new Kubernetes cluster using KinD
     - name: Populate temporary config file for KinD
