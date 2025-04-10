@@ -39,7 +39,7 @@ inputs:
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
-    default: 'v3.29.2'
+    default: 'v3.29.3'
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
@@ -60,6 +60,45 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        # Validate numControlPlaneNodes
+        if [[ ${{ inputs.numControlPlaneNodes }} -lt 1 ]]; then
+          echo "Error: numControlPlaneNodes cannot be less than 1." >&2
+          exit 1
+        fi
+
+        # Validate numWorkerNodes
+        if [[ ${{ inputs.numWorkerNodes }} -lt 0 ]]; then
+          echo "Error: numWorkerNodes cannot be negative." >&2
+          exit 1
+        fi
+
+        # Validate kindVersion (semver)
+        if ! [[ ${{ inputs.kindVersion }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Error: kindVersion must follow semantic versioning (e.g., v0.27.0)." >&2
+          exit 1
+        fi
+
+        # Validate calicoVersion (semver)
+        if ! [[ ${{ inputs.calicoVersion }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Error: calicoVersion must follow semantic versioning (e.g., v3.29.3)." >&2
+          exit 1
+        fi
+
+        # Check if kindVersion exists on GitHub
+        if ! curl --silent --head --fail https://github.com/kubernetes-sigs/kind/releases/tag/${{ inputs.kindVersion }}; then
+          echo "Error: kindVersion ${{ inputs.kindVersion }} does not exist on GitHub." >&2
+          exit 1
+        fi
+
+        # Check if calicoVersion exists on GitHub
+        if ! curl --silent --head --fail https://github.com/projectcalico/calico/releases/tag/${{ inputs.calicoVersion }}; then
+          echo "Error: calicoVersion ${{ inputs.calicoVersion }} does not exist on GitHub." >&2
+          exit 1
+        fi
+
     - name: Write temporary docker file (Linux)
       if: ${{ runner.os == 'Linux' }}
       shell: bash
