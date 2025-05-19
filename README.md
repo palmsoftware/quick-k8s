@@ -27,7 +27,7 @@ steps:
       apiServerAddress: 0.0.0.0
       disableDefaultCni: true
       ipFamily: dual
-      defaultNodeImage: 'kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f'
+      defaultNodeImage: 'kindest/node:v1.33.1@sha256:8d866994839cd096b3590681c55a6fa4a071fdaf33be7b9660e5697d2ed13002'
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       installOLM: false
