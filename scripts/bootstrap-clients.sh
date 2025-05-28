@@ -2,6 +2,14 @@
 # shellcheck disable=SC2207
 
 # download the latest openshift client at a certain release level
+
+for cmd in curl tar jq sort; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 RELEASE_LEVEL=$1
 ARCH=$2
 VERSIONS=($(sudo curl -sH 'Accept: application/json' "https://api.openshift.com/api/upgrades_info/v1/graph?channel=stable-${RELEASE_LEVEL}&arch=${ARCH}" | jq -r '.nodes[].version' | sort))
