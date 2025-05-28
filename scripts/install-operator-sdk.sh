@@ -3,6 +3,14 @@ set -x
 
 OPERATOR_SDK_VERSION="v1.39.2"
 
+# Pre-checks for required commands
+for cmd in curl tar; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 #check if operator-sdk is installed and install it if needed
 if [[ ! -z "$(which operator-sdk 2>/dev/null)" ]]; then
 	echo "operator-sdk was found in the path, no need to install it"

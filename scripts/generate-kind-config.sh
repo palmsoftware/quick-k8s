@@ -3,6 +3,13 @@
 # Generate a KinD configuration file from parameters
 # Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes>
 
+for cmd in envsubst; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 # Set the default values
 API_SERVER_PORT=$1
 API_SERVER_ADDRESS=$2

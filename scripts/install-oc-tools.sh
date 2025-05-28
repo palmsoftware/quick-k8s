@@ -2,6 +2,13 @@
 
 set -e
 
+for cmd in curl tar; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 OS=$(uname -s)
 
 if [ "${OS}" == 'Linux' ]; then

@@ -2,6 +2,14 @@
 
 # Script to remove the control plane taint from the control-plane nodes
 
+# Command precheck
+for cmd in kubectl; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 # Get the list of control-plane nodes
 CONTROL_PLANE_NODES=$(kubectl get nodes --selector=node-role.kubernetes.io/control-plane -o name)
 MASTER_NODES=$(kubectl get nodes --selector=node-role.kubernetes.io/master -o name)

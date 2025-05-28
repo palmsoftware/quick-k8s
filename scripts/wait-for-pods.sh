@@ -1,5 +1,12 @@
 #!/bin/bash
 
+for cmd in kubectl; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is not installed." >&2
+    exit 1
+  fi
+done
+
 timeout=1200  # 20 minutes in seconds
 elapsed=0
 interval=10
