@@ -119,6 +119,18 @@ runs:
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: false
+        large-packages: true
+        android: true
+        dotnet: true
+        haskell: true
+        docker-images: true
+        swap-storage: true
+      continue-on-error: true
+
     - name: Setup Docker on Mac
       if: ${{ runner.os == 'macOS' }}
       uses: douglascamata/setup-docker-macos-action@v1-alpha
@@ -174,6 +186,12 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 
+    - name: Pre-clean Docker images and containers
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        docker system prune -af --volumes
+
     - name: Create a new Kubernetes cluster using KinD
       shell: bash
       run: kind create cluster --config ${{ github.action_path }}/kind-config.yaml
@@ -220,3 +238,22 @@ runs:
       if: ${{ inputs.waitForPodsReady == 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
+
+    - name: Clean up package manager cache (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        sudo apt-get clean
+
+    - name: Clean up Homebrew cache (macOS)
+      if: ${{ runner.os == 'macOS' }}
+      shell: bash
+      run: |
+        brew cleanup -s
+        rm -rf ~/Library/Caches/Homebrew
+
+    - name: Remove temporary files
+      shell: bash
+      run: |
+        rm -f ${{ github.action_path }}/kind-config.yaml || true
+        rm -f oc.tar.gz kind || true
