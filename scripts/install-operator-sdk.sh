@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-OPERATOR_SDK_VERSION="v1.39.2"
+OPERATOR_SDK_VERSION="v1.40.0"
 
 # Pre-checks for required commands
 for cmd in curl tar; do
