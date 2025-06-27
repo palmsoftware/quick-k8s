@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-OLM_VERSION="v0.32.0"
+OLM_VERSION="null"
 echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do
