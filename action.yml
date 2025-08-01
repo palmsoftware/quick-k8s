@@ -43,7 +43,7 @@ inputs:
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
-    default: '4.18'
+    default: '4.19'
   installOLM:
     description: 'Install the Operator Lifecycle Manager'
     required: false
@@ -119,18 +119,10 @@ runs:
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
-    - name: Free Disk Space (Ubuntu)
+    - name: Proactive Disk Space Management (Ubuntu)
       if: ${{ runner.os == 'Linux' }}
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: false
-        large-packages: true
-        android: true
-        dotnet: true
-        haskell: true
-        docker-images: true
-        swap-storage: true
-      continue-on-error: true
+      shell: bash
+      run: ${{ github.action_path }}/scripts/proactive-disk-cleanup.sh
 
     - name: Setup Docker on Mac
       if: ${{ runner.os == 'macOS' }}
@@ -187,11 +179,10 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 
-    - name: Pre-clean Docker images and containers
+    - name: Final pre-cluster disk optimization
       if: ${{ runner.os == 'Linux' }}
       shell: bash
-      run: |
-        docker system prune -af --volumes
+      run: ${{ github.action_path }}/scripts/pre-cluster-optimization.sh
 
     - name: Create a new Kubernetes cluster using KinD
       shell: bash
@@ -209,6 +200,7 @@ runs:
       shell: bash
       run: |
         brew install openshift-cli
+        brew install kubernetes-cli
 
     - name: Install calico CNI if default CNI is disabled
       if: ${{ inputs.disableDefaultCni == 'true' }}

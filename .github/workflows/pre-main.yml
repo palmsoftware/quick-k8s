@@ -11,7 +11,23 @@ name: Test Changes
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck linting
+        run: make lint
+
   run-quick-k8s:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -24,3 +40,11 @@ jobs:
 
       - name: Run the action
         uses: ./
+        with:
+          waitForPodsReady: true
+          installOLM: true
+          removeDefaultStorageClass: true
+          removeControlPlaneTaint: true
+          apiServerPort: 6443
+          apiServerAddress: 127.0.0.1
+          disableDefaultCni: true

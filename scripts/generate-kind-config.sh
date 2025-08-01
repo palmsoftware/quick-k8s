@@ -3,12 +3,10 @@
 # Generate a KinD configuration file from parameters
 # Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes>
 
-for cmd in envsubst; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
-    exit 1
-  fi
-done
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "Error: envsubst is not installed." >&2
+  exit 1
+fi
 
 # Set the default values
 API_SERVER_PORT=$1
@@ -21,12 +19,12 @@ NUM_WORKER_NODES=$7
 FILE_NAME=$8
 
 # Check if the file exists and delete it
-if [ -f ${FILE_NAME} ]; then
-  rm ${FILE_NAME}
+if [ -f "${FILE_NAME}" ]; then
+  rm "${FILE_NAME}"
 fi
 
 # Generate the KinD configuration file
-cat > ${FILE_NAME} <<EOF
+cat > "${FILE_NAME}" <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
@@ -37,20 +35,20 @@ networking:
 EOF
 
 # Generate the nodes section of the file
-cat >> ${FILE_NAME} <<EOF
+cat >> "${FILE_NAME}" <<EOF
 nodes:
 EOF
 
 # Generate node section of the file
-for i in $(seq 1 ${CONTROL_PLANE_NODES}); do
-cat >> ${FILE_NAME} <<EOF
+for ((i=1; i<="${CONTROL_PLANE_NODES}"; i++)); do
+cat >> "${FILE_NAME}" <<EOF
   - role: control-plane
     image: "${DEFAULT_NODE_IMAGE}"
 EOF
 done
 
-for i in $(seq 1 ${NUM_WORKER_NODES}); do
-cat >> ${FILE_NAME} <<EOF
+for ((i=1; i<="${NUM_WORKER_NODES}"; i++)); do
+cat >> "${FILE_NAME}" <<EOF
   - role: worker
     image: "${DEFAULT_NODE_IMAGE}"
 EOF
