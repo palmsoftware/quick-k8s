@@ -1,16 +1,34 @@
 # Makefile for quick-k8s GitHub Action
 
-.PHONY: lint help clean
+.PHONY: lint help clean tool-precheck
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  lint     - Run shellcheck on all shell scripts"
-	@echo "  clean    - Remove temporary files"
-	@echo "  help     - Show this help message"
+	@echo "  lint          - Run shellcheck on all shell scripts"
+	@echo "  tool-precheck - Check for required tools (shellcheck)"
+	@echo "  clean         - Remove temporary files"
+	@echo "  help          - Show this help message"
+
+# Check for required tools
+tool-precheck:
+	@echo "🔍 Checking for shellcheck installation..."
+	@if ! command -v shellcheck >/dev/null 2>&1; then \
+		echo "❌ shellcheck is not installed!"; \
+		echo ""; \
+		echo "📦 To install shellcheck:"; \
+		echo "  • macOS:    brew install shellcheck"; \
+		echo "  • Ubuntu:   sudo apt-get install shellcheck"; \
+		echo "  • RHEL/CentOS: sudo yum install ShellCheck"; \
+		echo "  • Arch:     sudo pacman -S shellcheck"; \
+		echo "  • Or visit: https://github.com/koalaman/shellcheck#installing"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "✅ shellcheck found"
 
 # Lint all shell scripts using shellcheck
-lint:
+lint: tool-precheck
 	@echo "🔍 Running shellcheck on shell scripts..."
 	@failed=0; \
 	for script in $$(find scripts/ -name "*.sh" -type f); do \
