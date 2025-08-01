@@ -12,10 +12,10 @@ for cmd in curl tar; do
 done
 
 #check if operator-sdk is installed and install it if needed
-if [[ ! -z "$(which operator-sdk 2>/dev/null)" ]]; then
+if [[ -n "$(which operator-sdk 2>/dev/null)" ]]; then
 	echo "operator-sdk was found in the path, no need to install it"
   exit 0
-else
+fi
 
 #setting sudo
 sudo echo "setting sudo root"
