@@ -4,7 +4,8 @@
 # This script intelligently manages disk space by performing adaptive cleanup
 # based on available space and removing unnecessary packages/directories.
 
-set -e
+# Note: Using best-effort approach - don't exit on cleanup failures
+# set -e
 
 echo "=============================================="
 echo "🧹 PROACTIVE DISK SPACE MANAGEMENT"
@@ -33,8 +34,18 @@ else
 fi
 
 echo "=== Cleaning package caches ==="
-sudo apt-get clean
-sudo apt-get autoremove -y --purge
+# Best-effort package cache cleanup - don't fail if apt is locked
+if sudo apt-get clean 2>/dev/null; then
+  echo "✅ Package cache cleaned successfully"
+else
+  echo "⚠️  Could not clean package cache (apt may be locked by another process)"
+fi
+
+if sudo apt-get autoremove -y --purge 2>/dev/null; then
+  echo "✅ Unused packages removed successfully"
+else
+  echo "⚠️  Could not remove unused packages (apt may be locked by another process)"
+fi
 
 echo "=== Checking installed packages that consume significant space ==="
 LARGE_PACKAGES="mysql-server-core-8.0 mysql-client-core-8.0 postgresql-14 postgresql-client-14 firefox google-chrome-stable microsoft-edge-stable thunderbird mono-complete azure-cli powershell kubectl helm"
@@ -119,8 +130,18 @@ echo "=== Docker cleanup ==="
 docker system prune -af --volumes || true
 
 echo "=== Final cleanup ==="
-sudo apt-get autoremove -y --purge
-sudo apt-get autoclean
+# Best-effort final cleanup
+if sudo apt-get autoremove -y --purge 2>/dev/null; then
+  echo "✅ Final autoremove completed successfully"
+else
+  echo "⚠️  Could not complete final autoremove (apt may be locked)"
+fi
+
+if sudo apt-get autoclean 2>/dev/null; then
+  echo "✅ Package cache autoclean completed successfully"
+else
+  echo "⚠️  Could not complete autoclean (apt may be locked)"
+fi
 
 echo "=== Cleanup Summary ==="
 df -h
@@ -137,6 +158,8 @@ echo "└─ /tmp partition: $(df -h /tmp | tail -1 | awk '{print $4}') free"
 
 echo ""
 echo "=== Validating minimum space requirement ==="
+# Re-enable strict error handling for final validation
+set -e
 if [ $FINAL_AVAILABLE_GB -lt 8 ]; then
   echo "❌ ERROR: Insufficient disk space (${FINAL_AVAILABLE_GB}GB). Need at least 8GB for kind cluster."
   echo "Available space breakdown:"
