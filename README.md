@@ -1,4 +1,10 @@
 # quick-k8s
+
+[![Test Changes](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml)
+[![Update Calico Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml)
+[![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
+[![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
+
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
 
 ## Requirements:
