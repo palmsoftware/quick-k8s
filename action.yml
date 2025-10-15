@@ -150,14 +150,27 @@ runs:
       env:
         KIND_VERSION: ${{ inputs.kindVersion }}
 
-    - name: Install KinD for MacOS
-      if: ${{ runner.os == 'macOS' }}
+    - name: Install KinD for MacOS AMD64
+      if: ${{ runner.os == 'macOS' && runner.arch == 'x64' }}
       shell: bash
       run: |
-        brew install kind
+        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-darwin-amd64
+        chmod +x kind
+        sudo mv kind /usr/local/bin/
+      env:
+        KIND_VERSION: ${{ inputs.kindVersion }}
+
+    - name: Install KinD for MacOS ARM64
+      if: ${{ runner.os == 'macOS' && runner.arch == 'arm64' }}
+      shell: bash
+      run: |
+        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-darwin-arm64
+        chmod +x kind
+        sudo mv kind /usr/local/bin/
+      env:
+        KIND_VERSION: ${{ inputs.kindVersion }}
 
     - name: Add error handling for KinD installation
-      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
         if ! command -v kind &> /dev/null; then
