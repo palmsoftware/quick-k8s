@@ -9,7 +9,15 @@ Github Action that will automatically create a Kubernetes cluster that lives and
 
 ## Requirements:
 
-Linux (ARM and x86) Runners and MacOS-13 runners are supported.  See [this](https://github.com/marketplace/actions/setup-docker-on-macos#arm64-processors-m1-m2-m3-series-used-on-macos-14-images-are-unsupported) for more information about when other Mac runners will be available.
+Linux (ARM and x86) runners are fully supported and tested.
+
+**macOS Support Status**:
+- ⚠️ **Not actively tested in CI** - macOS builds have been temporarily disabled due to runner limitations
+- The action code supports macOS Intel runners (`macos-13`, `macos-14-large`, `macos-15-large`) but:
+  - `macos-13` is deprecated by GitHub
+  - `macos-14` and `macos-15` (Apple Silicon/ARM64) lack Docker nested virtualization support on free tier
+  - `-large` Intel runners require a paid GitHub plan
+- If you have access to Intel-based macOS runners, the action should work but use at your own risk
 
 ## Usage:
 
