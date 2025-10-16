@@ -89,6 +89,7 @@ jobs:
         if: steps.update_version.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           commit-message: "Update Calico version to ${{ steps.get_calico_version.outputs.calico_version }}"
           title: "Update Calico version to ${{ steps.get_calico_version.outputs.calico_version }}"
           body: "Automated PR to update default calicoVersion in action.yml to the latest release."

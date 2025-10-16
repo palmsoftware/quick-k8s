@@ -83,6 +83,7 @@ jobs:
         if: steps.update_version.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           commit-message: "Update OLM version to ${{ steps.get_olm_version.outputs.olm_version }}"
           title: "Update OLM version to ${{ steps.get_olm_version.outputs.olm_version }}"
           body: "Automated PR to update OLM version in install-olm.sh to the latest release."
