@@ -3,9 +3,12 @@
 [![Test Changes](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml)
 [![Update Calico Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml)
 [![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
+[![Update Minikube Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
+
+Supports both **KinD** (default) and **Minikube** as cluster providers.
 
 ## Requirements:
 
@@ -30,18 +33,37 @@ steps:
 
 This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
 
-With Flags (default values shown):
+### Using Minikube as the Cluster Provider
 
+To use Minikube instead of KinD:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with Minikube
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      clusterProvider: minikube
+      minikubeVersion: v1.37.0
+      minikubeDriver: docker
 ```
+
+### Complete Configuration (default values shown)
+
+With KinD (default):
+
+```yaml
 steps:
   - name: Set up Quick-K8s
     uses: palmsoftware/quick-k8s@v0.0.39
     with:
+      clusterProvider: kind
       apiServerPort: 6443
       apiServerAddress: 0.0.0.0
       disableDefaultCni: true
       ipFamily: dual
       defaultNodeImage: 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
+      kindVersion: v0.30.0
+      calicoVersion: v3.30.3
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
@@ -49,6 +71,57 @@ steps:
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
+
+With Minikube:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with Minikube
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      clusterProvider: minikube
+      minikubeVersion: v1.37.0
+      minikubeDriver: docker
+      apiServerPort: 6443
+      disableDefaultCni: true
+      defaultNodeImage: 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
+      calicoVersion: v3.30.3
+
+      numControlPlaneNodes: 1
+      numWorkerNodes: 1
+      installOLM: false
+      removeDefaultStorageClass: false
+      removeControlPlaneTaint: false
+```
+
+## Cluster Provider Comparison
+
+### KinD vs Minikube
+
+Both cluster providers are fully supported and tested. Choose the one that best fits your needs:
+
+#### KinD (Kubernetes in Docker) - **Default**
+- ✅ **Best for**: CI/CD pipelines, fast cluster creation
+- ✅ **Advantages**: 
+  - Faster startup time
+  - Native multi-node support with simple configuration
+  - Designed specifically for testing
+  - Lower resource overhead
+- ⚠️ **Considerations**: Limited to Docker as the runtime
+
+#### Minikube
+- ✅ **Best for**: Development environments, feature parity with production
+- ✅ **Advantages**:
+  - More mature and feature-rich
+  - Multiple driver options (docker, podman, none)
+  - Better local development experience
+  - Built-in addons system
+  - GPU support (with krunkit driver on macOS)
+- ⚠️ **Considerations**: 
+  - Slightly slower startup, more complex for multi-node setups
+  - When disabling default CNI (`disableDefaultCni: true`), uses docker runtime instead of containerd (Minikube requirement)
+
+**Recommendation**: Use **KinD** (default) for most CI/CD scenarios. Use **Minikube** if you need specific features or driver compatibility.
 
 ## Intelligent Resource Management
 
@@ -74,9 +147,9 @@ This action features intelligent, adaptive disk space management that optimizes 
 
 ## History
 
-The proof-of-concept is built upon [KinD](https://github.com/kubernetes-sigs/kind) and was tuned as part of [certsuite-sample-workload](https://github.com/redhat-best-practices-for-k8s/certsuite-sample-workload).
+Originally built upon [KinD](https://github.com/kubernetes-sigs/kind) and tuned as part of [certsuite-sample-workload](https://github.com/redhat-best-practices-for-k8s/certsuite-sample-workload), the project now supports both KinD and [Minikube](https://github.com/kubernetes/minikube) as cluster providers.
 
-This action is essentially a wrapper around some tried and true best practices for deploying a Kubernetes environment that runs well on Github Actions free-tier Ubuntu runner.
+This action is essentially a wrapper around best practices for deploying Kubernetes environments that run well on GitHub Actions free-tier Ubuntu runners, with intelligent resource management and optimizations for CI/CD workflows.
 
 ## References
 

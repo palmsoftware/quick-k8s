@@ -34,13 +34,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm]
+        provider: [kind, minikube]
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Run the action
+      - name: Run the action with ${{ matrix.provider }}
         uses: ./
         with:
+          clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
           installOLM: true
           removeDefaultStorageClass: true

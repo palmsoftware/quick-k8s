@@ -1,0 +1,97 @@
+name: Update Minikube Version Nightly
+on:
+  schedule:
+    - cron: '0 3 * * *' # Every day at 3am UTC
+  workflow_dispatch:
+jobs:
+  update-minikube-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get latest Minikube release version
+        id: get_minikube_version
+        run: |
+          # Function to get Minikube version with retries
+          get_minikube_version() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch Minikube version..."
+
+              # Make API call with timeout
+              response=$(curl -s --max-time 30 https://api.github.com/repos/kubernetes/minikube/releases/latest)
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract tag_name and validate it's not null/empty
+                version=$(echo "$response" | jq -r '.tag_name // empty')
+
+                if [ -n "$version" ] && [ "$version" != "null" ] && [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  echo "Successfully fetched Minikube version: $version"
+                  echo "minikube_version=$version" >> $GITHUB_OUTPUT
+                  return 0
+                else
+                  echo "Invalid version format: '$version'"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch valid Minikube version after $retries attempts"
+            exit 1
+          }
+
+          get_minikube_version
+
+      - name: Update default minikubeVersion in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_minikube_version.outputs.minikube_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid Minikube version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating Minikube version to: $version"
+
+          # Extract current default under the minikubeVersion block
+          current_version=$(sed -n "/^  minikubeVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current Minikube version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "Minikube version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the minikubeVersion block
+          sed -i.bak -E "/^  minikubeVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated Minikube version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Update Minikube version to ${{ steps.get_minikube_version.outputs.minikube_version }}"
+          title: "Update Minikube version to ${{ steps.get_minikube_version.outputs.minikube_version }}"
+          body: "Automated PR to update default minikubeVersion in action.yml to the latest release."
+          branch: "update-minikube-version-${{ steps.get_minikube_version.outputs.minikube_version }}"
+          delete-branch: true
+
