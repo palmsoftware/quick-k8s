@@ -78,8 +78,12 @@ done
 
 if [ -n "$PACKAGES_TO_REMOVE" ]; then
   echo "=== Removing large unnecessary packages ==="
-  echo "Removing:$PACKAGES_TO_REMOVE"
-  sudo apt-get remove -y --purge "$PACKAGES_TO_REMOVE" || true
+  # Trim leading/trailing whitespace for proper apt command
+  PACKAGES_TO_REMOVE=$(echo "$PACKAGES_TO_REMOVE" | xargs)
+  echo "Removing: $PACKAGES_TO_REMOVE"
+  # Use word splitting intentionally here (don't quote)
+  # shellcheck disable=SC2086
+  sudo apt-get remove -y --purge $PACKAGES_TO_REMOVE 2>&1 || echo "⚠️  Some packages could not be removed (may not exist or dependencies issue)"
   REMOVED_COUNT=$(echo "$PACKAGES_TO_REMOVE" | wc -w)
   echo "✓ Attempted to remove $REMOVED_COUNT large packages"
 else
@@ -87,17 +91,22 @@ else
 fi
 
 echo "=== Cleaning snap packages ==="
-sudo snap list --all | awk '/disabled/{print $1, $3}' | while read -r snapname revision; do
-  sudo snap remove "$snapname" --revision="$revision" || true
-done
+if command -v snap >/dev/null 2>&1; then
+  sudo snap list --all 2>/dev/null | awk '/disabled/{print $1, $3}' | while read -r snapname revision; do
+    sudo snap remove "$snapname" --revision="$revision" 2>&1 || echo "⚠️  Could not remove snap: $snapname"
+  done
+else
+  echo "✓ Snap not available, skipping"
+fi
 
 echo "=== Checking for Android SDK ==="
 ANDROID_DIRS="/usr/local/lib/android /opt/android ${ANDROID_HOME:-} ${ANDROID_SDK_ROOT:-}"
 ANDROID_FOUND=0
 for dir in $ANDROID_DIRS; do
   if [ -d "$dir" ] && [ "$dir" != "" ]; then
-    echo "📱 Found Android SDK: $dir ($(du -sh "$dir" 2>/dev/null | cut -f1))"
-    sudo rm -rf "$dir" || true
+    # Skip size calculation as it can be very slow on large directories
+    echo "📱 Found Android SDK: $dir (removing...)"
+    sudo rm -rf "$dir" 2>&1 || echo "⚠️  Could not fully remove $dir"
     ANDROID_FOUND=1
   fi
 done
@@ -110,9 +119,9 @@ if [ $LIGHT_CLEANUP -eq 0 ]; then
   LARGE_DIRS="/usr/share/dotnet /usr/local/share/powershell /usr/local/share/chromium /usr/local/lib/node_modules /opt/ghc /usr/local/.ghcup"
   for dir in $LARGE_DIRS; do
     if [ -d "$dir" ]; then
-      SIZE=$(du -sh "$dir" 2>/dev/null | cut -f1)
-      echo "🗂️  Removing: $dir ($SIZE)"
-      sudo rm -rf "$dir" || true
+      # Skip size calculation to avoid slowdowns - just remove
+      echo "🗂️  Removing: $dir"
+      sudo rm -rf "$dir" 2>&1 || echo "⚠️  Could not fully remove $dir"
     fi
   done
 else
@@ -127,7 +136,11 @@ sudo rm -rf /tmp/* || true
 sudo rm -rf /var/tmp/* || true
 
 echo "=== Docker cleanup ==="
-docker system prune -af --volumes || true
+if command -v docker >/dev/null 2>&1; then
+  docker system prune -af --volumes 2>&1 || echo "⚠️  Docker cleanup had some errors (non-critical)"
+else
+  echo "✓ Docker not available, skipping"
+fi
 
 echo "=== Final cleanup ==="
 # Best-effort final cleanup
