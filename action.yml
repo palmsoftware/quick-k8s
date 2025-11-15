@@ -51,7 +51,7 @@ inputs:
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
-    default: 'v3.31.0'
+    default: 'v3.31.1'
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
