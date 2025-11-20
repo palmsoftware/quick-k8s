@@ -93,7 +93,7 @@ runs:
           echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail https://github.com/kubernetes-sigs/kind/releases/tag/${{ inputs.kindVersion }} > /dev/null; then
+        if ! curl --silent --fail -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }} > /dev/null; then
           echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub"
           exit 1
         fi
@@ -106,7 +106,7 @@ runs:
           echo "Invalid Minikube version format: ${{ inputs.minikubeVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail https://github.com/kubernetes/minikube/releases/tag/${{ inputs.minikubeVersion }} > /dev/null; then
+        if ! curl --silent --fail -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }} > /dev/null; then
           echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub"
           exit 1
         fi
@@ -118,7 +118,7 @@ runs:
           echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail https://github.com/projectcalico/calico/releases/tag/${{ inputs.calicoVersion }} > /dev/null; then
+        if ! curl --silent --fail -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }} > /dev/null; then
           echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub"
           exit 1
         fi
@@ -147,6 +147,10 @@ runs:
           exit 1
         fi
 
+    - name: Check GitHub service status
+      shell: bash
+      run: ${{ github.action_path }}/scripts/check-github-status.sh
+
     - name: Write temporary docker file (Linux)
       if: ${{ runner.os == 'Linux' }}
       shell: bash
@@ -163,47 +167,22 @@ runs:
       if: ${{ runner.os == 'macOS' }}
       uses: douglascamata/setup-docker-macos-action@v1-alpha
 
-    # Based on the environment, we need to install the correct version of KinD
-    - name: Install KinD for Linux AMD64
-      if: ${{ inputs.clusterProvider == 'kind' && runner.os == 'Linux' && runner.arch == 'x64' }}
-      shell: bash
-      run: |
-        echo "Downloading the latest KinD binary..."
-        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-linux-amd64
-        chmod +x kind
-        sudo mv kind /usr/local/bin/
-      env:
-        KIND_VERSION: ${{ inputs.kindVersion }}
+    # Cache KinD binary to avoid download failures during outages
+    - name: Cache KinD binary
+      if: ${{ inputs.clusterProvider == 'kind' }}
+      id: cache-kind
+      uses: actions/cache@v4
+      with:
+        path: /tmp/kind-binary
+        key: kind-${{ inputs.kindVersion }}-${{ runner.os }}-${{ runner.arch }}
 
-    - name: Install KinD for Linux ARM64
-      if: ${{ inputs.clusterProvider == 'kind' && runner.os == 'Linux' && runner.arch == 'arm64' }}
+    # Install KinD binary (unified script for all platforms)
+    - name: Install KinD
+      if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
       run: |
-        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-linux-arm64
-        chmod +x kind
-        sudo mv kind /usr/local/bin/
-      env:
-        KIND_VERSION: ${{ inputs.kindVersion }}
-
-    - name: Install KinD for MacOS AMD64
-      if: ${{ inputs.clusterProvider == 'kind' && runner.os == 'macOS' && runner.arch == 'x64' }}
-      shell: bash
-      run: |
-        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-darwin-amd64
-        chmod +x kind
-        sudo mv kind /usr/local/bin/
-      env:
-        KIND_VERSION: ${{ inputs.kindVersion }}
-
-    - name: Install KinD for MacOS ARM64
-      if: ${{ inputs.clusterProvider == 'kind' && runner.os == 'macOS' && runner.arch == 'arm64' }}
-      shell: bash
-      run: |
-        curl -Lo kind https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-darwin-arm64
-        chmod +x kind
-        sudo mv kind /usr/local/bin/
-      env:
-        KIND_VERSION: ${{ inputs.kindVersion }}
+        OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+        ${{ github.action_path }}/scripts/install-kind.sh ${{ inputs.kindVersion }} "$OS" ${{ runner.arch }}
 
     - name: Add error handling for KinD installation
       if: ${{ inputs.clusterProvider == 'kind' }}
@@ -214,50 +193,22 @@ runs:
           exit 1
         fi
 
-    # Install Minikube based on environment
-    - name: Install Minikube for Linux AMD64
-      if: ${{ inputs.clusterProvider == 'minikube' && runner.os == 'Linux' && runner.arch == 'x64' }}
-      shell: bash
-      run: |
-        echo "Downloading Minikube binary for Linux AMD64..."
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64
-        chmod +x minikube
-        sudo mv minikube /usr/local/bin/
-      env:
-        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+    # Cache Minikube binary to avoid download failures during outages
+    - name: Cache Minikube binary
+      if: ${{ inputs.clusterProvider == 'minikube' }}
+      id: cache-minikube
+      uses: actions/cache@v4
+      with:
+        path: /tmp/minikube-binary
+        key: minikube-${{ inputs.minikubeVersion }}-${{ runner.os }}-${{ runner.arch }}
 
-    - name: Install Minikube for Linux ARM64
-      if: ${{ inputs.clusterProvider == 'minikube' && runner.os == 'Linux' && runner.arch == 'arm64' }}
+    # Install Minikube binary (unified script for all platforms)
+    - name: Install Minikube
+      if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
       run: |
-        echo "Downloading Minikube binary for Linux ARM64..."
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-arm64
-        chmod +x minikube
-        sudo mv minikube /usr/local/bin/
-      env:
-        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
-
-    - name: Install Minikube for MacOS AMD64
-      if: ${{ inputs.clusterProvider == 'minikube' && runner.os == 'macOS' && runner.arch == 'x64' }}
-      shell: bash
-      run: |
-        echo "Downloading Minikube binary for MacOS AMD64..."
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-darwin-amd64
-        chmod +x minikube
-        sudo mv minikube /usr/local/bin/
-      env:
-        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
-
-    - name: Install Minikube for MacOS ARM64
-      if: ${{ inputs.clusterProvider == 'minikube' && runner.os == 'macOS' && runner.arch == 'arm64' }}
-      shell: bash
-      run: |
-        echo "Downloading Minikube binary for MacOS ARM64..."
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-darwin-arm64
-        chmod +x minikube
-        sudo mv minikube /usr/local/bin/
-      env:
-        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+        OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+        ${{ github.action_path }}/scripts/install-minikube.sh ${{ inputs.minikubeVersion }} "$OS" ${{ runner.arch }}
 
     - name: Add error handling for Minikube installation
       if: ${{ inputs.clusterProvider == 'minikube' }}
@@ -298,38 +249,13 @@ runs:
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
       run: |
-        # Extract Kubernetes version from the defaultNodeImage
-        # Format: 'kindest/node:v1.33.1@sha256:...' -> 'v1.33.1'
-        K8S_VERSION=$(echo "${{ inputs.defaultNodeImage }}" | sed -E 's/.*:([^@]+)@.*/\1/')
-        echo "Extracted Kubernetes version: $K8S_VERSION"
-        
-        # Build minikube start command with appropriate flags
-        MINIKUBE_CMD="minikube start"
-        MINIKUBE_CMD="$MINIKUBE_CMD --driver=${{ inputs.minikubeDriver }}"
-        
-        # Configure CNI and container runtime
-        # Note: containerd requires CNI in Minikube, so use docker runtime when CNI is disabled
-        if [ "${{ inputs.disableDefaultCni }}" = "true" ]; then
-          echo "⚠️  Minikube: Using docker runtime (containerd requires CNI)"
-          MINIKUBE_CMD="$MINIKUBE_CMD --container-runtime=docker"
-          MINIKUBE_CMD="$MINIKUBE_CMD --cni=false"
-        else
-          MINIKUBE_CMD="$MINIKUBE_CMD --container-runtime=containerd"
-        fi
-        
-        MINIKUBE_CMD="$MINIKUBE_CMD --kubernetes-version=$K8S_VERSION"
-        
-        # Configure network settings
-        MINIKUBE_CMD="$MINIKUBE_CMD --apiserver-port=${{ inputs.apiServerPort }}"
-        
-        # Configure nodes
-        if [ "${{ inputs.numWorkerNodes }}" -gt 0 ]; then
-          TOTAL_NODES=$((${{ inputs.numControlPlaneNodes }} + ${{ inputs.numWorkerNodes }}))
-          MINIKUBE_CMD="$MINIKUBE_CMD --nodes=$TOTAL_NODES"
-        fi
-        
-        echo "Starting Minikube with command: $MINIKUBE_CMD"
-        eval $MINIKUBE_CMD
+        ${{ github.action_path }}/scripts/start-minikube.sh \
+          "${{ inputs.defaultNodeImage }}" \
+          "${{ inputs.disableDefaultCni }}" \
+          "${{ inputs.minikubeDriver }}" \
+          "${{ inputs.apiServerPort }}" \
+          "${{ inputs.numControlPlaneNodes }}" \
+          "${{ inputs.numWorkerNodes }}"
 
     # - name: Bootstrap the runner with kubectl and oc clients
     - name: Bootstrap the runner with kubectl and oc clients
