@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install shellcheck
         run: |
@@ -37,7 +37,7 @@ jobs:
         provider: [kind, minikube]
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run the action with ${{ matrix.provider }}
         uses: ./
