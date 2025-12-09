@@ -45,6 +45,8 @@ jobs:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
           installOLM: true
+          installIstio: true
+          istioProfile: minimal
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
           apiServerPort: 6443

@@ -1,0 +1,99 @@
+name: Update Istio Version Nightly
+on:
+  schedule:
+    - cron: '0 3 * * *' # Every day at 3am UTC
+  workflow_dispatch:
+jobs:
+  update-istio-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest Istio release version
+        id: get_istio_version
+        run: |
+          # Function to get Istio version with retries
+          get_istio_version() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch Istio version..."
+
+              # Make API call with timeout
+              response=$(curl -s --max-time 30 https://api.github.com/repos/istio/istio/releases/latest)
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract tag_name and validate it's not null/empty
+                version=$(echo "$response" | jq -r '.tag_name // empty')
+
+                if [ -n "$version" ] && [ "$version" != "null" ] && [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  echo "Successfully fetched Istio version: $version"
+                  echo "istio_version=$version" >> $GITHUB_OUTPUT
+                  return 0
+                else
+                  echo "Invalid version format: '$version'"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch valid Istio version after $retries attempts"
+            exit 1
+          }
+
+          get_istio_version
+
+      - name: Update default istioVersion in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_istio_version.outputs.istio_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid Istio version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating Istio version to: $version"
+
+          # Extract current default under the istioVersion block
+          current_version=$(sed -n "/^  istioVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current Istio version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "Istio version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the istioVersion block
+          sed -i.bak -E "/^  istioVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated Istio version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update Istio version to ${{ steps.get_istio_version.outputs.istio_version }}"
+          title: "Update Istio version to ${{ steps.get_istio_version.outputs.istio_version }}"
+          body: "Automated PR to update default istioVersion in action.yml to the latest release."
+          branch: "update-istio-version-${{ steps.get_istio_version.outputs.istio_version }}"
+          delete-branch: true
+
+

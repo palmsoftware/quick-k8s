@@ -1,0 +1,254 @@
+---
+name: Nightly Comprehensive Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight UTC daily
+  workflow_dispatch:
+
+jobs:
+  # Basic cluster tests with different providers and OS versions
+  basic-cluster-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm]
+        provider: [kind, minikube]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with ${{ matrix.provider }}
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          waitForPodsReady: true
+
+      - name: Verify cluster is operational
+        run: |
+          kubectl get nodes
+          kubectl get pods -A
+          kubectl cluster-info
+
+  # Multi-node cluster tests
+  multi-node-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind, minikube]
+        nodes:
+          - controlPlane: 1
+            workers: 2
+          - controlPlane: 1
+            workers: 3
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with multiple nodes
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          numControlPlaneNodes: ${{ matrix.nodes.controlPlane }}
+          numWorkerNodes: ${{ matrix.nodes.workers }}
+          waitForPodsReady: true
+
+      - name: Verify node count
+        run: |
+          NODE_COUNT=$(kubectl get nodes --no-headers | wc -l)
+          EXPECTED_COUNT=$((${{ matrix.nodes.controlPlane }} + ${{ matrix.nodes.workers }}))
+          if [ "$NODE_COUNT" -ne "$EXPECTED_COUNT" ]; then
+            echo "Expected $EXPECTED_COUNT nodes, found $NODE_COUNT"
+            exit 1
+          fi
+          kubectl get nodes
+
+  # OLM installation tests
+  olm-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind, minikube]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with OLM
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          installOLM: true
+          waitForPodsReady: true
+
+      - name: Verify OLM installation
+        run: |
+          kubectl get crds | grep operators.coreos.com
+          kubectl get pods -n olm
+          kubectl get catalogsource -n olm
+
+  # Istio installation tests
+  istio-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind, minikube]
+        istio-profile: [minimal, demo, default]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with Istio
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          installIstio: true
+          istioProfile: ${{ matrix.istio-profile }}
+          waitForPodsReady: true
+
+      - name: Verify Istio installation
+        run: |
+          kubectl get namespace istio-system
+          kubectl get pods -n istio-system
+          istioctl version
+          istioctl verify-install
+
+  # Combined features tests (OLM + Istio)
+  combined-features-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind, minikube]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with all features
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          installOLM: true
+          installIstio: true
+          istioProfile: minimal
+          removeDefaultStorageClass: true
+          removeControlPlaneTaint: true
+          waitForPodsReady: true
+
+      - name: Verify all features
+        run: |
+          echo "=== Cluster Info ==="
+          kubectl get nodes
+          kubectl get pods -A
+          
+          echo "=== OLM Verification ==="
+          kubectl get crds | grep operators.coreos.com
+          kubectl get pods -n olm
+          
+          echo "=== Istio Verification ==="
+          kubectl get pods -n istio-system
+          istioctl version
+          
+          echo "=== Storage Class Verification ==="
+          kubectl get storageclass
+
+  # Different Kubernetes versions test (KinD only as it supports explicit versions easily)
+  kubernetes-versions-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        k8s-version:
+          - 'kindest/node:v1.31.0@sha256:53df588e04085fd41ae12de0c3fe4c72f7013bba32a20e7325357a1ac94ba865'
+          - 'kindest/node:v1.32.0@sha256:c48366d9b4a63767ee37b5e1e965c25d2a84f6bd6be6f7fb8bf43bc96e904ee5'
+          - 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
+          - 'kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a'
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with specific K8s version
+        uses: ./
+        with:
+          clusterProvider: kind
+          defaultNodeImage: ${{ matrix.k8s-version }}
+          waitForPodsReady: true
+
+      - name: Verify Kubernetes version
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+  # Minikube driver tests
+  minikube-driver-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        driver: [docker]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with Minikube driver
+        uses: ./
+        with:
+          clusterProvider: minikube
+          minikubeDriver: ${{ matrix.driver }}
+          waitForPodsReady: true
+
+      - name: Verify Minikube driver
+        run: |
+          minikube profile list
+          kubectl get nodes
+
+  # IP family tests
+  ip-family-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind]
+        ip-family: [dual, ipv4, ipv6]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with IP family
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          ipFamily: ${{ matrix.ip-family }}
+          waitForPodsReady: true
+
+      - name: Verify IP configuration
+        run: |
+          kubectl get nodes -o wide
+          kubectl get pods -A -o wide
+
