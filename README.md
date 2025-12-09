@@ -2,6 +2,7 @@
 
 [![Test Changes](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/pre-main.yml)
 [![Update Calico Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/calico-update.yml)
+[![Update Istio Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/istio-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/istio-update.yml)
 [![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
 [![Update Minikube Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
@@ -68,6 +69,9 @@ steps:
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       installOLM: false
+      installIstio: false
+      istioVersion: 1.28.1
+      istioProfile: minimal
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
@@ -90,9 +94,42 @@ steps:
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       installOLM: false
+      installIstio: false
+      istioVersion: 1.28.1
+      istioProfile: minimal
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
+
+## Optional Features
+
+### Installing Istio Service Mesh
+
+Enable Istio installation to test service mesh functionality:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with Istio
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      installIstio: true
+      istioVersion: 1.28.1
+      istioProfile: minimal
+```
+
+**Available Istio Profiles**:
+- `minimal` (default) - Essential components only, lowest resource usage (~300MB)
+- `demo` - For demos and exploration (~500MB) 
+- `default` - Production-ready baseline (~400MB)
+- `preview` - Preview profile with experimental features
+- `ambient` - Ambient mesh mode (sidecar-less)
+- `empty` - Deploys nothing, for custom configurations
+
+**⚠️ Resource Considerations**:
+- Istio adds significant overhead to cluster startup time (2-5 minutes)
+- The `minimal` profile is recommended for CI/CD to reduce resource consumption
+- Consider reducing worker nodes or using runners with more resources when enabling Istio
+- Istio control plane requires ~300-500MB additional memory depending on profile
 
 ## Cluster Provider Comparison
 
