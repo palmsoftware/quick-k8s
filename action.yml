@@ -105,10 +105,22 @@ runs:
           echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }} > /dev/null; then
-          echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub"
-          exit 1
-        fi
+        # Retry logic for flaky GitHub API calls
+        max_attempts=3
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if curl --silent --fail -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }} > /dev/null; then
+            echo "KinD version ${{ inputs.kindVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
+          sleep 2
+          attempt=$((attempt + 1))
+        done
 
     - name: Validate Minikube version input
       if: ${{ inputs.clusterProvider == 'minikube' }}
@@ -118,10 +130,22 @@ runs:
           echo "Invalid Minikube version format: ${{ inputs.minikubeVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }} > /dev/null; then
-          echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub"
-          exit 1
-        fi
+        # Retry logic for flaky GitHub API calls
+        max_attempts=3
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if curl --silent --fail -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }} > /dev/null; then
+            echo "Minikube version ${{ inputs.minikubeVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
+          sleep 2
+          attempt=$((attempt + 1))
+        done
 
     - name: Validate Calico version input
       shell: bash
@@ -130,10 +154,22 @@ runs:
           echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }} > /dev/null; then
-          echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub"
-          exit 1
-        fi
+        # Retry logic for flaky GitHub API calls
+        max_attempts=3
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if curl --silent --fail -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }} > /dev/null; then
+            echo "Calico version ${{ inputs.calicoVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
+          sleep 2
+          attempt=$((attempt + 1))
+        done
 
     - name: Validate OpenShift release level input
       shell: bash
@@ -151,10 +187,22 @@ runs:
           echo "Invalid Istio version format: ${{ inputs.istioVersion }}"
           exit 1
         fi
-        if ! curl --silent --fail -L https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }} > /dev/null; then
-          echo "Istio version ${{ inputs.istioVersion }} does not exist on GitHub"
-          exit 1
-        fi
+        # Retry logic for flaky GitHub API calls
+        max_attempts=3
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if curl --silent --fail -L https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }} > /dev/null; then
+            echo "Istio version ${{ inputs.istioVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Istio version ${{ inputs.istioVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
+          sleep 2
+          attempt=$((attempt + 1))
+        done
 
     - name: Validate Istio profile input
       if: ${{ inputs.installIstio == 'true' }}
