@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Script to install KinD binary with caching and fallback support
 # Usage: install-kind.sh <version> <os> <arch>
-# Example: install-kind.sh v0.30.0 linux amd64
+# Example: install-kind.sh v0.31.0 linux amd64
 
 VERSION="${1:-}"
 OS="${2:-}"
@@ -11,7 +11,7 @@ ARCH="${3:-}"
 
 if [ -z "$VERSION" ] || [ -z "$OS" ] || [ -z "$ARCH" ]; then
   echo "Usage: $0 <version> <os> <arch>"
-  echo "Example: $0 v0.30.0 linux amd64"
+  echo "Example: $0 v0.31.0 linux amd64"
   exit 1
 fi
 

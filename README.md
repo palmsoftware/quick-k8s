@@ -63,7 +63,7 @@ steps:
       disableDefaultCni: true
       ipFamily: dual
       defaultNodeImage: 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
-      kindVersion: v0.30.0
+      kindVersion: v0.31.0
       calicoVersion: v3.30.3
 
       numControlPlaneNodes: 1
