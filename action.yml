@@ -243,10 +243,12 @@ runs:
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
-    - name: Proactive Disk Space Management (Ubuntu)
+    - name: Optimize disk space and relocate Docker storage (Linux)
       if: ${{ runner.os == 'Linux' }}
-      shell: bash
-      run: ${{ github.action_path }}/scripts/proactive-disk-cleanup.sh
+      uses: palmsoftware/quick-cleanup@v0
+      with:
+        cleanup-mode: auto
+        minimum-free-space: 8
 
     - name: Setup Docker on Mac
       if: ${{ runner.os == 'macOS' }}
@@ -315,7 +317,7 @@ runs:
       shell: bash
       run: cat ${{ github.action_path }}/kind-config.yaml
 
-    - name: Bootstrap the docker instance on the runner (Linux)
+    - name: Configure Docker for Kubernetes (Linux)
       if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
