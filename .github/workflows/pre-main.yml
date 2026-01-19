@@ -52,3 +52,158 @@ jobs:
           apiServerPort: 6443
           apiServerAddress: 127.0.0.1
           disableDefaultCni: true
+
+  # Test local registry functionality
+  test-local-registry:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with local registry
+        uses: ./
+        with:
+          clusterProvider: kind
+          installLocalRegistry: true
+          localRegistryPort: 5001
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify local registry is running
+        run: |
+          echo "Checking registry container..."
+          docker ps | grep quick-k8s-registry
+          echo "Testing registry connectivity..."
+          curl -s http://localhost:5001/v2/ || exit 1
+          echo "Testing push to registry..."
+          docker pull busybox:latest
+          docker tag busybox:latest localhost:5001/test-image:latest
+          docker push localhost:5001/test-image:latest
+          echo "Verifying image in registry..."
+          curl -s http://localhost:5001/v2/_catalog | grep test-image
+          echo "Local registry test passed!"
+
+  # Test skipping CNI installation (for projects that bring their own CNI)
+  test-skip-cni:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action without Calico (bring your own CNI)
+        uses: ./
+        with:
+          clusterProvider: kind
+          disableDefaultCni: true
+          installCalico: false
+          waitForPodsReady: false
+          installOLM: false
+          installIstio: false
+
+      - name: Verify cluster is created without CNI
+        run: |
+          echo "Checking cluster nodes..."
+          kubectl get nodes
+          echo "Verifying no Calico pods exist..."
+          if kubectl get pods -n kube-system -l k8s-app=calico-node 2>/dev/null | grep -q calico; then
+            echo "ERROR: Calico pods found when installCalico=false"
+            exit 1
+          fi
+          echo "Skip CNI test passed - no Calico installed!"
+
+      - name: Install Calico manually (simulating bring-your-own-CNI)
+        run: |
+          echo "Installing Calico manually to verify cluster works..."
+          kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/calico.yaml
+          echo "Waiting for Calico pods..."
+          kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=120s
+          echo "Manual CNI installation successful!"
+
+  # Test custom KIND config
+  test-custom-kind-config:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Create custom KIND config
+        run: |
+          cat > ${{ github.workspace }}/custom-kind-config.yaml << 'EOF'
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          networking:
+            apiServerAddress: "127.0.0.1"
+            apiServerPort: 6443
+            ipFamily: ipv4
+            disableDefaultCNI: true
+          nodes:
+            - role: control-plane
+              image: kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f
+              extraPortMappings:
+                - containerPort: 30000
+                  hostPort: 30000
+                  protocol: TCP
+          EOF
+          echo "Custom KIND config created:"
+          cat ${{ github.workspace }}/custom-kind-config.yaml
+
+      - name: Run the action with custom KIND config
+        uses: ./
+        with:
+          clusterProvider: kind
+          kindConfigPath: ${{ github.workspace }}/custom-kind-config.yaml
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify custom config was used
+        run: |
+          echo "Checking cluster configuration..."
+          kubectl get nodes
+          echo "Verifying single node (from custom config)..."
+          NODE_COUNT=$(kubectl get nodes --no-headers | wc -l)
+          if [ "$NODE_COUNT" -ne 1 ]; then
+            echo "ERROR: Expected 1 node from custom config, got $NODE_COUNT"
+            exit 1
+          fi
+          echo "Custom KIND config test passed!"
+
+  # Test input validation
+  test-input-validation:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Test invalid installCalico value (should fail)
+        id: test-invalid-calico
+        continue-on-error: true
+        uses: ./
+        with:
+          clusterProvider: kind
+          installCalico: invalid-value
+
+      - name: Verify invalid installCalico was rejected
+        run: |
+          if [ "${{ steps.test-invalid-calico.outcome }}" = "success" ]; then
+            echo "ERROR: Invalid installCalico value should have failed"
+            exit 1
+          fi
+          echo "Input validation test passed!"

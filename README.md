@@ -74,6 +74,12 @@ steps:
       istioProfile: minimal
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
+
+      # New advanced options
+      installCalico: true           # Set to false to bring your own CNI
+      kindConfigPath: ''            # Path to custom KinD config file
+      installLocalRegistry: false   # Enable local Docker registry
+      localRegistryPort: 5001       # Port for local registry
 ```
 
 With Minikube:
@@ -130,6 +136,106 @@ steps:
 - The `minimal` profile is recommended for CI/CD to reduce resource consumption
 - Consider reducing worker nodes or using runners with more resources when enabling Istio
 - Istio control plane requires ~300-500MB additional memory depending on profile
+
+### Bring Your Own CNI (Skip Calico)
+
+For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes, Cilium), you can skip the default Calico installation:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s without Calico
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      disableDefaultCni: true
+      installCalico: false  # Skip Calico installation
+      waitForPodsReady: false  # Don't wait - no CNI means pods won't be ready
+
+  - name: Install your own CNI
+    run: |
+      # Example: Install Multus
+      kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset.yml
+```
+
+**⚠️ Important Notes**:
+- When `installCalico: false`, the cluster will not have a functional CNI
+- Pods will remain in `Pending` state until you install a CNI
+- Set `waitForPodsReady: false` to avoid timeouts waiting for pods
+- This is ideal for projects testing their own CNI implementations
+
+### Custom KinD Configuration
+
+For advanced use cases, you can provide your own KinD configuration file:
+
+```yaml
+steps:
+  - name: Create custom KinD config
+    run: |
+      cat > ${{ github.workspace }}/my-kind-config.yaml << 'EOF'
+      kind: Cluster
+      apiVersion: kind.x-k8s.io/v1alpha4
+      networking:
+        apiServerAddress: "127.0.0.1"
+        apiServerPort: 6443
+        ipFamily: ipv4
+        disableDefaultCNI: true
+      nodes:
+        - role: control-plane
+          extraPortMappings:
+            - containerPort: 30000
+              hostPort: 30000
+              protocol: TCP
+        - role: worker
+        - role: worker
+      EOF
+
+  - name: Set up Quick-K8s with custom config
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      kindConfigPath: ${{ github.workspace }}/my-kind-config.yaml
+```
+
+**⚠️ Important**: Place the config file in `${{ github.workspace }}` or another persistent location. Files in `/tmp` may be cleaned up during the action's disk optimization step.
+
+**Use cases for custom configuration**:
+- Extra port mappings for NodePort services
+- Custom node labels and taints
+- Specific container runtime settings
+- Advanced networking configurations
+- Testing multi-zone setups
+
+### Local Docker Registry
+
+Enable a local Docker registry for faster image pulls and testing:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with local registry
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      installLocalRegistry: true
+      localRegistryPort: 5001  # Default port
+
+  - name: Build and push to local registry
+    run: |
+      docker build -t localhost:5001/my-app:latest .
+      docker push localhost:5001/my-app:latest
+
+  - name: Deploy using local registry image
+    run: |
+      kubectl create deployment my-app --image=localhost:5001/my-app:latest
+```
+
+**Benefits**:
+- Faster image pulls within the cluster
+- No need for external registry authentication
+- Ideal for testing container builds in CI/CD
+- Images persist for the duration of the workflow
+
+**Registry Details**:
+- Accessible at `localhost:<port>` from both the host and cluster
+- Uses the standard Docker registry:2 image
+- Automatically connected to the KinD network
+- ConfigMap created in `kube-public` namespace for discoverability
 
 ## Cluster Provider Comparison
 
