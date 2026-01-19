@@ -170,7 +170,7 @@ For advanced use cases, you can provide your own KinD configuration file:
 steps:
   - name: Create custom KinD config
     run: |
-      cat > /tmp/my-kind-config.yaml << 'EOF'
+      cat > ${{ github.workspace }}/my-kind-config.yaml << 'EOF'
       kind: Cluster
       apiVersion: kind.x-k8s.io/v1alpha4
       networking:
@@ -191,8 +191,10 @@ steps:
   - name: Set up Quick-K8s with custom config
     uses: palmsoftware/quick-k8s@v0.0.39
     with:
-      kindConfigPath: /tmp/my-kind-config.yaml
+      kindConfigPath: ${{ github.workspace }}/my-kind-config.yaml
 ```
+
+**⚠️ Important**: Place the config file in `${{ github.workspace }}` or another persistent location. Files in `/tmp` may be cleaned up during the action's disk optimization step.
 
 **Use cases for custom configuration**:
 - Extra port mappings for NodePort services

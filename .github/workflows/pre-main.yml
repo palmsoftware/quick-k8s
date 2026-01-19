@@ -141,7 +141,7 @@ jobs:
 
       - name: Create custom KIND config
         run: |
-          cat > /tmp/custom-kind-config.yaml << 'EOF'
+          cat > ${{ github.workspace }}/custom-kind-config.yaml << 'EOF'
           kind: Cluster
           apiVersion: kind.x-k8s.io/v1alpha4
           networking:
@@ -158,13 +158,13 @@ jobs:
                   protocol: TCP
           EOF
           echo "Custom KIND config created:"
-          cat /tmp/custom-kind-config.yaml
+          cat ${{ github.workspace }}/custom-kind-config.yaml
 
       - name: Run the action with custom KIND config
         uses: ./
         with:
           clusterProvider: kind
-          kindConfigPath: /tmp/custom-kind-config.yaml
+          kindConfigPath: ${{ github.workspace }}/custom-kind-config.yaml
           waitForPodsReady: true
           installOLM: false
           installIstio: false
