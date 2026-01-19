@@ -84,6 +84,22 @@ inputs:
     description: 'Istio installation profile (minimal, demo, default, preview, ambient, empty)'
     required: false
     default: 'minimal'
+  installCalico:
+    description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
+    required: false
+    default: 'true'
+  kindConfigPath:
+    description: 'Path to custom KinD configuration file. When provided, uses this instead of auto-generated config'
+    required: false
+    default: ''
+  installLocalRegistry:
+    description: 'Install a local Docker registry accessible from the cluster'
+    required: false
+    default: 'false'
+  localRegistryPort:
+    description: 'Port for the local Docker registry'
+    required: false
+    default: '5001'
 
 runs:
   using: 'composite'
@@ -216,6 +232,46 @@ runs:
           exit 1
         fi
 
+    - name: Validate installCalico input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installCalico }}" != "true" && "${{ inputs.installCalico }}" != "false" ]]; then
+          echo "Invalid installCalico value: ${{ inputs.installCalico }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate installLocalRegistry input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installLocalRegistry }}" != "true" && "${{ inputs.installLocalRegistry }}" != "false" ]]; then
+          echo "Invalid installLocalRegistry value: ${{ inputs.installLocalRegistry }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate localRegistryPort input
+      if: ${{ inputs.installLocalRegistry == 'true' }}
+      shell: bash
+      run: |
+        PORT="${{ inputs.localRegistryPort }}"
+        if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
+          echo "Invalid localRegistryPort: $PORT"
+          echo "Must be a number between 1024 and 65535"
+          exit 1
+        fi
+
+    - name: Validate kindConfigPath input
+      if: ${{ inputs.kindConfigPath != '' && inputs.clusterProvider == 'kind' }}
+      shell: bash
+      run: |
+        CONFIG_PATH="${{ inputs.kindConfigPath }}"
+        if [ ! -f "$CONFIG_PATH" ]; then
+          echo "Custom KinD config file not found: $CONFIG_PATH"
+          exit 1
+        fi
+        echo "Using custom KinD configuration from: $CONFIG_PATH"
+
     - name: Validate number of control-plane nodes
       shell: bash
       run: |
@@ -307,10 +363,17 @@ runs:
         fi
 
     # Create a new Kubernetes cluster using KinD
-    - name: Populate temporary config file for KinD
-      if: ${{ inputs.clusterProvider == 'kind' }}
+    - name: Populate temporary config file for KinD (auto-generated)
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath == '' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }} ${{ github.action_path }}/kind-config.yaml
+
+    - name: Use custom KinD config file
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath != '' }}
+      shell: bash
+      run: |
+        echo "Using custom KinD configuration from: ${{ inputs.kindConfigPath }}"
+        cp "${{ inputs.kindConfigPath }}" "${{ github.action_path }}/kind-config.yaml"
 
     - name: Print the KinD config
       if: ${{ inputs.clusterProvider == 'kind' }}
@@ -358,13 +421,26 @@ runs:
         brew install openshift-cli
         brew install kubernetes-cli
 
-    - name: Install calico CNI if default CNI is disabled
-      if: ${{ inputs.disableDefaultCni == 'true' }}
+    - name: Install calico CNI if default CNI is disabled and installCalico is true
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
       shell: bash
       run: |
+        echo "Installing Calico CNI version $CALICO_VERSION..."
         oc apply -f https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml;
       env:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
+
+    - name: Skip CNI installation (bring your own CNI)
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'false' }}
+      shell: bash
+      run: |
+        echo "⚠️  Skipping Calico CNI installation - installCalico is set to false"
+        echo "   You must install your own CNI (e.g., Multus, OVN, Cilium) for the cluster to be functional"
+
+    - name: Setup local Docker registry
+      if: ${{ inputs.installLocalRegistry == 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/setup-local-registry.sh ${{ inputs.localRegistryPort }} ${{ inputs.clusterProvider }}
 
     - name: Install OLM
       if: ${{ inputs.installOLM == 'true' }}
