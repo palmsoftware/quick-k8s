@@ -32,6 +32,7 @@ jobs:
     env:
       SHELL: /bin/bash
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm]
         provider: [kind, minikube]
