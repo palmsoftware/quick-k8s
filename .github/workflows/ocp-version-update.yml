@@ -1,0 +1,122 @@
+name: Update OCP Version Nightly
+on:
+  schedule:
+    - cron: '0 4 * * *' # Every day at 4am UTC
+  workflow_dispatch:
+jobs:
+  update-ocp-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest OCP GA release level
+        id: get_ocp_version
+        run: |
+          # Function to find the latest GA OCP version from Cincinnati API
+          # Future-proofed for 4.23 -> 5.0 transition
+          find_latest_ocp_version() {
+            local retries=3
+            local delay=5
+
+            for ((attempt=1; attempt<=retries; attempt++)); do
+              echo "Attempt $attempt to fetch OCP version..."
+
+              # Check major versions in descending order (5.x first, then 4.x)
+              # This handles the upcoming 4.23 -> 5.0 transition
+              for major in 5 4; do
+                # Set max minor based on major version
+                local max_minor=30
+                if [ "$major" -eq 5 ]; then
+                  max_minor=15  # 5.0 through 5.15 should cover near future
+                fi
+
+                for minor in $(seq $max_minor -1 0); do
+                  channel="stable-${major}.${minor}"
+
+                  response=$(curl -s --max-time 10 \
+                    "https://api.openshift.com/api/upgrades_info/v1/graph?channel=${channel}&arch=amd64" 2>/dev/null)
+
+                  if [ $? -ne 0 ] || [ -z "$response" ]; then
+                    continue
+                  fi
+
+                  node_count=$(echo "$response" | jq '.nodes | length' 2>/dev/null || echo "0")
+
+                  if [ "$node_count" -gt 0 ]; then
+                    echo "Found GA channel: $channel with $node_count versions"
+                    echo "${major}.${minor}"
+                    return 0
+                  fi
+                done
+              done
+
+              if [ $attempt -lt $retries ]; then
+                echo "No valid channel found, retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to find valid OCP GA version after $retries attempts"
+            return 1
+          }
+
+          version=$(find_latest_ocp_version)
+          if [ $? -ne 0 ] || [ -z "$version" ]; then
+            echo "Error: Could not determine latest OCP GA version"
+            exit 1
+          fi
+
+          # Validate format (major.minor only)
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format '$version' - expected major.minor"
+            exit 1
+          fi
+
+          echo "Successfully determined latest OCP GA version: $version"
+          echo "ocp_version=$version" >> $GITHUB_OUTPUT
+
+      - name: Update default ocpReleaseLevel in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_ocp_version.outputs.ocp_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid OCP version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating OCP release level to: $version"
+
+          # Extract current default under the ocpReleaseLevel block
+          current_version=$(sed -n "/^  ocpReleaseLevel:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current OCP release level from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "OCP release level is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the ocpReleaseLevel block
+          sed -i.bak -E "/^  ocpReleaseLevel:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated OCP release level from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update OCP release level to ${{ steps.get_ocp_version.outputs.ocp_version }}"
+          title: "Update OCP release level to ${{ steps.get_ocp_version.outputs.ocp_version }}"
+          body: "Automated PR to update default ocpReleaseLevel in action.yml to the latest GA release."
+          branch: "update-ocp-version-${{ steps.get_ocp_version.outputs.ocp_version }}"
+          delete-branch: true
