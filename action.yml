@@ -121,20 +121,28 @@ runs:
           echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
           exit 1
         fi
-        # Retry logic for flaky GitHub API calls
-        max_attempts=3
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
         attempt=1
+        delay=2
         while [ $attempt -le $max_attempts ]; do
-          if curl --silent --fail -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }} > /dev/null; then
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }})
+          if [ "$http_code" = "200" ]; then
             echo "KinD version ${{ inputs.kindVersion }} validated successfully"
             break
           fi
           if [ $attempt -eq $max_attempts ]; then
-            echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            if [ "$http_code" = "404" ]; then
+              echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate KinD version ${{ inputs.kindVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
             exit 1
           fi
-          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
-          sleep 2
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
           attempt=$((attempt + 1))
         done
 
@@ -146,20 +154,28 @@ runs:
           echo "Invalid Minikube version format: ${{ inputs.minikubeVersion }}"
           exit 1
         fi
-        # Retry logic for flaky GitHub API calls
-        max_attempts=3
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
         attempt=1
+        delay=2
         while [ $attempt -le $max_attempts ]; do
-          if curl --silent --fail -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }} > /dev/null; then
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }})
+          if [ "$http_code" = "200" ]; then
             echo "Minikube version ${{ inputs.minikubeVersion }} validated successfully"
             break
           fi
           if [ $attempt -eq $max_attempts ]; then
-            echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            if [ "$http_code" = "404" ]; then
+              echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate Minikube version ${{ inputs.minikubeVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
             exit 1
           fi
-          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
-          sleep 2
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
           attempt=$((attempt + 1))
         done
 
@@ -170,20 +186,28 @@ runs:
           echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
           exit 1
         fi
-        # Retry logic for flaky GitHub API calls
-        max_attempts=3
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
         attempt=1
+        delay=2
         while [ $attempt -le $max_attempts ]; do
-          if curl --silent --fail -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }} > /dev/null; then
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }})
+          if [ "$http_code" = "200" ]; then
             echo "Calico version ${{ inputs.calicoVersion }} validated successfully"
             break
           fi
           if [ $attempt -eq $max_attempts ]; then
-            echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            if [ "$http_code" = "404" ]; then
+              echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate Calico version ${{ inputs.calicoVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
             exit 1
           fi
-          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
-          sleep 2
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
           attempt=$((attempt + 1))
         done
 
@@ -203,20 +227,28 @@ runs:
           echo "Invalid Istio version format: ${{ inputs.istioVersion }}"
           exit 1
         fi
-        # Retry logic for flaky GitHub API calls
-        max_attempts=3
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
         attempt=1
+        delay=2
         while [ $attempt -le $max_attempts ]; do
-          if curl --silent --fail -L https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }} > /dev/null; then
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }})
+          if [ "$http_code" = "200" ]; then
             echo "Istio version ${{ inputs.istioVersion }} validated successfully"
             break
           fi
           if [ $attempt -eq $max_attempts ]; then
-            echo "Istio version ${{ inputs.istioVersion }} does not exist on GitHub (after $max_attempts attempts)"
+            if [ "$http_code" = "404" ]; then
+              echo "Istio version ${{ inputs.istioVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate Istio version ${{ inputs.istioVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
             exit 1
           fi
-          echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
-          sleep 2
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
           attempt=$((attempt + 1))
         done
 
