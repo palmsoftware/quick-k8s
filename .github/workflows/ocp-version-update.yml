@@ -20,7 +20,7 @@ jobs:
             local delay=5
 
             for ((attempt=1; attempt<=retries; attempt++)); do
-              echo "Attempt $attempt to fetch OCP version..."
+              echo "Attempt $attempt to fetch OCP version..." >&2
 
               # Check major versions in descending order (5.x first, then 4.x)
               # This handles the upcoming 4.23 -> 5.0 transition
@@ -44,7 +44,7 @@ jobs:
                   node_count=$(echo "$response" | jq '.nodes | length' 2>/dev/null || echo "0")
 
                   if [ "$node_count" -gt 0 ]; then
-                    echo "Found GA channel: $channel with $node_count versions"
+                    echo "Found GA channel: $channel with $node_count versions" >&2
                     echo "${major}.${minor}"
                     return 0
                   fi
@@ -52,12 +52,12 @@ jobs:
               done
 
               if [ $attempt -lt $retries ]; then
-                echo "No valid channel found, retrying in $delay seconds..."
+                echo "No valid channel found, retrying in $delay seconds..." >&2
                 sleep $delay
               fi
             done
 
-            echo "Failed to find valid OCP GA version after $retries attempts"
+            echo "Failed to find valid OCP GA version after $retries attempts" >&2
             return 1
           }
 
