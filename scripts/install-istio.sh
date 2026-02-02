@@ -29,16 +29,31 @@ case $ARCH in
     ;;
 esac
 
-# Determine OS
+# Determine OS (Istio uses 'osx' for macOS, not 'darwin')
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+if [ "$OS" = "darwin" ]; then
+  OS="osx"
+fi
 
 echo "Detected OS: $OS, Architecture: $ARCH"
 
 # Download istioctl
-ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
+# Istio naming convention: linux-{arch}, osx (universal), osx-arm64
+if [ "$OS" = "osx" ] && [ "$ARCH" = "amd64" ]; then
+  # macOS Intel uses universal 'osx' build (not osx-amd64)
+  ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-osx.tar.gz"
+else
+  ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
+fi
 echo "Downloading Istio from: $ISTIO_URL"
 
-curl -L "$ISTIO_URL" -o istio.tar.gz
+if ! curl -fSL "$ISTIO_URL" -o istio.tar.gz; then
+  echo "Error: Failed to download Istio from $ISTIO_URL" >&2
+  echo "This may indicate:" >&2
+  echo "  1. Network connectivity issues" >&2
+  echo "  2. Istio version $ISTIO_VERSION may not be available for $OS-$ARCH" >&2
+  exit 1
+fi
 
 # Extract istioctl
 echo "Extracting istioctl..."
