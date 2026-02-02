@@ -13,15 +13,21 @@ Supports both **KinD** (default) and **Minikube** as cluster providers.
 
 ## Requirements:
 
-Linux (ARM and x86) runners are fully supported and tested.
+**Tested Runners:**
 
-**macOS Support Status**:
-- ⚠️ **Not actively tested in CI** - macOS builds have been temporarily disabled due to runner limitations
-- The action code supports macOS Intel runners (`macos-13`, `macos-14-large`, `macos-15-large`) but:
-  - `macos-13` is deprecated by GitHub
-  - `macos-14` and `macos-15` (Apple Silicon/ARM64) lack Docker nested virtualization support on free tier
-  - `-large` Intel runners require a paid GitHub plan
-- If you have access to Intel-based macOS runners, the action should work but use at your own risk
+| Runner | Architecture | Status |
+|--------|--------------|--------|
+| `ubuntu-22.04` | x86_64 | ✅ Fully supported |
+| `ubuntu-22.04-arm` | ARM64 | ✅ Fully supported |
+| `ubuntu-24.04` | x86_64 | ✅ Fully supported |
+| `ubuntu-24.04-arm` | ARM64 | ✅ Fully supported |
+| `macos-15-intel` | x86_64 | ✅ Supported (see notes) |
+| `macos-14`, `macos-15` | ARM64 (M1) | ❌ Not supported |
+
+**macOS Notes:**
+- Docker is set up automatically via Colima using `douglascamata/setup-docker-macos-action`
+- OLM and Istio installation are not supported on macOS due to Colima networking limitations
+- Apple Silicon runners (`macos-14`, `macos-15`) lack nested virtualization required for Docker
 
 ## Usage:
 

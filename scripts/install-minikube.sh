@@ -15,6 +15,15 @@ if [ -z "$VERSION" ] || [ -z "$OS" ] || [ -z "$ARCH" ]; then
   exit 1
 fi
 
+# Map OS names (GitHub Actions uses macOS, Minikube uses darwin)
+# Convert to lowercase first
+OS=$(echo "$OS" | tr '[:upper:]' '[:lower:]')
+
+# Map macOS to darwin
+if [ "$OS" = "macos" ]; then
+  OS="darwin"
+fi
+
 # Map architecture names (GitHub Actions uses X64/x64/ARM64/arm64, Minikube uses amd64/arm64)
 # Convert to lowercase first
 ARCH=$(echo "$ARCH" | tr '[:upper:]' '[:lower:]')
