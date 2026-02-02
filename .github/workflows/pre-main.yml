@@ -55,8 +55,9 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
-          installOLM: true
-          installIstio: true
+          # Skip OLM and Istio on macOS due to Colima networking limitations
+          installOLM: ${{ !startsWith(matrix.os, 'macos') }}
+          installIstio: ${{ !startsWith(matrix.os, 'macos') }}
           istioProfile: minimal
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
