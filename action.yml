@@ -116,6 +116,8 @@ runs:
     - name: Validate KinD version input
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         if ! [[ "${{ inputs.kindVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
@@ -126,7 +128,7 @@ runs:
         attempt=1
         delay=2
         while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }})
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }})
           if [ "$http_code" = "200" ]; then
             echo "KinD version ${{ inputs.kindVersion }} validated successfully"
             break
@@ -149,6 +151,8 @@ runs:
     - name: Validate Minikube version input
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         if ! [[ "${{ inputs.minikubeVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid Minikube version format: ${{ inputs.minikubeVersion }}"
@@ -159,7 +163,7 @@ runs:
         attempt=1
         delay=2
         while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }})
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }})
           if [ "$http_code" = "200" ]; then
             echo "Minikube version ${{ inputs.minikubeVersion }} validated successfully"
             break
@@ -181,6 +185,8 @@ runs:
 
     - name: Validate Calico version input
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         if ! [[ "${{ inputs.calicoVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
@@ -191,7 +197,7 @@ runs:
         attempt=1
         delay=2
         while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }})
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }})
           if [ "$http_code" = "200" ]; then
             echo "Calico version ${{ inputs.calicoVersion }} validated successfully"
             break
@@ -222,6 +228,8 @@ runs:
     - name: Validate Istio version input
       if: ${{ inputs.installIstio == 'true' }}
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         if ! [[ "${{ inputs.istioVersion }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Invalid Istio version format: ${{ inputs.istioVersion }}"
@@ -232,7 +240,7 @@ runs:
         attempt=1
         delay=2
         while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }})
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }})
           if [ "$http_code" = "200" ]; then
             echo "Istio version ${{ inputs.istioVersion }} validated successfully"
             break
