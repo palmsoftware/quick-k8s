@@ -16,12 +16,9 @@ Supports both **KinD** (default) and **Minikube** as cluster providers.
 Linux (ARM and x86) runners are fully supported and tested.
 
 **macOS Support Status**:
-- ⚠️ **Not actively tested in CI** - macOS builds have been temporarily disabled due to runner limitations
-- The action code supports macOS Intel runners (`macos-13`, `macos-14-large`, `macos-15-large`) but:
-  - `macos-13` is deprecated by GitHub
-  - `macos-14` and `macos-15` (Apple Silicon/ARM64) lack Docker nested virtualization support on free tier
-  - `-large` Intel runners require a paid GitHub plan
-- If you have access to Intel-based macOS runners, the action should work but use at your own risk
+- ✅ **Intel macOS runners supported** - `macos-15-intel` works with Docker via Colima
+- ⚠️ **Apple Silicon not supported** - `macos-14`/`macos-15` (M1) lack nested virtualization
+- The action automatically sets up Docker on macOS using `douglascamata/setup-docker-macos-action`
 
 ## Usage:
 
