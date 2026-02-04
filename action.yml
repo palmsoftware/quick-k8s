@@ -55,7 +55,7 @@ inputs:
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
-    default: '4.20'
+    default: '4.21'
   installOLM:
     description: 'Install the Operator Lifecycle Manager'
     required: false
