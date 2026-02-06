@@ -1,0 +1,97 @@
+name: Update cert-manager Version Nightly
+on:
+  schedule:
+    - cron: '0 4 * * *' # Every day at 4am UTC
+  workflow_dispatch:
+jobs:
+  update-cert-manager-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest cert-manager release version
+        id: get_cert_manager_version
+        run: |
+          # Function to get cert-manager version with retries
+          get_cert_manager_version() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch cert-manager version..."
+
+              # Make API call with timeout
+              response=$(curl -s --max-time 30 https://api.github.com/repos/cert-manager/cert-manager/releases/latest)
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract tag_name and validate it's not null/empty
+                version=$(echo "$response" | jq -r '.tag_name // empty')
+
+                if [ -n "$version" ] && [ "$version" != "null" ] && [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  echo "Successfully fetched cert-manager version: $version"
+                  echo "cert_manager_version=$version" >> $GITHUB_OUTPUT
+                  return 0
+                else
+                  echo "Invalid version format: '$version'"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch valid cert-manager version after $retries attempts"
+            exit 1
+          }
+
+          get_cert_manager_version
+
+      - name: Update default certManagerVersion in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_cert_manager_version.outputs.cert_manager_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid cert-manager version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating cert-manager version to: $version"
+
+          # Extract current default under the certManagerVersion block
+          current_version=$(sed -n "/^  certManagerVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current cert-manager version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "cert-manager version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the certManagerVersion block
+          sed -i.bak -E "/^  certManagerVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated cert-manager version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update cert-manager version to ${{ steps.get_cert_manager_version.outputs.cert_manager_version }}"
+          title: "Update cert-manager version to ${{ steps.get_cert_manager_version.outputs.cert_manager_version }}"
+          body: "Automated PR to update default certManagerVersion in action.yml to the latest release."
+          branch: "update-cert-manager-version-${{ steps.get_cert_manager_version.outputs.cert_manager_version }}"
+          delete-branch: true

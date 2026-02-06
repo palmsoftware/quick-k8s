@@ -55,10 +55,11 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
-          # Skip OLM and Istio on macOS due to Colima networking limitations
+          # Skip OLM, Istio, and cert-manager on macOS due to Colima networking limitations
           installOLM: ${{ !startsWith(matrix.os, 'macos') }}
           installIstio: ${{ !startsWith(matrix.os, 'macos') }}
           istioProfile: minimal
+          installCertManager: ${{ !startsWith(matrix.os, 'macos') }}
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
           apiServerPort: 6443
@@ -219,3 +220,50 @@ jobs:
             exit 1
           fi
           echo "Input validation test passed!"
+
+  # Test cert-manager installation
+  test-cert-manager:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with cert-manager
+        uses: ./
+        with:
+          clusterProvider: kind
+          installCertManager: true
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify cert-manager is running
+        run: |
+          echo "Checking cert-manager namespace..."
+          kubectl get namespace cert-manager
+          echo "Checking cert-manager pods..."
+          kubectl get pods -n cert-manager
+          echo "Verifying all cert-manager pods are running..."
+          kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=60s
+          echo "Checking cert-manager CRDs..."
+          kubectl get crd | grep cert-manager
+          echo "cert-manager installation verified!"
+
+      - name: Test cert-manager functionality with self-signed issuer
+        run: |
+          echo "Creating a self-signed ClusterIssuer..."
+          cat <<EOF | kubectl apply -f -
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: selfsigned-issuer
+          spec:
+            selfSigned: {}
+          EOF
+          echo "Waiting for ClusterIssuer to be ready..."
+          kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=60s
+          echo "cert-manager functionality test passed!"

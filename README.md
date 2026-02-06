@@ -5,6 +5,7 @@
 [![Update Istio Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/istio-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/istio-update.yml)
 [![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
 [![Update Minikube Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml)
+[![Update cert-manager Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
@@ -78,6 +79,8 @@ steps:
       installIstio: false
       istioVersion: 1.28.1
       istioProfile: minimal
+      installCertManager: false
+      certManagerVersion: v1.17.2
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
@@ -109,6 +112,8 @@ steps:
       installIstio: false
       istioVersion: 1.28.1
       istioProfile: minimal
+      installCertManager: false
+      certManagerVersion: v1.17.2
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
@@ -142,6 +147,46 @@ steps:
 - The `minimal` profile is recommended for CI/CD to reduce resource consumption
 - Consider reducing worker nodes or using runners with more resources when enabling Istio
 - Istio control plane requires ~300-500MB additional memory depending on profile
+
+### Installing cert-manager
+
+Enable cert-manager for automatic TLS certificate management:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with cert-manager
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      installCertManager: true
+      certManagerVersion: v1.17.2
+```
+
+**Features**:
+- Automatic TLS certificate provisioning for Kubernetes
+- Supports Let's Encrypt, self-signed, and CA issuers
+- Integrates with Ingress controllers for automatic certificate management
+- CRDs installed automatically with cert-manager
+
+**Example: Create a self-signed issuer for testing**:
+```yaml
+- name: Create self-signed issuer
+  run: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: selfsigned-issuer
+    spec:
+      selfSigned: {}
+    EOF
+    kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=60s
+```
+
+**⚠️ Resource Considerations**:
+- cert-manager adds 3 pods to the cluster (controller, webhook, cainjector)
+- Requires approximately 200-300MB additional memory
+- Webhook startup may take 30-60 seconds
+- Not supported on macOS due to Colima networking limitations
 
 ### Bring Your Own CNI (Skip Calico)
 

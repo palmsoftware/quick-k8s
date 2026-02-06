@@ -84,6 +84,14 @@ inputs:
     description: 'Istio installation profile (minimal, demo, default, preview, ambient, empty)'
     required: false
     default: 'minimal'
+  installCertManager:
+    description: 'Install cert-manager for TLS certificate management'
+    required: false
+    default: 'false'
+  certManagerVersion:
+    description: 'The version of cert-manager to install'
+    required: false
+    default: 'v1.17.2'
   installCalico:
     description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
     required: false
@@ -271,6 +279,50 @@ runs:
           echo "Valid profiles are: ${VALID_PROFILES[*]}"
           exit 1
         fi
+
+    - name: Validate installCertManager input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installCertManager }}" != "true" && "${{ inputs.installCertManager }}" != "false" ]]; then
+          echo "Invalid installCertManager value: ${{ inputs.installCertManager }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate cert-manager version input
+      if: ${{ inputs.installCertManager == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if ! [[ "${{ inputs.certManagerVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid cert-manager version format: ${{ inputs.certManagerVersion }}"
+          exit 1
+        fi
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
+        attempt=1
+        delay=2
+        while [ $attempt -le $max_attempts ]; do
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/cert-manager/cert-manager/releases/tags/${{ inputs.certManagerVersion }})
+          if [ "$http_code" = "200" ]; then
+            echo "cert-manager version ${{ inputs.certManagerVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            if [ "$http_code" = "404" ]; then
+              echo "cert-manager version ${{ inputs.certManagerVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate cert-manager version ${{ inputs.certManagerVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
+          attempt=$((attempt + 1))
+        done
 
     - name: Validate installCalico input
       shell: bash
@@ -491,6 +543,11 @@ runs:
       if: ${{ inputs.installIstio == 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/install-istio.sh ${{ inputs.istioVersion }} ${{ inputs.istioProfile }}
+
+    - name: Install cert-manager
+      if: ${{ inputs.installCertManager == 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/install-cert-manager.sh ${{ inputs.certManagerVersion }}
 
     - name: Remove the default storage class
       if: ${{ inputs.removeDefaultStorageClass == 'true' }}
