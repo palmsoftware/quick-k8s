@@ -80,7 +80,7 @@ steps:
       istioVersion: 1.28.1
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.17.2
+      certManagerVersion: v1.19.3
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
@@ -113,7 +113,7 @@ steps:
       istioVersion: 1.28.1
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.17.2
+      certManagerVersion: v1.19.3
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
@@ -158,7 +158,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0.0.39
     with:
       installCertManager: true
-      certManagerVersion: v1.17.2
+      certManagerVersion: v1.19.3
 ```
 
 **Features**:

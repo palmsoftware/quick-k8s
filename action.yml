@@ -91,7 +91,7 @@ inputs:
   certManagerVersion:
     description: 'The version of cert-manager to install'
     required: false
-    default: 'v1.17.2'
+    default: 'v1.19.3'
   installCalico:
     description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
     required: false
