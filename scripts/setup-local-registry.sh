@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Setup a local Docker registry accessible from the KinD/Minikube cluster
-# Usage: setup-local-registry.sh <port> <cluster-provider>
+# Usage: setup-local-registry.sh <port> <cluster-provider> [cluster-name]
 
 set -e
 
 REGISTRY_PORT="${1:-5001}"
 CLUSTER_PROVIDER="${2:-kind}"
+CLUSTER_NAME="${3:-kind}"
 REGISTRY_NAME="quick-k8s-registry"
 
 echo "Setting up local Docker registry on port ${REGISTRY_PORT}..."
@@ -45,7 +46,7 @@ done
 if [ "${CLUSTER_PROVIDER}" = "kind" ]; then
   # Connect registry to the KinD network
   echo "Connecting registry to KinD network..."
-  docker network connect "kind" "${REGISTRY_NAME}" 2>/dev/null || true
+  docker network connect "${CLUSTER_NAME}" "${REGISTRY_NAME}" 2>/dev/null || true
 
   # Document the local registry for KinD
   # See: https://kind.sigs.k8s.io/docs/user/local-registry/
