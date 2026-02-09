@@ -362,16 +362,19 @@ jobs:
       - name: Verify worker node labels
         run: |
           echo "Checking worker node labels..."
+          echo "All nodes with labels:"
+          kubectl get nodes --show-labels
           WORKER_NODES=$(kubectl get nodes --no-headers -l '!node-role.kubernetes.io/control-plane' -o custom-columns=':metadata.name')
           for NODE in $WORKER_NODES; do
             echo "Checking labels on $NODE..."
-            LABELS=$(kubectl get node "$NODE" --show-labels --no-headers | awk '{print $NF}')
-            if ! echo "$LABELS" | grep -q "node-role.kubernetes.io/worker=worker"; then
-              echo "ERROR: Label 'node-role.kubernetes.io/worker=worker' not found on $NODE"
+            WORKER_LABEL=$(kubectl get node "$NODE" -o jsonpath='{.metadata.labels.node-role\.kubernetes\.io/worker}')
+            if [ "$WORKER_LABEL" != "worker" ]; then
+              echo "ERROR: Label 'node-role.kubernetes.io/worker=worker' not found on $NODE (got: '$WORKER_LABEL')"
               exit 1
             fi
-            if ! echo "$LABELS" | grep -q "env=test"; then
-              echo "ERROR: Label 'env=test' not found on $NODE"
+            ENV_LABEL=$(kubectl get node "$NODE" -o jsonpath='{.metadata.labels.env}')
+            if [ "$ENV_LABEL" != "test" ]; then
+              echo "ERROR: Label 'env=test' not found on $NODE (got: '$ENV_LABEL')"
               exit 1
             fi
             echo "  Labels verified on $NODE"
