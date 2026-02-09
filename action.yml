@@ -612,11 +612,6 @@ runs:
           "${{ inputs.numControlPlaneNodes }}" \
           "${{ inputs.numWorkerNodes }}"
 
-    - name: Apply labels to worker nodes
-      if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
-      shell: bash
-      run: ${{ github.action_path }}/scripts/label-worker-nodes.sh ${{ inputs.numWorkerNodes }} "${{ inputs.workerNodeLabels }}"
-
     # - name: Bootstrap the runner with kubectl and oc clients
     - name: Bootstrap the runner with kubectl and oc clients
       if: ${{ runner.os == 'Linux' }}
@@ -630,6 +625,11 @@ runs:
       run: |
         brew install openshift-cli
         brew install kubernetes-cli
+
+    - name: Apply labels to worker nodes
+      if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/label-worker-nodes.sh ${{ inputs.numWorkerNodes }} "${{ inputs.workerNodeLabels }}"
 
     - name: Install calico CNI if default CNI is disabled and installCalico is true
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
