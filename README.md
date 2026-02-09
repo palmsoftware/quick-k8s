@@ -6,6 +6,8 @@
 [![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
 [![Update Minikube Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/minikube-update.yml)
 [![Update cert-manager Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml)
+[![Update ingress-nginx Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml)
+[![Update metrics-server Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
@@ -81,6 +83,10 @@ steps:
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.19.3
+      installIngressNginx: false
+      ingressNginxVersion: v1.14.3
+      installMetricsServer: false
+      metricsServerVersion: v0.8.1
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
@@ -114,6 +120,10 @@ steps:
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.19.3
+      installIngressNginx: false
+      ingressNginxVersion: v1.14.3
+      installMetricsServer: false
+      metricsServerVersion: v0.8.1
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
@@ -187,6 +197,101 @@ steps:
 - Requires approximately 200-300MB additional memory
 - Webhook startup may take 30-60 seconds
 - Not supported on macOS due to Colima networking limitations
+
+### Installing ingress-nginx
+
+Enable NGINX Ingress controller for HTTP/HTTPS routing to your services:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with ingress-nginx
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      installIngressNginx: true
+      ingressNginxVersion: v1.14.3
+```
+
+**Features**:
+- NGINX-based ingress controller for Kubernetes
+- HTTP/HTTPS load balancing and routing
+- TLS termination support
+- Works seamlessly with cert-manager for automatic TLS certificates
+- Provider-specific manifests for KinD (with host port bindings)
+
+**Example: Create an Ingress resource**:
+```yaml
+- name: Create sample ingress
+  run: |
+    cat <<EOF | kubectl apply -f -
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: example-ingress
+    spec:
+      ingressClassName: nginx
+      rules:
+        - host: example.local
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: my-service
+                    port:
+                      number: 80
+    EOF
+```
+
+**⚠️ Resource Considerations**:
+- ingress-nginx adds 1-2 pods to the cluster (controller + optional admission webhook)
+- Requires approximately 100-200MB additional memory
+- For KinD, uses special manifest with host port mappings (ports 80 and 443)
+- Controller startup may take 1-2 minutes
+
+### Installing metrics-server
+
+Enable metrics-server for resource monitoring and HPA (Horizontal Pod Autoscaler) support:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with metrics-server
+    uses: palmsoftware/quick-k8s@v0.0.39
+    with:
+      installMetricsServer: true
+      metricsServerVersion: v0.8.1
+```
+
+**Features**:
+- Enables `kubectl top nodes` and `kubectl top pods` commands
+- Required for Horizontal Pod Autoscaler (HPA) based on CPU/memory
+- Required for Vertical Pod Autoscaler (VPA)
+- Lightweight cluster resource monitoring
+
+**Example: Use kubectl top commands**:
+```yaml
+- name: View resource usage
+  run: |
+    # Wait for metrics to be available (takes ~30 seconds after startup)
+    sleep 30
+    kubectl top nodes
+    kubectl top pods --all-namespaces
+```
+
+**Example: Create an HPA**:
+```yaml
+- name: Create HPA for deployment
+  run: |
+    # Requires metrics-server to be running
+    kubectl autoscale deployment my-app --cpu-percent=50 --min=1 --max=10
+    kubectl get hpa
+```
+
+**⚠️ Resource Considerations**:
+- metrics-server adds 1 pod to the kube-system namespace
+- Requires approximately 50-100MB additional memory
+- Metrics API takes ~30 seconds after startup to populate
+- Automatically patched with `--kubelet-insecure-tls` for local clusters (KinD/Minikube)
 
 ### Bring Your Own CNI (Skip Calico)
 

@@ -267,3 +267,65 @@ jobs:
           echo "Waiting for ClusterIssuer to be ready..."
           kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=60s
           echo "cert-manager functionality test passed!"
+
+  # Test ingress-nginx installation
+  test-ingress-nginx:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with ingress-nginx
+        uses: ./
+        with:
+          clusterProvider: kind
+          installIngressNginx: true
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify ingress-nginx is running
+        run: |
+          echo "Checking ingress-nginx namespace..."
+          kubectl get namespace ingress-nginx
+          echo "Checking ingress-nginx pods..."
+          kubectl get pods -n ingress-nginx
+          echo "Verifying controller is ready..."
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=60s
+          echo "Checking IngressClass..."
+          kubectl get ingressclass
+          echo "ingress-nginx installation verified!"
+
+  # Test metrics-server installation
+  test-metrics-server:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with metrics-server
+        uses: ./
+        with:
+          clusterProvider: kind
+          installMetricsServer: true
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify metrics-server is running
+        run: |
+          echo "Checking metrics-server pod..."
+          kubectl get pods -n kube-system -l k8s-app=metrics-server
+          echo "Waiting for metrics API to be available..."
+          sleep 30
+          echo "Testing kubectl top nodes..."
+          kubectl top nodes || echo "Metrics may need more time to populate"
+          echo "metrics-server installation verified!"

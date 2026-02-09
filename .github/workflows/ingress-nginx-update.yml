@@ -1,0 +1,100 @@
+name: Update ingress-nginx Version Nightly
+on:
+  schedule:
+    - cron: '0 4 * * *' # Every day at 4am UTC
+  workflow_dispatch:
+jobs:
+  update-ingress-nginx-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest ingress-nginx release version
+        id: get_ingress_nginx_version
+        run: |
+          # Function to get ingress-nginx version with retries
+          get_ingress_nginx_version() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch ingress-nginx version..."
+
+              # Make API call with timeout
+              response=$(curl -s --max-time 30 https://api.github.com/repos/kubernetes/ingress-nginx/releases/latest)
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract tag_name and validate it's not null/empty
+                # ingress-nginx uses controller-vX.Y.Z format
+                tag=$(echo "$response" | jq -r '.tag_name // empty')
+
+                if [ -n "$tag" ] && [ "$tag" != "null" ] && [[ "$tag" =~ ^controller-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  # Extract just the version part (vX.Y.Z)
+                  version="${tag#controller-}"
+                  echo "Successfully fetched ingress-nginx version: $version (from tag: $tag)"
+                  echo "ingress_nginx_version=$version" >> $GITHUB_OUTPUT
+                  return 0
+                else
+                  echo "Invalid tag format: '$tag'"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch valid ingress-nginx version after $retries attempts"
+            exit 1
+          }
+
+          get_ingress_nginx_version
+
+      - name: Update default ingressNginxVersion in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_ingress_nginx_version.outputs.ingress_nginx_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid ingress-nginx version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating ingress-nginx version to: $version"
+
+          # Extract current default under the ingressNginxVersion block
+          current_version=$(sed -n "/^  ingressNginxVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current ingress-nginx version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "ingress-nginx version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the ingressNginxVersion block
+          sed -i.bak -E "/^  ingressNginxVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated ingress-nginx version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update ingress-nginx version to ${{ steps.get_ingress_nginx_version.outputs.ingress_nginx_version }}"
+          title: "Update ingress-nginx version to ${{ steps.get_ingress_nginx_version.outputs.ingress_nginx_version }}"
+          body: "Automated PR to update default ingressNginxVersion in action.yml to the latest release."
+          branch: "update-ingress-nginx-version-${{ steps.get_ingress_nginx_version.outputs.ingress_nginx_version }}"
+          delete-branch: true
