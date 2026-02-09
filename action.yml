@@ -92,6 +92,22 @@ inputs:
     description: 'The version of cert-manager to install'
     required: false
     default: 'v1.19.3'
+  installIngressNginx:
+    description: 'Install NGINX Ingress controller for HTTP/HTTPS routing'
+    required: false
+    default: 'false'
+  ingressNginxVersion:
+    description: 'The version of ingress-nginx to install'
+    required: false
+    default: 'v1.14.3'
+  installMetricsServer:
+    description: 'Install metrics-server for kubectl top and HPA support'
+    required: false
+    default: 'false'
+  metricsServerVersion:
+    description: 'The version of metrics-server to install'
+    required: false
+    default: 'v0.8.1'
   installCalico:
     description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
     required: false
@@ -314,6 +330,95 @@ runs:
               echo "cert-manager version ${{ inputs.certManagerVersion }} does not exist on GitHub"
             else
               echo "GitHub API failed to validate cert-manager version ${{ inputs.certManagerVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
+          attempt=$((attempt + 1))
+        done
+
+    - name: Validate installIngressNginx input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installIngressNginx }}" != "true" && "${{ inputs.installIngressNginx }}" != "false" ]]; then
+          echo "Invalid installIngressNginx value: ${{ inputs.installIngressNginx }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate ingress-nginx version input
+      if: ${{ inputs.installIngressNginx == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if ! [[ "${{ inputs.ingressNginxVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid ingress-nginx version format: ${{ inputs.ingressNginxVersion }}"
+          exit 1
+        fi
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        # Note: ingress-nginx uses controller-vX.Y.Z tag format
+        max_attempts=5
+        attempt=1
+        delay=2
+        while [ $attempt -le $max_attempts ]; do
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes/ingress-nginx/releases/tags/controller-${{ inputs.ingressNginxVersion }})
+          if [ "$http_code" = "200" ]; then
+            echo "ingress-nginx version ${{ inputs.ingressNginxVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            if [ "$http_code" = "404" ]; then
+              echo "ingress-nginx version ${{ inputs.ingressNginxVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate ingress-nginx version ${{ inputs.ingressNginxVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
+          attempt=$((attempt + 1))
+        done
+
+    - name: Validate installMetricsServer input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installMetricsServer }}" != "true" && "${{ inputs.installMetricsServer }}" != "false" ]]; then
+          echo "Invalid installMetricsServer value: ${{ inputs.installMetricsServer }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate metrics-server version input
+      if: ${{ inputs.installMetricsServer == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if ! [[ "${{ inputs.metricsServerVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid metrics-server version format: ${{ inputs.metricsServerVersion }}"
+          exit 1
+        fi
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
+        attempt=1
+        delay=2
+        while [ $attempt -le $max_attempts ]; do
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes-sigs/metrics-server/releases/tags/${{ inputs.metricsServerVersion }})
+          if [ "$http_code" = "200" ]; then
+            echo "metrics-server version ${{ inputs.metricsServerVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            if [ "$http_code" = "404" ]; then
+              echo "metrics-server version ${{ inputs.metricsServerVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate metrics-server version ${{ inputs.metricsServerVersion }} (HTTP $http_code after $max_attempts attempts)"
               echo "This may be a temporary GitHub API issue - consider re-running the workflow"
             fi
             exit 1
@@ -548,6 +653,16 @@ runs:
       if: ${{ inputs.installCertManager == 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/install-cert-manager.sh ${{ inputs.certManagerVersion }}
+
+    - name: Install ingress-nginx
+      if: ${{ inputs.installIngressNginx == 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh ${{ inputs.ingressNginxVersion }} ${{ inputs.clusterProvider }}
+
+    - name: Install metrics-server
+      if: ${{ inputs.installMetricsServer == 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/install-metrics-server.sh ${{ inputs.metricsServerVersion }}
 
     - name: Remove the default storage class
       if: ${{ inputs.removeDefaultStorageClass == 'true' }}
