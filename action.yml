@@ -613,14 +613,24 @@ runs:
           "${{ inputs.numWorkerNodes }}"
 
     - name: Apply labels to worker nodes
-      if: ${{ inputs.workerNodeLabels != '' }}
+      if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
       shell: bash
       run: |
         echo "Applying labels to worker nodes..."
+        echo "Waiting for ${{ inputs.numWorkerNodes }} worker node(s) to be registered..."
+        EXPECTED=${{ inputs.numWorkerNodes }}
+        for i in $(seq 1 30); do
+          WORKER_NODES=$(kubectl get nodes --no-headers -l '!node-role.kubernetes.io/control-plane' -o custom-columns=':metadata.name' 2>/dev/null | tr -s ' ' | sed '/^$/d' || true)
+          COUNT=$(echo "$WORKER_NODES" | grep -c . 2>/dev/null || echo 0)
+          if [ "$COUNT" -ge "$EXPECTED" ]; then
+            break
+          fi
+          echo "  Found $COUNT/$EXPECTED worker nodes, waiting..."
+          sleep 2
+        done
         IFS=',' read -ra LABELS <<< "${{ inputs.workerNodeLabels }}"
-        WORKER_NODES=$(kubectl get nodes --no-headers -l '!node-role.kubernetes.io/control-plane' -o custom-columns=':metadata.name' 2>/dev/null || true)
         if [ -z "$WORKER_NODES" ]; then
-          echo "No worker nodes found, skipping label application"
+          echo "WARNING: No worker nodes found after waiting, skipping label application"
         else
           for NODE in $WORKER_NODES; do
             for LABEL in "${LABELS[@]}"; do
