@@ -300,6 +300,87 @@ jobs:
           kubectl get ingressclass
           echo "ingress-nginx installation verified!"
 
+  # Test custom cluster name
+  test-cluster-name:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with custom cluster name
+        uses: ./
+        with:
+          clusterProvider: kind
+          clusterName: my-test-cluster
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify custom cluster name
+        run: |
+          echo "Checking cluster name..."
+          CLUSTERS=$(kind get clusters)
+          echo "KinD clusters: $CLUSTERS"
+          if ! echo "$CLUSTERS" | grep -q "my-test-cluster"; then
+            echo "ERROR: Expected cluster 'my-test-cluster' not found"
+            exit 1
+          fi
+          echo "Verifying kubectl context..."
+          CONTEXT=$(kubectl config current-context)
+          echo "Current context: $CONTEXT"
+          if [[ "$CONTEXT" != *"my-test-cluster"* ]]; then
+            echo "ERROR: Expected context to contain 'my-test-cluster', got '$CONTEXT'"
+            exit 1
+          fi
+          echo "Custom cluster name test passed!"
+
+  # Test worker node labels
+  test-worker-node-labels:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with worker node labels
+        uses: ./
+        with:
+          clusterProvider: kind
+          numWorkerNodes: 2
+          workerNodeLabels: "node-role.kubernetes.io/worker=worker,env=test"
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify worker node labels
+        run: |
+          echo "Checking worker node labels..."
+          echo "All nodes with labels:"
+          kubectl get nodes --show-labels
+          WORKER_NODES=$(kubectl get nodes --no-headers -l '!node-role.kubernetes.io/control-plane' -o custom-columns=':metadata.name')
+          for NODE in $WORKER_NODES; do
+            echo "Checking labels on $NODE..."
+            WORKER_LABEL=$(kubectl get node "$NODE" -o jsonpath='{.metadata.labels.node-role\.kubernetes\.io/worker}')
+            if [ "$WORKER_LABEL" != "worker" ]; then
+              echo "ERROR: Label 'node-role.kubernetes.io/worker=worker' not found on $NODE (got: '$WORKER_LABEL')"
+              exit 1
+            fi
+            ENV_LABEL=$(kubectl get node "$NODE" -o jsonpath='{.metadata.labels.env}')
+            if [ "$ENV_LABEL" != "test" ]; then
+              echo "ERROR: Label 'env=test' not found on $NODE (got: '$ENV_LABEL')"
+              exit 1
+            fi
+            echo "  Labels verified on $NODE"
+          done
+          echo "Worker node labels test passed!"
+
   # Test metrics-server installation
   test-metrics-server:
     needs: lint
