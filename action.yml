@@ -83,7 +83,7 @@ inputs:
   istioVersion:
     description: 'The version of Istio to install'
     required: false
-    default: '1.28.3'
+    default: '1.29.0'
   istioProfile:
     description: 'Istio installation profile (minimal, demo, default, preview, ambient, empty)'
     required: false
