@@ -47,7 +47,7 @@ inputs:
   minikubeVersion:
     description: 'The version of Minikube to use'
     required: false
-    default: 'v1.38.0'
+    default: 'v1.38.1'
   minikubeDriver:
     description: 'The driver to use for Minikube (docker, podman, none)'
     required: false
