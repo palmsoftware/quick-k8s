@@ -8,6 +8,8 @@ on:
   #   branches: [main]
   workflow_dispatch:
 
+permissions: read-all
+
 jobs:
   # Basic cluster tests with different providers and OS versions
   basic-cluster-tests:
