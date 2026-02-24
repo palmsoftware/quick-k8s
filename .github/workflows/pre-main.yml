@@ -10,6 +10,8 @@ name: Test Changes
     - cron: '0 2 * * *' # Nightly at 2AM UTC
   workflow_dispatch:
 
+permissions: read-all
+
 jobs:
   lint:
     runs-on: ubuntu-latest

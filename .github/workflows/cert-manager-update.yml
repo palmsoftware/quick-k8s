@@ -3,9 +3,15 @@ on:
   schedule:
     - cron: '0 4 * * *' # Every day at 4am UTC
   workflow_dispatch:
+
+permissions: read-all
+
 jobs:
   update-cert-manager-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
