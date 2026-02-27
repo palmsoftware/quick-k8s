@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if ! command -v kubectl >/dev/null 2>&1; then
-  echo "Error: kubectl is not installed." >&2
+if ! command -v oc >/dev/null 2>&1; then
+  echo "Error: oc is not installed." >&2
   exit 1
 fi
 

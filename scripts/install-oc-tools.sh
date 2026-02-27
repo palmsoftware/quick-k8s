@@ -255,7 +255,7 @@ version() {
   else
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
-    if [ "$VERSION" == "$CUR_VERSION" ]; then
+    if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} already installed."
       exit 0
     fi
@@ -286,7 +286,7 @@ release() {
   if [[ "$1" == "" ]]; then
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
-    if [ "$VERSION" == "$CUR_VERSION" ]; then
+    if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} is installed."
       exit 0
     fi
@@ -303,7 +303,7 @@ release() {
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" "$1"
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
-    if [ "$VERSION" == "$CUR_VERSION" ]; then
+    if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} already installed."
       exit 0
     fi
@@ -327,7 +327,7 @@ nightly() {
   if [[ "$1" == "" ]]; then
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
-      if [ "$VERSION" == "$CUR_VERSION" ]; then
+      if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
         echo "${VERSION} is installed."
         exit 0
       fi
@@ -344,7 +344,7 @@ nightly() {
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" "$1"
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
-    if [ "$VERSION" == "$CUR_VERSION" ]; then
+    if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "$VERSION already installed."
       exit 0
     fi
