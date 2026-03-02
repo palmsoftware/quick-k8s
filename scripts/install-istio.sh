@@ -47,13 +47,26 @@ else
 fi
 echo "Downloading Istio from: $ISTIO_URL"
 
-if ! curl -fSL "$ISTIO_URL" -o istio.tar.gz; then
-  echo "Error: Failed to download Istio from $ISTIO_URL" >&2
-  echo "This may indicate:" >&2
-  echo "  1. Network connectivity issues" >&2
-  echo "  2. Istio version $ISTIO_VERSION may not be available for $OS-$ARCH" >&2
-  exit 1
-fi
+max_attempts=3
+attempt=1
+delay=5
+while [ $attempt -le $max_attempts ]; do
+  if curl -fSL "$ISTIO_URL" -o istio.tar.gz; then
+    echo "Istio download succeeded"
+    break
+  fi
+  if [ $attempt -eq $max_attempts ]; then
+    echo "Error: Failed to download Istio from $ISTIO_URL after $max_attempts attempts" >&2
+    echo "This may indicate:" >&2
+    echo "  1. Network connectivity issues" >&2
+    echo "  2. Istio version $ISTIO_VERSION may not be available for $OS-$ARCH" >&2
+    exit 1
+  fi
+  echo "Download attempt $attempt/$max_attempts failed, retrying in $delay seconds..."
+  sleep $delay
+  delay=$((delay * 2))
+  attempt=$((attempt + 1))
+done
 
 # Extract istioctl
 echo "Extracting istioctl..."
