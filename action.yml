@@ -103,7 +103,7 @@ inputs:
   ingressNginxVersion:
     description: 'The version of ingress-nginx to install'
     required: false
-    default: 'v1.15.0'
+    default: 'v1.15.1'
   installMetricsServer:
     description: 'Install metrics-server for kubectl top and HPA support'
     required: false
