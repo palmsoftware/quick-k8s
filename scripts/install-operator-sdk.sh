@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OPERATOR_SDK_VERSION="${1:-v1.42.2}"
+OPERATOR_SDK_VERSION="${1:?operator-sdk version argument is required}"
 
 echo "Installing operator-sdk version $OPERATOR_SDK_VERSION"
 
-for cmd in curl chmod; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
-    exit 1
-  fi
-done
-
-if command -v operator-sdk >/dev/null 2>&1; then
-  echo "operator-sdk is already installed: $(operator-sdk version)"
-  exit 0
+if ! command -v curl >/dev/null 2>&1; then
+  echo "Error: curl is not installed." >&2
+  exit 1
 fi
 
 ARCH="$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n "$(uname -m)" ;; esac)"
