@@ -43,16 +43,15 @@ while [ $attempt -le $max_attempts ]; do
   attempt=$((attempt + 1))
 done
 
+# Provider-specific network configuration
 if [ "${CLUSTER_PROVIDER}" = "kind" ]; then
-  # Connect registry to the KinD network
   echo "Connecting registry to KinD network..."
   docker network connect "${CLUSTER_NAME}" "${REGISTRY_NAME}" 2>/dev/null || true
+fi
 
-  # Document the local registry for KinD
-  # See: https://kind.sigs.k8s.io/docs/user/local-registry/
-  echo "Configuring KinD to use local registry..."
-
-  cat <<EOF | kubectl apply -f -
+# Create ConfigMap for registry discoverability (all providers)
+echo "Configuring ${CLUSTER_PROVIDER} to use local registry..."
+cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -63,25 +62,6 @@ data:
     host: "localhost:${REGISTRY_PORT}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
-fi
-
-if [ "${CLUSTER_PROVIDER}" = "minikube" ]; then
-  echo "Configuring Minikube to use local registry..."
-
-  # For Minikube, we need to configure the registry as an insecure registry
-  # This is typically done at minikube start, but we can add the ConfigMap for documentation
-  cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: local-registry-hosting
-  namespace: kube-public
-data:
-  localRegistryHosting.v1: |
-    host: "localhost:${REGISTRY_PORT}"
-    help: "Local registry for quick-k8s"
-EOF
-fi
 
 echo ""
 echo "=============================================="
