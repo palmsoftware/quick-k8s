@@ -1,0 +1,103 @@
+name: Update operator-sdk Version Nightly
+on:
+  schedule:
+    - cron: '0 4 * * *' # Every day at 4am UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  update-operator-sdk-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest operator-sdk release version
+        id: get_operator_sdk_version
+        run: |
+          # Function to get operator-sdk version with retries
+          get_operator_sdk_version() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch operator-sdk version..."
+
+              # Make API call with timeout
+              response=$(curl -s --max-time 30 https://api.github.com/repos/operator-framework/operator-sdk/releases/latest)
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract tag_name and validate it's not null/empty
+                version=$(echo "$response" | jq -r '.tag_name // empty')
+
+                if [ -n "$version" ] && [ "$version" != "null" ] && [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  echo "Successfully fetched operator-sdk version: $version"
+                  echo "operator_sdk_version=$version" >> $GITHUB_OUTPUT
+                  return 0
+                else
+                  echo "Invalid version format: '$version'"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch valid operator-sdk version after $retries attempts"
+            exit 1
+          }
+
+          get_operator_sdk_version
+
+      - name: Update default operatorSdkVersion in action.yml
+        id: update_version
+        run: |
+          version=${{ steps.get_operator_sdk_version.outputs.operator_sdk_version }}
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid operator-sdk version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating operator-sdk version to: $version"
+
+          # Extract current default under the operatorSdkVersion block
+          current_version=$(sed -n "/^  operatorSdkVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current operator-sdk version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "operator-sdk version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the operatorSdkVersion block
+          sed -i.bak -E "/^  operatorSdkVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated operator-sdk version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update operator-sdk version to ${{ steps.get_operator_sdk_version.outputs.operator_sdk_version }}"
+          title: "Update operator-sdk version to ${{ steps.get_operator_sdk_version.outputs.operator_sdk_version }}"
+          body: "Automated PR to update default operatorSdkVersion in action.yml to the latest release."
+          branch: "update-operator-sdk-version-${{ steps.get_operator_sdk_version.outputs.operator_sdk_version }}"
+          delete-branch: true
