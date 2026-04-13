@@ -38,7 +38,7 @@ Basic Usage:
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
 ```
 
 This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
@@ -50,10 +50,10 @@ To use Minikube instead of KinD:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       clusterProvider: minikube
-      minikubeVersion: v1.37.0
+      minikubeVersion: v1.38.1
       minikubeDriver: docker
 ```
 
@@ -64,33 +64,35 @@ With KinD (default):
 ```yaml
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       clusterProvider: kind
+      clusterName: kind
       apiServerPort: 6443
       apiServerAddress: 0.0.0.0
       disableDefaultCni: true
       ipFamily: dual
-      defaultNodeImage: 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
+      defaultNodeImage: 'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f'
       kindVersion: v0.31.0
-      calicoVersion: v3.30.3
+      calicoVersion: v3.31.4
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
+      workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.28.1
+      istioVersion: 1.29.1
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.19.3
+      certManagerVersion: v1.20.2
       installIngressNginx: false
-      ingressNginxVersion: v1.14.3
+      ingressNginxVersion: v1.15.1
       installMetricsServer: false
       metricsServerVersion: v0.8.1
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
-      # New advanced options
+      # Advanced options
       installCalico: true           # Set to false to bring your own CNI
       kindConfigPath: ''            # Path to custom KinD config file
       installLocalRegistry: false   # Enable local Docker registry
@@ -102,26 +104,28 @@ With Minikube:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       clusterProvider: minikube
-      minikubeVersion: v1.37.0
+      clusterName: kind
+      minikubeVersion: v1.38.1
       minikubeDriver: docker
       apiServerPort: 6443
       disableDefaultCni: true
-      defaultNodeImage: 'kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f'
-      calicoVersion: v3.30.3
+      defaultNodeImage: 'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f'
+      calicoVersion: v3.31.4
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
+      workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.28.1
+      istioVersion: 1.29.1
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.19.3
+      certManagerVersion: v1.20.2
       installIngressNginx: false
-      ingressNginxVersion: v1.14.3
+      ingressNginxVersion: v1.15.1
       installMetricsServer: false
       metricsServerVersion: v0.8.1
       removeDefaultStorageClass: false
@@ -137,10 +141,10 @@ Enable Istio installation to test service mesh functionality:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Istio
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       installIstio: true
-      istioVersion: 1.28.1
+      istioVersion: 1.29.1
       istioProfile: minimal
 ```
 
@@ -165,10 +169,10 @@ Enable cert-manager for automatic TLS certificate management:
 ```yaml
 steps:
   - name: Set up Quick-K8s with cert-manager
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       installCertManager: true
-      certManagerVersion: v1.19.3
+      certManagerVersion: v1.20.2
 ```
 
 **Features**:
@@ -205,10 +209,10 @@ Enable NGINX Ingress controller for HTTP/HTTPS routing to your services:
 ```yaml
 steps:
   - name: Set up Quick-K8s with ingress-nginx
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       installIngressNginx: true
-      ingressNginxVersion: v1.14.3
+      ingressNginxVersion: v1.15.1
 ```
 
 **Features**:
@@ -256,7 +260,7 @@ Enable metrics-server for resource monitoring and HPA (Horizontal Pod Autoscaler
 ```yaml
 steps:
   - name: Set up Quick-K8s with metrics-server
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       installMetricsServer: true
       metricsServerVersion: v0.8.1
@@ -300,7 +304,7 @@ For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes, C
 ```yaml
 steps:
   - name: Set up Quick-K8s without Calico
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       disableDefaultCni: true
       installCalico: false  # Skip Calico installation
@@ -345,7 +349,7 @@ steps:
       EOF
 
   - name: Set up Quick-K8s with custom config
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       kindConfigPath: ${{ github.workspace }}/my-kind-config.yaml
 ```
@@ -366,7 +370,7 @@ Enable a local Docker registry for faster image pulls and testing:
 ```yaml
 steps:
   - name: Set up Quick-K8s with local registry
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       installLocalRegistry: true
       localRegistryPort: 5001  # Default port
@@ -431,7 +435,7 @@ The action supports multiple IP family configurations for Kubernetes clusters:
 ```yaml
 steps:
   - name: Set up Quick-K8s with IP family
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       ipFamily: dual  # Options: dual, ipv4, ipv6
 ```
