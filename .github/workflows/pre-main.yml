@@ -412,3 +412,29 @@ jobs:
           echo "Testing kubectl top nodes..."
           kubectl top nodes || echo "Metrics may need more time to populate"
           echo "metrics-server installation verified!"
+
+  # Test operator-sdk installation
+  test-operator-sdk:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run the action with operator-sdk
+        uses: ./
+        with:
+          clusterProvider: kind
+          installOperatorSdk: true
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify operator-sdk is installed
+        run: |
+          echo "Checking operator-sdk installation..."
+          operator-sdk version
+          echo "operator-sdk installation verified!"

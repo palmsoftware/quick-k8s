@@ -8,6 +8,7 @@
 [![Update cert-manager Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/cert-manager-update.yml)
 [![Update ingress-nginx Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml)
 [![Update metrics-server Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml)
+[![Update operator-sdk Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/operator-sdk-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/operator-sdk-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
@@ -87,6 +88,8 @@ steps:
       ingressNginxVersion: v1.14.3
       installMetricsServer: false
       metricsServerVersion: v0.8.1
+      installOperatorSdk: false
+      operatorSdkVersion: v1.42.2
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
@@ -124,6 +127,8 @@ steps:
       ingressNginxVersion: v1.14.3
       installMetricsServer: false
       metricsServerVersion: v0.8.1
+      installOperatorSdk: false
+      operatorSdkVersion: v1.42.2
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
@@ -292,6 +297,39 @@ steps:
 - Requires approximately 50-100MB additional memory
 - Metrics API takes ~30 seconds after startup to populate
 - Automatically patched with `--kubelet-insecure-tls` for local clusters (KinD/Minikube)
+
+### Installing operator-sdk
+
+Enable operator-sdk CLI installation for building and testing Kubernetes operators:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with operator-sdk
+    uses: palmsoftware/quick-k8s@v0.0.61
+    with:
+      installOperatorSdk: true
+      operatorSdkVersion: v1.42.2
+```
+
+**Features**:
+- CLI tool for scaffolding, building, and testing Kubernetes operators
+- Supports Go, Ansible, and Helm-based operators
+- Includes scorecard testing for operator validation
+- Works with OLM for operator packaging and deployment
+
+**Example: Scaffold and test an operator**:
+```yaml
+- name: Initialize operator project
+  run: |
+    mkdir my-operator && cd my-operator
+    operator-sdk init --domain example.com --repo github.com/example/my-operator
+    operator-sdk create api --group cache --version v1alpha1 --kind Memcached --resource --controller
+```
+
+**⚠️ Resource Considerations**:
+- operator-sdk is a CLI tool only — it does not deploy any pods to the cluster
+- Requires approximately 100MB disk space for the binary
+- For full operator development workflows, consider also enabling OLM (`installOLM: true`)
 
 ### Bring Your Own CNI (Skip Calico)
 
