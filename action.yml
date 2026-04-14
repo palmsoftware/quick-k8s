@@ -37,7 +37,7 @@ inputs:
     required: false
     default: 'kind'
   clusterProvider:
-    description: 'Kubernetes cluster provider (kind or minikube)'
+    description: 'Kubernetes cluster provider (kind, minikube, or k3s)'
     required: false
     default: 'kind'
   kindVersion:
@@ -52,6 +52,10 @@ inputs:
     description: 'The driver to use for Minikube (docker, podman, none)'
     required: false
     default: 'docker'
+  k3sVersion:
+    description: 'The version of k3s to use (format: v1.33.1+k3s1)'
+    required: false
+    default: 'v1.35.3+k3s1'
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
@@ -147,9 +151,9 @@ runs:
     - name: Validate cluster provider input
       shell: bash
       run: |
-        if [[ "${{ inputs.clusterProvider }}" != "kind" && "${{ inputs.clusterProvider }}" != "minikube" ]]; then
+        if [[ "${{ inputs.clusterProvider }}" != "kind" && "${{ inputs.clusterProvider }}" != "minikube" && "${{ inputs.clusterProvider }}" != "k3s" ]]; then
           echo "Invalid cluster provider: ${{ inputs.clusterProvider }}"
-          echo "Must be either 'kind' or 'minikube'"
+          echo "Must be 'kind', 'minikube', or 'k3s'"
           exit 1
         fi
 
@@ -222,6 +226,54 @@ runs:
           delay=$((delay * 2))
           attempt=$((attempt + 1))
         done
+
+    - name: Validate k3s version input
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if ! [[ "${{ inputs.k3sVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\+k3s[0-9]+$ ]]; then
+          echo "Invalid k3s version format: ${{ inputs.k3sVersion }}"
+          echo "Expected format: v1.33.1+k3s1"
+          exit 1
+        fi
+        # URL-encode the + as %2B for GitHub API
+        ENCODED_VERSION=$(echo "${{ inputs.k3sVersion }}" | sed 's/+/%2B/g')
+        # Retry logic for flaky GitHub API calls with exponential backoff
+        max_attempts=5
+        attempt=1
+        delay=2
+        while [ $attempt -le $max_attempts ]; do
+          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/k3s-io/k3s/releases/tags/${ENCODED_VERSION}")
+          if [ "$http_code" = "200" ]; then
+            echo "k3s version ${{ inputs.k3sVersion }} validated successfully"
+            break
+          fi
+          if [ $attempt -eq $max_attempts ]; then
+            if [ "$http_code" = "404" ]; then
+              echo "k3s version ${{ inputs.k3sVersion }} does not exist on GitHub"
+            else
+              echo "GitHub API failed to validate k3s version ${{ inputs.k3sVersion }} (HTTP $http_code after $max_attempts attempts)"
+              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
+            fi
+            exit 1
+          fi
+          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
+          sleep $delay
+          delay=$((delay * 2))
+          attempt=$((attempt + 1))
+        done
+
+    - name: Validate k3s control plane node count
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      shell: bash
+      run: |
+        if [[ "${{ inputs.numControlPlaneNodes }}" -gt 1 ]]; then
+          echo "k3s provider currently supports only 1 control plane node (got: ${{ inputs.numControlPlaneNodes }})"
+          echo "Multi-control-plane requires embedded etcd and is not yet implemented"
+          exit 1
+        fi
 
     - name: Validate Calico version input
       shell: bash
@@ -619,6 +671,32 @@ runs:
           exit 1
         fi
 
+    # Cache k3s binary to avoid download failures during outages
+    - name: Cache k3s binary
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      id: cache-k3s
+      uses: actions/cache@v5
+      with:
+        path: /tmp/k3s-binary
+        key: k3s-${{ inputs.k3sVersion }}-${{ runner.os }}-${{ runner.arch }}
+
+    # Install k3s binary (Linux only)
+    - name: Install k3s
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      shell: bash
+      run: |
+        OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+        ${{ github.action_path }}/scripts/install-k3s.sh "${{ inputs.k3sVersion }}" "$OS" ${{ runner.arch }}
+
+    - name: Add error handling for k3s installation
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      shell: bash
+      run: |
+        if ! command -v k3s &> /dev/null; then
+          echo "k3s installation failed. Exiting."
+          exit 1
+        fi
+
     # Create a new Kubernetes cluster using KinD
     - name: Populate temporary config file for KinD (auto-generated)
       if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath == '' }}
@@ -663,6 +741,22 @@ runs:
           "${{ inputs.apiServerPort }}" \
           "${{ inputs.numControlPlaneNodes }}" \
           "${{ inputs.numWorkerNodes }}"
+
+    - name: Create a new Kubernetes cluster using k3s
+      if: ${{ inputs.clusterProvider == 'k3s' }}
+      shell: bash
+      run: |
+        REGISTRY_PORT=""
+        if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then
+          REGISTRY_PORT="${{ inputs.localRegistryPort }}"
+        fi
+        ${{ github.action_path }}/scripts/start-k3s.sh \
+          "${{ inputs.disableDefaultCni }}" \
+          "${{ inputs.apiServerPort }}" \
+          "${{ inputs.numControlPlaneNodes }}" \
+          "${{ inputs.numWorkerNodes }}" \
+          "${{ inputs.clusterName }}" \
+          "$REGISTRY_PORT"
 
     # - name: Bootstrap the runner with kubectl and oc clients
     - name: Bootstrap the runner with kubectl and oc clients
@@ -738,7 +832,11 @@ runs:
       if: ${{ inputs.removeDefaultStorageClass == 'true' }}
       shell: bash
       run: |
-        oc delete storageclass standard --ignore-not-found
+        if [ "${{ inputs.clusterProvider }}" = "k3s" ]; then
+          oc delete storageclass local-path --ignore-not-found
+        else
+          oc delete storageclass standard --ignore-not-found
+        fi
 
     - name: Remove the control plane taint
       if: ${{ inputs.removeControlPlaneTaint == 'true' }}

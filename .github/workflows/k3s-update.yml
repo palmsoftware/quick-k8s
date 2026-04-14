@@ -1,0 +1,69 @@
+name: Update k3s Version Nightly
+on:
+  schedule:
+    - cron: '0 4 * * *' # Every day at 4am UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  update-k3s-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get latest k3s release version
+        id: get_k3s_version
+        run: |
+          version=$(./scripts/get-latest-k3s-version.sh)
+          echo "k3s_version=$version" >> $GITHUB_OUTPUT
+
+      - name: Update default k3sVersion in action.yml
+        id: update_version
+        run: |
+          version="${{ steps.get_k3s_version.outputs.k3s_version }}"
+
+          # Double-check the version is valid before updating
+          if [ -z "$version" ] || [ "$version" = "null" ] || ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\+k3s[0-9]+$ ]]; then
+            echo "Error: Invalid k3s version '$version' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating k3s version to: $version"
+
+          # Extract current default under the k3sVersion block
+          current_version=$(sed -n "/^  k3sVersion:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_version" ]; then
+            echo "Could not determine current k3s version from action.yml"
+            exit 1
+          fi
+
+          if [ "$current_version" = "$version" ]; then
+            echo "k3s version is already up to date ($version)"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update only within the k3sVersion block
+          # Escape the + in the version for sed replacement
+          escaped_version=$(echo "$version" | sed 's/+/\\+/g')
+          sed -i.bak -E "/^  k3sVersion:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1${escaped_version}\2/}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated k3s version from $current_version to $version"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_version.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "Update k3s version to ${{ steps.get_k3s_version.outputs.k3s_version }}"
+          title: "Update k3s version to ${{ steps.get_k3s_version.outputs.k3s_version }}"
+          body: "Automated PR to update default k3sVersion in action.yml to the latest release."
+          branch: "update-k3s-version-${{ steps.get_k3s_version.outputs.k3s_version }}"
+          delete-branch: true

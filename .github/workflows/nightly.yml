@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm]
-        provider: [kind, minikube]
+        provider: [kind, minikube, k3s]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube]
+        provider: [kind, minikube, k3s]
         nodes:
           - controlPlane: 1
             workers: 2
@@ -80,7 +80,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube]
+        provider: [kind, minikube, k3s]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -107,13 +107,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube]
+        provider: [kind, minikube, k3s]
         istio-profile: [minimal, demo, default]
         exclude:
-          # Exclude resource-heavy profiles on minikube to avoid timeouts
+          # Exclude resource-heavy profiles on minikube/k3s to avoid timeouts
           - provider: minikube
             istio-profile: demo
           - provider: minikube
+            istio-profile: default
+          - provider: k3s
+            istio-profile: demo
+          - provider: k3s
             istio-profile: default
     runs-on: ${{ matrix.os }}
     env:
@@ -144,7 +148,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube]
+        provider: [kind, minikube, k3s]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
