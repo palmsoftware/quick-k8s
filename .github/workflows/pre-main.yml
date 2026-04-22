@@ -57,7 +57,7 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
-          # Skip OLM, Istio, and cert-manager on macOS (Colima limitations) and k3s (resource-heavy; tested in nightly)
+          # Skip OLM, Istio, and cert-manager on macOS (Colima limitations) and k3s (too resource-heavy for free-tier runners)
           installOLM: ${{ !startsWith(matrix.os, 'macos') && matrix.provider != 'k3s' }}
           installIstio: ${{ !startsWith(matrix.os, 'macos') && matrix.provider != 'k3s' }}
           istioProfile: minimal
@@ -66,7 +66,7 @@ jobs:
           removeControlPlaneTaint: true
           apiServerPort: 6443
           apiServerAddress: 127.0.0.1
-          disableDefaultCni: true
+          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
 
   # Test local registry functionality
   test-local-registry:

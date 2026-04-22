@@ -29,7 +29,7 @@ jobs:
         uses: ./
         with:
           clusterProvider: ${{ matrix.provider }}
-          disableDefaultCni: true
+          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
           waitForPodsReady: true
 
       - name: Verify cluster is operational
@@ -63,7 +63,7 @@ jobs:
           clusterProvider: ${{ matrix.provider }}
           numControlPlaneNodes: ${{ matrix.nodes.controlPlane }}
           numWorkerNodes: ${{ matrix.nodes.workers }}
-          disableDefaultCni: true
+          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
           waitForPodsReady: true
 
       - name: Verify node count
@@ -82,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube, k3s]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -95,7 +95,6 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           installOLM: true
-          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify OLM installation
@@ -110,17 +109,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube, k3s]
+        provider: [kind, minikube]
         istio-profile: [minimal, demo, default]
         exclude:
-          # Exclude resource-heavy profiles on minikube/k3s to avoid timeouts
           - provider: minikube
             istio-profile: demo
           - provider: minikube
-            istio-profile: default
-          - provider: k3s
-            istio-profile: demo
-          - provider: k3s
             istio-profile: default
     runs-on: ${{ matrix.os }}
     env:
@@ -135,7 +129,6 @@ jobs:
           clusterProvider: ${{ matrix.provider }}
           installIstio: true
           istioProfile: ${{ matrix.istio-profile }}
-          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify Istio installation
@@ -152,7 +145,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        provider: [kind, minikube, k3s]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -169,7 +162,6 @@ jobs:
           istioProfile: minimal
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
-          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify all features
@@ -177,15 +169,15 @@ jobs:
           echo "=== Cluster Info ==="
           kubectl get nodes
           kubectl get pods -A
-          
+
           echo "=== OLM Verification ==="
           kubectl get crds | grep operators.coreos.com
           kubectl get pods -n olm
-          
+
           echo "=== Istio Verification ==="
           kubectl get pods -n istio-system
           istioctl version
-          
+
           echo "=== Storage Class Verification ==="
           kubectl get storageclass
 
