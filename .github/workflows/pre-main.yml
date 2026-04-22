@@ -66,8 +66,7 @@ jobs:
           removeControlPlaneTaint: true
           apiServerPort: 6443
           apiServerAddress: 127.0.0.1
-          # k3s uses built-in Flannel; disabling it requires complex CNI bootstrapping tested in nightly
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
 
   # Test local registry functionality
   test-local-registry:

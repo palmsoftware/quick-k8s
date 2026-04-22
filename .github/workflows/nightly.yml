@@ -29,7 +29,7 @@ jobs:
         uses: ./
         with:
           clusterProvider: ${{ matrix.provider }}
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify cluster is operational
@@ -63,7 +63,7 @@ jobs:
           clusterProvider: ${{ matrix.provider }}
           numControlPlaneNodes: ${{ matrix.nodes.controlPlane }}
           numWorkerNodes: ${{ matrix.nodes.workers }}
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify node count
@@ -95,7 +95,7 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           installOLM: true
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify OLM installation
@@ -135,7 +135,7 @@ jobs:
           clusterProvider: ${{ matrix.provider }}
           installIstio: true
           istioProfile: ${{ matrix.istio-profile }}
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify Istio installation
@@ -169,7 +169,7 @@ jobs:
           istioProfile: minimal
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
+          disableDefaultCni: true
           waitForPodsReady: true
 
       - name: Verify all features
