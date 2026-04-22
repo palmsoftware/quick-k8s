@@ -80,6 +80,7 @@ steps:
 - Built-in Traefik and ServiceLB are disabled by default to avoid conflicts with the action's own ingress support
 - `defaultNodeImage` and `ipFamily` inputs are ignored for k3s
 - Includes built-in local-path storage provisioner and CoreDNS
+- Resource-heavy add-ons (OLM, Istio) may not stabilize on free-tier runners; use KinD or Minikube for these workloads
 
 ### Complete Configuration (default values shown)
 
@@ -527,6 +528,7 @@ All three cluster providers are fully supported and tested. Choose the one that 
   - Single control plane node only (multi-CP not yet supported)
   - `defaultNodeImage` and `ipFamily` inputs are not applicable
   - K8s version is determined by the k3s release version
+  - Resource-heavy add-ons (OLM, Istio) may not stabilize on free-tier GitHub Actions runners due to k3s's built-in Flannel CNI constraints; use KinD or Minikube for these workloads
 
 **Recommendation**: Use **KinD** (default) for most CI/CD scenarios. Use **k3s** for the fastest, lightest clusters on Linux runners. Use **Minikube** if you need specific features or driver compatibility.
 
