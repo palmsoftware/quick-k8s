@@ -181,6 +181,42 @@ jobs:
           echo "=== Storage Class Verification ==="
           kubectl get storageclass
 
+  # Cluster monitoring tests (Prometheus + Thanos)
+  monitoring-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        provider: [kind, minikube]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v6
+
+      - name: Run action with cluster monitoring
+        uses: ./
+        with:
+          clusterProvider: ${{ matrix.provider }}
+          enableClusterMonitoring: true
+          waitForPodsReady: true
+
+      - name: Verify monitoring stack
+        run: |
+          echo "=== Monitoring Namespace ==="
+          kubectl get namespace monitoring
+
+          echo "=== Prometheus Verification ==="
+          kubectl get pods -n monitoring
+          kubectl get prometheus -n monitoring
+          kubectl get alertmanager -n monitoring
+          kubectl get crd | grep monitoring.coreos.com
+
+          echo "=== Thanos Verification ==="
+          kubectl get pods -n monitoring -l app.kubernetes.io/name=thanos-query
+          kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus -o jsonpath='{.items[*].spec.containers[*].name}' | tr ' ' '\n' | grep thanos
+
   # Different Kubernetes versions test (KinD only as it supports explicit versions easily)
   kubernetes-versions-test:
     strategy:
