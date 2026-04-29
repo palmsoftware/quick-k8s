@@ -55,7 +55,7 @@ inputs:
   k3sVersion:
     description: 'The version of k3s to use (format: v1.33.1+k3s1)'
     required: false
-    default: 'v1.35.3+k3s1'
+    default: 'v1.35.4+k3s1'
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
