@@ -17,6 +17,11 @@ if ! kubectl get namespace monitoring >/dev/null 2>&1; then
   exit 1
 fi
 
+# kube-prometheus ships NetworkPolicies that block Thanos Query from reaching the
+# Prometheus sidecar gRPC port. Remove them so the monitoring stack works out of the box.
+echo "Removing kube-prometheus NetworkPolicies (they block Thanos Query -> sidecar gRPC)..."
+kubectl delete networkpolicies --all -n monitoring 2>/dev/null || true
+
 # Patch the Prometheus CR to add Thanos sidecar via the Prometheus Operator's built-in spec.thanos field
 echo "Configuring Thanos sidecar on Prometheus..."
 kubectl -n monitoring patch prometheus k8s --type=merge -p "{
