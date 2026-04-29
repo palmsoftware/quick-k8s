@@ -139,7 +139,7 @@ inputs:
   thanosVersion:
     description: 'The version of Thanos to install'
     required: false
-    default: 'v0.37.2'
+    default: 'v0.41.0'
   installCalico:
     description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
     required: false
