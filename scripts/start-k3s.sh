@@ -132,7 +132,9 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
 
   NODE_TOKEN=$(sudo cat /var/lib/rancher/k3s/server/token)
 
-  # Start all agents in parallel
+  # Start agents with staggered delays to avoid flannel iptables race.
+  # All k3s processes share the host iptables namespace; simultaneous flannel
+  # instances race on iptables-restore when setting up masquerade rules.
   for i in $(seq 1 "$NUM_WORKERS"); do
     WORKER_NAME="${CLUSTER_NAME}-worker-${i}"
     WORKER_DATA_DIR="/var/lib/rancher/k3s-agent-${i}"
@@ -140,6 +142,11 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
     # Each agent on the same machine needs unique ports to avoid conflicts
     LB_PORT=$((6444 + i))
     KUBELET_PORT=$((10250 + i))
+
+    if [ "$i" -gt 1 ]; then
+      echo "Waiting 5s before starting next agent (flannel iptables stagger)..."
+      sleep 5
+    fi
 
     echo "Starting worker node: ${WORKER_NAME}..."
     sudo k3s agent \
@@ -176,6 +183,11 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
     done
     echo "✅ Worker node ${WORKER_NAME} registered"
   done
+fi
+
+if ! kill -0 "$K3S_PID" 2>/dev/null; then
+  echo "❌ k3s server process died after worker registration (likely flannel iptables race)"
+  exit 1
 fi
 
 echo ""
