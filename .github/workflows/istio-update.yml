@@ -18,6 +18,8 @@ jobs:
 
       - name: Get latest Istio release version
         id: get_istio_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Function to get Istio version with retries
           get_istio_version() {
@@ -28,7 +30,7 @@ jobs:
               echo "Attempt $i to fetch Istio version..."
 
               # Make API call with timeout
-              response=$(curl -s --max-time 30 https://api.github.com/repos/istio/istio/releases/latest)
+              response=$(curl -s --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/istio/istio/releases/latest)
 
               if [ $? -eq 0 ] && [ -n "$response" ]; then
                 # Extract tag_name and validate it's not null/empty
