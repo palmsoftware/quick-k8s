@@ -19,48 +19,19 @@ jobs:
       - name: Get latest ingress-nginx release version
         id: get_ingress_nginx_version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Function to get ingress-nginx version with retries
-          get_ingress_nginx_version() {
-            local retries=3
-            local delay=5
+          # ingress-nginx uses controller-vX.Y.Z tag format
+          tag=$(gh api repos/kubernetes/ingress-nginx/releases/latest --jq '.tag_name')
 
-            for ((i=1; i<=retries; i++)); do
-              echo "Attempt $i to fetch ingress-nginx version..."
-
-              # Make API call with timeout
-              response=$(curl -s --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/kubernetes/ingress-nginx/releases/latest)
-
-              if [ $? -eq 0 ] && [ -n "$response" ]; then
-                # Extract tag_name and validate it's not null/empty
-                # ingress-nginx uses controller-vX.Y.Z format
-                tag=$(echo "$response" | jq -r '.tag_name // empty')
-
-                if [ -n "$tag" ] && [ "$tag" != "null" ] && [[ "$tag" =~ ^controller-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                  # Extract just the version part (vX.Y.Z)
-                  version="${tag#controller-}"
-                  echo "Successfully fetched ingress-nginx version: $version (from tag: $tag)"
-                  echo "ingress_nginx_version=$version" >> $GITHUB_OUTPUT
-                  return 0
-                else
-                  echo "Invalid tag format: '$tag'"
-                fi
-              else
-                echo "API call failed or returned empty response"
-              fi
-
-              if [ $i -lt $retries ]; then
-                echo "Retrying in $delay seconds..."
-                sleep $delay
-              fi
-            done
-
-            echo "Failed to fetch valid ingress-nginx version after $retries attempts"
+          if [ -z "$tag" ] || ! [[ "$tag" =~ ^controller-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid or missing tag: '$tag'"
             exit 1
-          }
+          fi
 
-          get_ingress_nginx_version
+          version="${tag#controller-}"
+          echo "ingress-nginx version: $version (from tag: $tag)"
+          echo "ingress_nginx_version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Update default ingressNginxVersion in action.yml
         id: update_version
