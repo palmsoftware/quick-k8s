@@ -18,6 +18,8 @@ jobs:
 
       - name: Get latest operator-sdk release version
         id: get_operator_sdk_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Function to get operator-sdk version with retries
           get_operator_sdk_version() {
@@ -28,7 +30,7 @@ jobs:
               echo "Attempt $i to fetch operator-sdk version..."
 
               # Make API call with timeout
-              response=$(curl -s --max-time 30 https://api.github.com/repos/operator-framework/operator-sdk/releases/latest)
+              response=$(curl -s --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/operator-framework/operator-sdk/releases/latest)
 
               if [ $? -eq 0 ] && [ -n "$response" ]; then
                 # Extract tag_name and validate it's not null/empty
