@@ -816,6 +816,11 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/pre-cluster-optimization.sh
 
+    - name: Pre-pull Kind node image with retry
+      if: ${{ inputs.clusterProvider == 'kind' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/pull-kind-image.sh "${{ inputs.defaultNodeImage }}"
+
     - name: Create a new Kubernetes cluster using KinD
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
