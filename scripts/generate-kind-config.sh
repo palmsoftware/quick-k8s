@@ -3,6 +3,11 @@
 # Generate a KinD configuration file from parameters
 # Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes> <output-file> [cluster-name]
 
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "Error: envsubst is not installed." >&2
+  exit 1
+fi
+
 # Set the default values
 API_SERVER_PORT=$1
 API_SERVER_ADDRESS=$2
