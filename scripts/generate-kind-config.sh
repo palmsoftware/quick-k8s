@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Generate a KinD configuration file from parameters
 # Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes> <output-file> [cluster-name]

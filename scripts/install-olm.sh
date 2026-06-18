@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -euo pipefail
+
 OLM_VERSION="v0.45.0"
 echo "Installing OLM version $OLM_VERSION"
 

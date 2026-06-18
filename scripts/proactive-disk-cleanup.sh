@@ -4,8 +4,8 @@
 # This script intelligently manages disk space by performing adaptive cleanup
 # based on available space and removing unnecessary packages/directories.
 
-# Note: Using best-effort approach - don't exit on cleanup failures
-# set -e
+# Note: Using best-effort approach - individual cleanup commands use || true
+set -euo pipefail
 
 echo "=============================================="
 echo "🧹 PROACTIVE DISK SPACE MANAGEMENT"
@@ -171,8 +171,6 @@ echo "└─ /tmp partition: $(df -h /tmp | tail -1 | awk '{print $4}') free"
 
 echo ""
 echo "=== Validating minimum space requirement ==="
-# Re-enable strict error handling for final validation
-set -e
 if [ $FINAL_AVAILABLE_GB -lt 8 ]; then
   echo "❌ ERROR: Insufficient disk space (${FINAL_AVAILABLE_GB}GB). Need at least 8GB for kind cluster."
   echo "Available space breakdown:"

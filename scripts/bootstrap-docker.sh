@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # Configure Docker for Kubernetes (IPv6 support and file system limits)
 # Note: Docker storage relocation is handled by quick-cleanup action
 

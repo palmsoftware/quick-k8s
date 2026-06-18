@@ -4,7 +4,7 @@
 # This script performs final Docker and containerd cleanup immediately
 # before creating the kind cluster to maximize available resources.
 
-set -e
+set -euo pipefail
 
 echo "=============================================="
 echo "⚡ FINAL PRE-CLUSTER OPTIMIZATION"

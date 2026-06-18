@@ -3,7 +3,7 @@
 # Setup a local Docker registry accessible from the KinD/Minikube cluster
 # Usage: setup-local-registry.sh <port> <cluster-provider> [cluster-name]
 
-set -e
+set -euo pipefail
 
 REGISTRY_PORT="${1:-5001}"
 CLUSTER_PROVIDER="${2:-kind}"

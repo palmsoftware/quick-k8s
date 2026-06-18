@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Script to apply labels to worker nodes after cluster creation
 # Usage: label-worker-nodes.sh <expected-worker-count> <comma-separated-labels>
