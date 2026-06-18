@@ -998,6 +998,37 @@ runs:
         brew cleanup -s
         rm -rf ~/Library/Caches/Homebrew
 
+    - name: Print cluster deployment summary
+      shell: bash
+      run: |
+        echo ""
+        echo "======================================"
+        echo "  Quick-K8s Deployment Summary"
+        echo "======================================"
+        echo ""
+        echo "Provider:     ${{ inputs.clusterProvider }}"
+        echo "Cluster:      ${{ inputs.clusterName }}"
+        echo "CP Nodes:     ${{ inputs.numControlPlaneNodes }}"
+        echo "Worker Nodes: ${{ inputs.numWorkerNodes }}"
+        echo "IP Family:    ${{ inputs.ipFamily }}"
+        echo ""
+        echo "Components:"
+        if [ "${{ inputs.installCalico }}" = "true" ]; then echo "  - Calico CNI ${{ inputs.calicoVersion }}"; fi
+        if [ "${{ inputs.installIstio }}" = "true" ]; then echo "  - Istio ${{ inputs.istioVersion }} (${{ inputs.istioProfile }})"; fi
+        if [ "${{ inputs.installOLM }}" = "true" ]; then echo "  - OLM"; fi
+        if [ "${{ inputs.installCertManager }}" = "true" ]; then echo "  - cert-manager ${{ inputs.certManagerVersion }}"; fi
+        if [ "${{ inputs.installIngressNginx }}" = "true" ]; then echo "  - ingress-nginx ${{ inputs.ingressNginxVersion }}"; fi
+        if [ "${{ inputs.installMetricsServer }}" = "true" ]; then echo "  - metrics-server ${{ inputs.metricsServerVersion }}"; fi
+        if [ "${{ inputs.installOperatorSdk }}" = "true" ]; then echo "  - operator-sdk ${{ inputs.operatorSdkVersion }}"; fi
+        if [ "${{ inputs.enableClusterMonitoring }}" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
+        if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then echo "  - Local registry @ localhost:${{ inputs.localRegistryPort }}"; fi
+        echo ""
+        echo "Kubeconfig: ~/.kube/config"
+        echo ""
+        kubectl get nodes 2>/dev/null || true
+        echo ""
+        echo "======================================"
+
     - name: Remove temporary files
       shell: bash
       run: |
