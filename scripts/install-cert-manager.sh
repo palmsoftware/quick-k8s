@@ -16,7 +16,7 @@ done
 MANIFEST_URL="https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml"
 echo "Downloading cert-manager manifest from: $MANIFEST_URL"
 
-if ! kubectl apply -f "$MANIFEST_URL"; then
+if ! kubectl apply --timeout=5m -f "$MANIFEST_URL"; then
   echo "Error: Failed to apply cert-manager manifest" >&2
   exit 1
 fi

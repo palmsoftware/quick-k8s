@@ -25,7 +25,7 @@ fi
 
 echo "Downloading ingress-nginx manifest from: $MANIFEST_URL"
 
-if ! kubectl apply -f "$MANIFEST_URL"; then
+if ! kubectl apply --timeout=5m -f "$MANIFEST_URL"; then
   echo "Error: Failed to apply ingress-nginx manifest" >&2
   exit 1
 fi
