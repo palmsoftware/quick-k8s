@@ -23,7 +23,7 @@ inputs:
   defaultNodeImage:
     description: 'The default node image to use for the Kubernetes cluster'
     required: false
-    default: 'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f'
+    default: 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
   numControlPlaneNodes:
     description: 'The number of control plane nodes to use for the Kubernetes cluster'
     required: false
@@ -43,7 +43,7 @@ inputs:
   kindVersion:
     description: 'The version of KinD to use'
     required: false
-    default: 'v0.31.0'
+    default: 'v0.32.0'
   minikubeVersion:
     description: 'The version of Minikube to use'
     required: false
