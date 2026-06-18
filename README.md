@@ -165,24 +165,24 @@ With k3s:
 ```yaml
 steps:
   - name: Set up Quick-K8s with k3s
-    uses: palmsoftware/quick-k8s@v0.0.39
+    uses: palmsoftware/quick-k8s@v0.0.61
     with:
       clusterProvider: k3s
-      k3sVersion: v1.35.3+k3s1
+      k3sVersion: v1.36.1+k3s1
       apiServerPort: 6443
       disableDefaultCni: true
-      calicoVersion: v3.30.3
+      calicoVersion: v3.31.4
 
-      numControlPlaneNodes: 1
+      numControlPlaneNodes: 1       # Must be 1 (multi-CP not supported)
       numWorkerNodes: 1
       installOLM: false
       installIstio: false
-      istioVersion: 1.28.1
+      istioVersion: 1.29.1
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.19.3
+      certManagerVersion: v1.20.2
       installIngressNginx: false
-      ingressNginxVersion: v1.14.3
+      ingressNginxVersion: v1.15.1
       installMetricsServer: false
       metricsServerVersion: v0.8.1
       installOperatorSdk: false
@@ -190,6 +190,18 @@ steps:
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
+
+**k3s Limitations**:
+- **Single control plane only** — setting `numControlPlaneNodes > 1` will fail with a validation error (multi-CP requires embedded etcd, not yet supported)
+- **Linux-only** — no macOS binary exists; use KinD or Minikube on macOS runners
+- **`defaultNodeImage` is ignored** — the Kubernetes version is determined by the k3s release version
+- **`ipFamily` is ignored** — k3s uses Flannel's default networking configuration
+- **Version format** — must include the k3s suffix: `v1.36.1+k3s1` (not just `v1.36.1`)
+
+**When to use k3s**:
+- Fastest startup (~30 seconds) and smallest footprint (~512MB RAM)
+- Best for simple CI tests that don't need OLM, Istio, or custom CNI
+- Ideal for resource-constrained free-tier runners
 
 ## Optional Features
 
@@ -578,6 +590,98 @@ This action features intelligent, adaptive disk space management that optimizes 
 - **Detailed Progress Reporting**: Shows exactly what's being cleaned and how much space is recovered
 - **Cross-Architecture Support**: Optimized for both x86_64 and ARM64 GitHub Actions runners (Ubuntu 22.04/24.04)
 - **Zero External Dependencies**: Uses only built-in bash arithmetic (no `bc` or other external tools)
+
+## Using the Cluster in Downstream Steps
+
+The action installs `kubectl` (and `oc` on Linux) and configures kubeconfig automatically. No extra setup is needed in subsequent workflow steps.
+
+```yaml
+steps:
+  - uses: palmsoftware/quick-k8s@v0.0.61
+
+  - name: Verify cluster
+    run: |
+      kubectl get nodes
+      kubectl cluster-info
+
+  - name: Deploy a test application
+    run: |
+      kubectl create deployment nginx --image=nginx:latest
+      kubectl wait --for=condition=ready pod -l app=nginx --timeout=60s
+```
+
+### Kubeconfig and Context
+
+- **Kubeconfig**: `~/.kube/config` (no need to set `KUBECONFIG`)
+- **kubectl and oc**: Already in `PATH`, ready to use
+
+**Context names by provider**:
+
+| Provider | Context Name |
+|----------|-------------|
+| KinD | `kind-<clusterName>` (e.g., `kind-kind`) |
+| Minikube | `minikube` |
+| k3s | `default` |
+
+### Storage Class
+
+| Provider | Default Storage Class |
+|----------|----------------------|
+| KinD | `standard` |
+| Minikube | `standard` |
+| k3s | `local-path` |
+
+## Troubleshooting
+
+### Disk Space
+
+**"No space left on device"**
+- GitHub Actions free-tier runners have ~14GB available disk
+- Reduce cluster footprint: fewer worker nodes, skip OLM/Istio/monitoring, or use k3s
+- The action runs adaptive cleanup automatically, but very large add-on combinations can still exhaust disk
+
+### KinD
+
+**"Failed to pre-pull image" or image pull timeout**
+- Docker Hub rate limiting (100 pulls/6 hours unauthenticated). Re-run the workflow or configure Docker Hub credentials.
+
+**Cluster creation hangs**
+- Check available disk with `df -h`. Minimum 8GB free is required.
+
+### Minikube
+
+**"execution phase cni-install failed"**
+- When `disableDefaultCni: true`, Minikube requires Docker runtime (not containerd). The action handles this automatically. If you see this error with a custom configuration, ensure `--container-runtime=docker` is set.
+
+**Multi-node topology**
+- Minikube's `--nodes=N` creates N identical nodes. There is no control-plane vs worker distinction — all nodes have the same role. If you need explicit topology, use KinD.
+
+### k3s
+
+**"k3s server process died" or agent registration failures**
+- Flannel iptables race condition on multi-node clusters. The action staggers agent startup to mitigate this. If it persists, reduce `numWorkerNodes` or upgrade to the latest action version.
+
+**OLM/Istio pods stuck or OOMKilled**
+- These add-ons are resource-heavy and may not stabilize on free-tier runners with k3s. Use KinD or Minikube instead.
+
+**"Cluster does not have a functional CNI"**
+- Ensure `installCalico: true` (default) or install your own CNI when `installCalico: false`. Check for pending pods with `kubectl get pods -A`.
+
+### Add-on Issues
+
+**"cert-manager webhook not ready"**
+- Webhook startup is slow on CI runners. Add a wait step:
+  ```yaml
+  - name: Wait for cert-manager webhook
+    run: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=webhook -n cert-manager --timeout=120s
+  ```
+
+**Istio installation timeout**
+- Reduce worker nodes, use `istioProfile: minimal`, or increase pod readiness timeout
+
+**"Local registry not accessible from cluster"**
+- For KinD: registry is automatically connected to the Docker network
+- For Minikube/k3s: local registry connectivity is limited (see [#74](https://github.com/palmsoftware/quick-k8s/issues/74))
 
 ## History
 
