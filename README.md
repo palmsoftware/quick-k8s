@@ -134,12 +134,11 @@ steps:
     uses: palmsoftware/quick-k8s@v0.0.61
     with:
       clusterProvider: minikube
-      clusterName: kind
+      clusterName: minikube
       minikubeVersion: v1.38.1
       minikubeDriver: docker
       apiServerPort: 6443
       disableDefaultCni: true
-      defaultNodeImage: 'kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f'
       calicoVersion: v3.31.4
 
       numControlPlaneNodes: 1
