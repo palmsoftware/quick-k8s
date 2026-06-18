@@ -15,10 +15,10 @@ MASTER_NODES=$(kubectl get nodes --selector=node-role.kubernetes.io/master -o na
 
 # Remove the control-plane taint from the control-plane nodes
 for node in $CONTROL_PLANE_NODES; do
-	kubectl taint nodes "$node" node-role.kubernetes.io/control-plane:NoSchedule-
+	kubectl taint nodes "$node" node-role.kubernetes.io/control-plane:NoSchedule- || true
 done
 
 # Remove the master taint from the master nodes (deprecated)
 for node in $MASTER_NODES; do
-	kubectl taint nodes "$node" node-role.kubernetes.io/master:NoSchedule-
+	kubectl taint nodes "$node" node-role.kubernetes.io/master:NoSchedule- || true
 done
