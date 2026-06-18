@@ -169,6 +169,24 @@ runs:
           exit 1
         fi
 
+    - name: Validate IP family input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.ipFamily }}" != "dual" && "${{ inputs.ipFamily }}" != "ipv4" && "${{ inputs.ipFamily }}" != "ipv6" ]]; then
+          echo "Invalid IP family: ${{ inputs.ipFamily }}"
+          echo "Must be 'dual', 'ipv4', or 'ipv6'"
+          exit 1
+        fi
+
+    - name: Validate API server address input
+      shell: bash
+      run: |
+        if ! [[ "${{ inputs.apiServerAddress }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! [[ "${{ inputs.apiServerAddress }}" =~ ^[0-9a-fA-F:]+$ ]]; then
+          echo "Invalid API server address: ${{ inputs.apiServerAddress }}"
+          echo "Must be a valid IPv4 or IPv6 address"
+          exit 1
+        fi
+
     - name: Validate KinD version input
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
