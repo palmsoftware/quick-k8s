@@ -20,7 +20,7 @@ echo "Downloading metrics-server manifest from: $MANIFEST_URL"
 # This is required for KinD/Minikube where kubelet uses self-signed certs
 if ! curl -sL "$MANIFEST_URL" | \
   sed '/args:/a\        - --kubelet-insecure-tls' | \
-  kubectl apply -f -; then
+  kubectl apply --timeout=5m -f -; then
   echo "Error: Failed to apply metrics-server manifest" >&2
   exit 1
 fi

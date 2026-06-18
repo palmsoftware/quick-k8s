@@ -51,7 +51,7 @@ fi
 
 # Create ConfigMap for registry discoverability (all providers)
 echo "Configuring ${CLUSTER_PROVIDER} to use local registry..."
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply --timeout=5m -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:

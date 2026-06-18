@@ -40,7 +40,7 @@ grep -rl 'memory:\|cpu:' "${KUBE_PROMETHEUS_DIR}/manifests/" --include="*.yaml" 
   -e 's/cpu: "2"/cpu: 200m/g'
 
 echo "Applying kube-prometheus setup manifests (CRDs, namespace)..."
-if ! kubectl apply --server-side -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/"; then
+if ! kubectl apply --server-side --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/"; then
   echo "Error: Failed to apply kube-prometheus setup manifests" >&2
   exit 1
 fi
@@ -50,8 +50,8 @@ kubectl wait --for condition=Established --all CustomResourceDefinition --timeou
 
 # Apply twice — first pass may fail on CRD-to-CR ordering races
 echo "Applying kube-prometheus manifests..."
-kubectl apply -f "${KUBE_PROMETHEUS_DIR}/manifests/" 2>&1 || true
-if ! kubectl apply -f "${KUBE_PROMETHEUS_DIR}/manifests/"; then
+kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/" 2>&1 || true
+if ! kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/"; then
   echo "Error: Failed to apply kube-prometheus manifests" >&2
   exit 1
 fi

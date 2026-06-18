@@ -884,7 +884,7 @@ runs:
         delay=5
         while [ $attempt -le $max_attempts ]; do
           echo "Attempt $attempt/$max_attempts: Applying Calico manifest..."
-          output=$(oc apply -f "$CALICO_URL" 2>&1) && {
+          output=$(oc apply --timeout=5m -f "$CALICO_URL" 2>&1) && {
             echo "$output"
             echo "Calico CNI installed successfully"
             break

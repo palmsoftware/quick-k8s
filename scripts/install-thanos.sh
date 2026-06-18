@@ -44,7 +44,7 @@ kubectl -n monitoring patch prometheus k8s --type=merge -p "{
 
 # Deploy Thanos Query and headless sidecar service
 echo "Deploying Thanos Query and services..."
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply --timeout=5m -f -
 apiVersion: v1
 kind: Service
 metadata:
