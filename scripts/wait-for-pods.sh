@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 if ! command -v oc >/dev/null 2>&1; then
   echo "Error: oc is not installed." >&2
