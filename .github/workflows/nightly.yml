@@ -23,7 +23,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with ${{ matrix.provider }}
         uses: ./
@@ -55,7 +55,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with multiple nodes
         uses: ./
@@ -88,7 +88,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with OLM
         uses: ./
@@ -121,7 +121,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with Istio
         uses: ./
@@ -151,7 +151,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with all features
         uses: ./
@@ -193,7 +193,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with cluster monitoring
         uses: ./
@@ -231,7 +231,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with specific K8s version
         uses: ./
@@ -257,7 +257,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with Minikube driver
         uses: ./
@@ -284,7 +284,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run action with IP family
         uses: ./

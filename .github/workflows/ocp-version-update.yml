@@ -20,7 +20,7 @@ jobs:
             api.openshift.com
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Get latest OCP GA release level
         id: get_ocp_version
