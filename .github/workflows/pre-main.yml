@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install shellcheck
         run: |
@@ -50,7 +50,7 @@ jobs:
             experimental: true
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with ${{ matrix.provider }}
         uses: ./
@@ -77,7 +77,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with local registry
         uses: ./
@@ -112,7 +112,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action without Calico (bring your own CNI)
         uses: ./
@@ -152,7 +152,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create custom KIND config
         run: |
@@ -205,7 +205,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Test invalid installCalico value (should fail)
         id: test-invalid-calico
@@ -232,7 +232,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with cert-manager
         uses: ./
@@ -279,7 +279,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with ingress-nginx
         uses: ./
@@ -311,7 +311,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with custom cluster name
         uses: ./
@@ -349,7 +349,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with worker node labels
         uses: ./
@@ -392,7 +392,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with metrics-server
         uses: ./
@@ -422,7 +422,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with operator-sdk
         uses: ./
@@ -448,7 +448,7 @@ jobs:
       SHELL: /bin/bash
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run the action with cluster monitoring
         uses: ./
