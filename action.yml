@@ -732,7 +732,7 @@ runs:
     - name: Cache KinD binary
       if: ${{ inputs.clusterProvider == 'kind' }}
       id: cache-kind
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /tmp/kind-binary
         key: kind-${{ inputs.kindVersion }}-${{ runner.os }}-${{ runner.arch }}
@@ -758,7 +758,7 @@ runs:
     - name: Cache Minikube binary
       if: ${{ inputs.clusterProvider == 'minikube' }}
       id: cache-minikube
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /tmp/minikube-binary
         key: minikube-${{ inputs.minikubeVersion }}-${{ runner.os }}-${{ runner.arch }}
@@ -784,7 +784,7 @@ runs:
     - name: Cache k3s binary
       if: ${{ inputs.clusterProvider == 'k3s' }}
       id: cache-k3s
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: /tmp/k3s-binary
         key: k3s-${{ inputs.k3sVersion }}-${{ runner.os }}-${{ runner.arch }}
