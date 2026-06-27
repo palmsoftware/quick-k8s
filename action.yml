@@ -127,7 +127,7 @@ inputs:
   operatorSdkVersion:
     description: 'The version of operator-sdk to install'
     required: false
-    default: 'v1.42.2'
+    default: 'v1.42.3'
   enableClusterMonitoring:
     description: 'Enable cluster monitoring stack (Prometheus, Thanos, Alertmanager, Grafana) via kube-prometheus'
     required: false
