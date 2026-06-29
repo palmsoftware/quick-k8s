@@ -99,7 +99,7 @@ inputs:
   certManagerVersion:
     description: 'The version of cert-manager to install'
     required: false
-    default: 'v1.20.2'
+    default: 'v1.20.3'
   installIngressNginx:
     description: 'Install NGINX Ingress controller for HTTP/HTTPS routing'
     required: false
