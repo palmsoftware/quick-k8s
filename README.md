@@ -26,6 +26,7 @@ Supports **KinD** (default), **Minikube**, and **k3s** as cluster providers.
 | `ubuntu-22.04-arm` | ARM64 | ✅ Fully supported |
 | `ubuntu-24.04` | x86_64 | ✅ Fully supported |
 | `ubuntu-24.04-arm` | ARM64 | ✅ Fully supported |
+| `ubuntu-26.04` | x86_64 | ✅ Fully supported |
 | `macos-15-intel` | x86_64 | ✅ Supported (see notes) |
 | `macos-14`, `macos-15` | ARM64 (M1) | ❌ Not supported |
 
