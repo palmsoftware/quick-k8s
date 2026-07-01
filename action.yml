@@ -855,7 +855,8 @@ runs:
           "${{ inputs.apiServerPort }}" \
           "${{ inputs.numControlPlaneNodes }}" \
           "${{ inputs.numWorkerNodes }}" \
-          "${{ inputs.apiServerAddress }}"
+          "${{ inputs.apiServerAddress }}" \
+          "${{ inputs.clusterName }}"
 
     - name: Create a new Kubernetes cluster using k3s
       if: ${{ inputs.clusterProvider == 'k3s' }}
