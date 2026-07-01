@@ -306,6 +306,7 @@ runs:
         fi
 
     - name: Validate Calico version input
+      if: ${{ inputs.installCalico != 'false' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
