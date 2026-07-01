@@ -8,9 +8,8 @@ set -euo pipefail
 EXPECTED_WORKERS=${1:?"Usage: $0 <expected-worker-count> <comma-separated-labels>"}
 LABELS_CSV=${2:?"Usage: $0 <expected-worker-count> <comma-separated-labels>"}
 
-# Command precheck
-if ! command -v oc >/dev/null 2>&1; then
-  echo "Error: oc is not installed." >&2
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "Error: kubectl is not installed." >&2
   exit 1
 fi
 
@@ -20,9 +19,7 @@ echo "Waiting for ${EXPECTED_WORKERS} worker node(s) to be registered..."
 # Wait for worker nodes to appear (up to 120 seconds)
 WORKER_NODES=""
 for i in $(seq 1 60); do
-  # List all nodes and filter out control-plane nodes by ROLES column
-  ALL_OUTPUT=$(oc get nodes --no-headers 2>&1 || true)
-  WORKER_NODES=$(echo "$ALL_OUTPUT" | grep -v "control-plane" | awk 'NF{print $1}' || true)
+  WORKER_NODES=$(kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' --no-headers 2>/dev/null | awk 'NF{print $1}' || true)
 
   if [ -n "$WORKER_NODES" ]; then
     COUNT=$(echo "$WORKER_NODES" | wc -l | tr -d ' ')
@@ -43,7 +40,7 @@ done
 
 if [ -z "$WORKER_NODES" ]; then
   echo "ERROR: No worker nodes found after waiting 120s"
-  oc get nodes || true
+  kubectl get nodes || true
   exit 1
 fi
 
@@ -53,7 +50,7 @@ for NODE in $WORKER_NODES; do
   for LABEL in "${LABELS[@]}"; do
     LABEL=$(echo "$LABEL" | xargs)
     echo "  Labeling node $NODE with $LABEL"
-    oc label node "$NODE" "$LABEL" --overwrite
+    kubectl label node "$NODE" "$LABEL" --overwrite
   done
 done
 
