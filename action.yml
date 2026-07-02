@@ -861,7 +861,8 @@ runs:
           "${{ inputs.minikubeDriver }}" \
           "${{ inputs.apiServerPort }}" \
           "${{ inputs.numControlPlaneNodes }}" \
-          "${{ inputs.numWorkerNodes }}"
+          "${{ inputs.numWorkerNodes }}" \
+          "${{ inputs.apiServerAddress }}"
 
     - name: Create a new Kubernetes cluster using k3s
       if: ${{ inputs.clusterProvider == 'k3s' }}
