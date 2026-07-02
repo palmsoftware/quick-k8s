@@ -61,4 +61,3 @@ echo "Starting Minikube with command: $MINIKUBE_CMD"
 eval "$MINIKUBE_CMD"
 
 echo "✅ Minikube cluster started successfully"
-

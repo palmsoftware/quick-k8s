@@ -178,6 +178,12 @@ runs:
           exit 1
         fi
 
+    - name: Warn about ipFamily support for non-KinD providers
+      if: ${{ inputs.clusterProvider != 'kind' && inputs.ipFamily != 'ipv4' }}
+      shell: bash
+      run: |
+        echo "::warning::ipFamily '${{ inputs.ipFamily }}' is only fully supported with KinD. ${{ inputs.clusterProvider }} will use default networking (ipv4)."
+
     - name: Validate API server address input
       shell: bash
       run: |
@@ -842,6 +848,7 @@ runs:
     - name: Create a new Kubernetes cluster using KinD
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
+      timeout-minutes: 10
       run: kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
 
     - name: Create a new Kubernetes cluster using Minikube
