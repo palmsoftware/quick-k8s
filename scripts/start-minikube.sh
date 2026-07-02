@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Script to start Minikube cluster with configuration
-# Usage: start-minikube.sh <node_image> <disable_cni> <driver> <api_port> <num_control_plane> <num_workers> [api_server_address]
-# Example: start-minikube.sh "kindest/node:v1.34.0@sha256:..." true docker 6443 1 1 0.0.0.0
+# Usage: start-minikube.sh <node_image> <disable_cni> <driver> <api_port> <num_control_plane> <num_workers> [api_server_address] [cluster_name]
+# Example: start-minikube.sh "kindest/node:v1.34.0@sha256:..." true docker 6443 1 1 0.0.0.0 minikube
 
 NODE_IMAGE="${1:-}"
 DISABLE_CNI="${2:-false}"
@@ -12,6 +12,7 @@ API_PORT="${4:-6443}"
 NUM_CONTROL_PLANE="${5:-1}"
 NUM_WORKERS="${6:-0}"
 API_SERVER_ADDRESS="${7:-0.0.0.0}"
+CLUSTER_NAME="${8:-minikube}"
 
 if [ -z "$NODE_IMAGE" ]; then
   echo "Usage: $0 <node_image> [disable_cni] [driver] [api_port] [num_control_plane] [num_workers]"
@@ -46,6 +47,10 @@ if [ "$API_SERVER_ADDRESS" != "0.0.0.0" ]; then
   MINIKUBE_CMD="$MINIKUBE_CMD --apiserver-ips=$API_SERVER_ADDRESS"
 fi
 
+if [ "$CLUSTER_NAME" != "minikube" ]; then
+  MINIKUBE_CMD="$MINIKUBE_CMD --profile=$CLUSTER_NAME"
+fi
+
 # Configure nodes
 if [ "$NUM_WORKERS" -gt 0 ]; then
   TOTAL_NODES=$((NUM_CONTROL_PLANE + NUM_WORKERS))
@@ -56,4 +61,3 @@ echo "Starting Minikube with command: $MINIKUBE_CMD"
 eval "$MINIKUBE_CMD"
 
 echo "✅ Minikube cluster started successfully"
-
