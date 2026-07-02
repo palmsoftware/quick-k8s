@@ -848,6 +848,7 @@ runs:
     - name: Create a new Kubernetes cluster using KinD
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
+      timeout-minutes: 10
       run: kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
 
     - name: Create a new Kubernetes cluster using Minikube
