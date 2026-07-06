@@ -25,52 +25,47 @@ jobs:
       - name: Get latest OCP GA release level
         id: get_ocp_version
         run: |
-          # Function to find the latest GA OCP version from Cincinnati API
-          # Future-proofed for 4.23 -> 5.0 transition
+          # Scan upward from current version to find the latest GA channel.
+          # Handles the 4.22 -> 5.0 major version transition.
           find_latest_ocp_version() {
-            local retries=3
-            local delay=5
+            local current
+            current=$(sed -n "/^  ocpReleaseLevel:/,/^  [a-zA-Z]/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+            if [ -z "$current" ]; then
+              echo "Error: Could not parse ocpReleaseLevel from action.yml" >&2
+              return 1
+            fi
+            local current_major=${current%%.*}
+            local current_minor=${current##*.}
 
-            for ((attempt=1; attempt<=retries; attempt++)); do
-              echo "Attempt $attempt to fetch OCP version..." >&2
+            echo "Current version in action.yml: ${current}" >&2
+            local latest="$current"
 
-              # Check major versions in descending order (5.x first, then 4.x)
-              # This handles the upcoming 4.23 -> 5.0 transition
-              for major in 5 4; do
-                # Set max minor based on major version
-                local max_minor=30
-                if [ "$major" -eq 5 ]; then
-                  max_minor=15  # 5.0 through 5.15 should cover near future
-                fi
-
-                for minor in $(seq $max_minor -1 0); do
-                  channel="stable-${major}.${minor}"
-
-                  response=$(curl -s --max-time 10 \
-                    "https://api.openshift.com/api/upgrades_info/v1/graph?channel=${channel}&arch=amd64" 2>/dev/null)
-
-                  if [ $? -ne 0 ] || [ -z "$response" ]; then
-                    continue
-                  fi
-
-                  node_count=$(echo "$response" | jq '.nodes | length' 2>/dev/null || echo "0")
-
-                  if [ "$node_count" -gt 0 ]; then
-                    echo "Found GA channel: $channel with $node_count versions" >&2
-                    echo "${major}.${minor}"
-                    return 0
-                  fi
-                done
-              done
-
-              if [ $attempt -lt $retries ]; then
-                echo "No valid channel found, retrying in $delay seconds..." >&2
-                sleep $delay
+            for major in $current_major $((current_major + 1)); do
+              local start_minor=0
+              if [ "$major" -eq "$current_major" ]; then
+                start_minor=$((current_minor + 1))
               fi
+
+              for minor in $(seq $start_minor $((start_minor + 5))); do
+                local channel="stable-${major}.${minor}"
+                echo "Checking ${channel}..." >&2
+
+                local node_count
+                node_count=$(curl -s --max-time 10 \
+                  "https://api.openshift.com/api/upgrades_info/v1/graph?channel=${channel}&arch=amd64" 2>/dev/null \
+                  | jq '.nodes | length' 2>/dev/null || echo "0")
+
+                if [ "$node_count" -gt 0 ]; then
+                  echo "Found GA channel: ${channel} with ${node_count} versions" >&2
+                  latest="${major}.${minor}"
+                else
+                  echo "No versions in ${channel}, stopping scan for ${major}.x" >&2
+                  break
+                fi
+              done
             done
 
-            echo "Failed to find valid OCP GA version after $retries attempts" >&2
-            return 1
+            echo "$latest"
           }
 
           version=$(find_latest_ocp_version)
