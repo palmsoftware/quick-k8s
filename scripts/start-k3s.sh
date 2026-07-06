@@ -148,6 +148,10 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
       sleep 5
     fi
 
+    HEALTHZ_PORT=$((10248 + i))
+    PROXY_HEALTHZ_PORT=$((10256 + i))
+    PROXY_METRICS_PORT=$((10249 + i))
+
     echo "Starting worker node: ${WORKER_NAME}..."
     sudo k3s agent \
       --server="https://127.0.0.1:${API_PORT}" \
@@ -155,7 +159,10 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
       --node-name="$WORKER_NAME" \
       --data-dir="$WORKER_DATA_DIR" \
       --lb-server-port="$LB_PORT" \
-      --kubelet-arg="--port=${KUBELET_PORT}" &
+      --kubelet-arg="--port=${KUBELET_PORT}" \
+      --kubelet-arg="--healthz-port=${HEALTHZ_PORT}" \
+      --kube-proxy-arg=healthz-bind-address=127.0.0.1:${PROXY_HEALTHZ_PORT} \
+      --kube-proxy-arg=metrics-bind-address=127.0.0.1:${PROXY_METRICS_PORT} &
   done
 
   # Wait for all workers to register
