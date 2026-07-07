@@ -56,6 +56,14 @@ echo "Starting k3s server with command: sudo k3s ${K3S_ARGS[*]}"
 sudo k3s "${K3S_ARGS[@]}" &
 K3S_PID=$!
 
+# Verify the k3s server process is actually running after backgrounding
+sleep 1
+if ! kill -0 "$K3S_PID" 2>/dev/null; then
+  echo "::error::k3s server failed to start (PID $K3S_PID not running)"
+  echo "Common causes: port $API_PORT already in use, insufficient permissions, or invalid k3s flags"
+  exit 1
+fi
+
 echo "Waiting for k3s to be ready..."
 max_attempts=60
 attempt=1
