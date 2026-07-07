@@ -116,6 +116,25 @@ fi
 if [ "$NUM_WORKERS" -gt 0 ]; then
   echo "Starting ${NUM_WORKERS} worker node(s)..."
 
+  # Check port availability before starting workers to fail fast
+  echo "Checking port availability for ${NUM_WORKERS} worker(s)..."
+  for i in $(seq 1 "$NUM_WORKERS"); do
+    HEALTHZ_PORT=$((10248 + i))
+    PROXY_HEALTHZ_PORT=$((10256 + i))
+    KUBELET_PORT=$((10250 + i))
+    LB_PORT=$((6444 + i))
+    PROXY_METRICS_PORT=$((10249 + i))
+
+    for port in $HEALTHZ_PORT $PROXY_HEALTHZ_PORT $KUBELET_PORT $LB_PORT $PROXY_METRICS_PORT; do
+      if ss -ltn 2>/dev/null | grep -q ":$port "; then
+        echo "::error::Port $port (needed for worker $i) is already in use"
+        echo "Check for existing k3s agents or other processes: sudo lsof -i :$port"
+        exit 1
+      fi
+    done
+  done
+  echo "✅ All required ports are available"
+
   token_attempts=90
   token_attempt=1
   while [ $token_attempt -le $token_attempts ]; do
