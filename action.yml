@@ -909,31 +909,34 @@ runs:
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
       shell: bash
       run: |
-        echo "Installing Calico CNI version $CALICO_VERSION..."
-        CALICO_URL="https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml"
+        # Detect K8s version to pin compatible Calico version
+        K8S_VERSION=$(kubectl version --short 2>/dev/null | grep 'Server Version' | awk '{print $3}' | sed 's/v//')
+        K8S_MINOR=$(echo "$K8S_VERSION" | cut -d. -f2)
+
+        # Calico v3.32+ has CRD schema changes incompatible with K8s <1.31
+        # Use v3.28.x (last version before CRD changes) for older K8s versions
+        if [ "$K8S_MINOR" -lt 31 ]; then
+          EFFECTIVE_CALICO_VERSION="v3.28.2"
+          echo "::warning::Kubernetes $K8S_VERSION detected - using Calico $EFFECTIVE_CALICO_VERSION for compatibility"
+          echo "Calico v3.32+ requires Kubernetes 1.31+. Automatically pinning to compatible version."
+        else
+          EFFECTIVE_CALICO_VERSION="$CALICO_VERSION"
+        fi
+
+        echo "Installing Calico CNI version $EFFECTIVE_CALICO_VERSION..."
+        CALICO_URL="https://raw.githubusercontent.com/projectcalico/calico/$EFFECTIVE_CALICO_VERSION/manifests/calico.yaml"
         max_attempts=3
         attempt=1
         delay=5
         while [ $attempt -le $max_attempts ]; do
           echo "Attempt $attempt/$max_attempts: Applying Calico manifest..."
-          output=$(oc apply --timeout=5m -f "$CALICO_URL" 2>&1) && {
-            echo "$output"
-            echo "Calico CNI installed successfully"
+          if oc apply --timeout=5m -f "$CALICO_URL"; then
+            echo "✅ Calico CNI installed successfully"
             break
-          }
-          exit_code=$?
-          echo "$output"
-          # Calico v3.32+ includes CRDs using CEL functions (e.g. isCIDR) not available
-          # in K8s < 1.31. The core CNI components still install correctly, so treat
-          # CRD validation errors as non-fatal if the calico-node daemonset exists.
-          if echo "$output" | grep -q "is invalid:.*compilation failed"; then
-            if oc get daemonset calico-node -n kube-system &>/dev/null; then
-              echo "Warning: Some Calico CRDs failed validation (likely K8s version incompatibility) but core components installed successfully"
-              break
-            fi
           fi
+          exit_code=$?
           if [ $attempt -eq $max_attempts ]; then
-            echo "Calico installation failed after $max_attempts attempts"
+            echo "::error::Calico installation failed after $max_attempts attempts"
             exit $exit_code
           fi
           echo "Retrying in $delay seconds..."
