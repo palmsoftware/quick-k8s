@@ -9,12 +9,11 @@
 [![Update ingress-nginx Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/ingress-nginx-update.yml)
 [![Update metrics-server Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/metrics-server-update.yml)
 [![Update operator-sdk Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/operator-sdk-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/operator-sdk-update.yml)
-[![Update k3s Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/k3s-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/k3s-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
 Github Action that will automatically create a Kubernetes cluster that lives and runs on Github Actions to allow for deployment and testing of code.
 
-Supports **KinD** (default), **Minikube**, and **k3s** as cluster providers.
+Supports **KinD** (default) and **Minikube** as cluster providers.
 
 ## Requirements:
 
@@ -59,29 +58,6 @@ steps:
       minikubeVersion: v1.38.1
       minikubeDriver: docker
 ```
-
-### Using k3s as the Cluster Provider
-
-To use k3s for a lightweight, fast-starting cluster:
-
-```yaml
-steps:
-  - name: Set up Quick-K8s with k3s
-    uses: palmsoftware/quick-k8s@v0.0.73
-    with:
-      clusterProvider: k3s
-      k3sVersion: v1.36.2+k3s1
-      numWorkerNodes: 1
-      waitForPodsReady: true
-```
-
-**k3s Notes:**
-- Linux-only (not supported on macOS runners)
-- Single control plane node only (multi-CP not yet supported)
-- Built-in Traefik and ServiceLB are disabled by default to avoid conflicts with the action's own ingress support
-- `defaultNodeImage` and `ipFamily` inputs are ignored for k3s
-- Includes built-in local-path storage provisioner and CoreDNS
-- Resource-heavy add-ons (OLM, Istio) may not stabilize on free-tier runners; use KinD or Minikube for these workloads
 
 ### Complete Configuration (default values shown)
 
@@ -160,49 +136,6 @@ steps:
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 ```
-
-With k3s:
-
-```yaml
-steps:
-  - name: Set up Quick-K8s with k3s
-    uses: palmsoftware/quick-k8s@v0.0.73
-    with:
-      clusterProvider: k3s
-      k3sVersion: v1.36.1+k3s1
-      apiServerPort: 6443
-      disableDefaultCni: true
-      calicoVersion: v3.32.1
-
-      numControlPlaneNodes: 1       # Must be 1 (multi-CP not supported)
-      numWorkerNodes: 1
-      installOLM: false
-      installIstio: false
-      istioVersion: 1.30.2
-      istioProfile: minimal
-      installCertManager: false
-      certManagerVersion: v1.20.3
-      installIngressNginx: false
-      ingressNginxVersion: v1.15.1
-      installMetricsServer: false
-      metricsServerVersion: v0.8.1
-      installOperatorSdk: false
-      operatorSdkVersion: v1.42.3
-      removeDefaultStorageClass: false
-      removeControlPlaneTaint: false
-```
-
-**k3s Limitations**:
-- **Single control plane only** — setting `numControlPlaneNodes > 1` will fail with a validation error (multi-CP requires embedded etcd, not yet supported)
-- **Linux-only** — no macOS binary exists; use KinD or Minikube on macOS runners
-- **`defaultNodeImage` is ignored** — the Kubernetes version is determined by the k3s release version
-- **`ipFamily` is ignored** — k3s uses Flannel's default networking configuration
-- **Version format** — must include the k3s suffix: `v1.36.1+k3s1` (not just `v1.36.1`)
-
-**When to use k3s**:
-- Fastest startup (~30 seconds) and smallest footprint (~512MB RAM)
-- Best for simple CI tests that don't need OLM, Istio, or custom CNI
-- Ideal for resource-constrained free-tier runners
 
 ## Optional Features
 
@@ -504,7 +437,7 @@ steps:
 
 ## Cluster Provider Comparison
 
-All three cluster providers are fully supported and tested. Choose the one that best fits your needs:
+Both cluster providers are fully supported and tested. Choose the one that best fits your needs:
 
 #### KinD (Kubernetes in Docker) - **Default**
 - ✅ **Best for**: CI/CD pipelines, fast cluster creation
@@ -527,22 +460,7 @@ All three cluster providers are fully supported and tested. Choose the one that 
   - Slightly slower startup, more complex for multi-node setups
   - When disabling default CNI (`disableDefaultCni: true`), uses docker runtime instead of containerd (Minikube requirement)
 
-#### k3s
-- ✅ **Best for**: Resource-constrained runners, fastest startup
-- ✅ **Advantages**:
-  - Extremely lightweight (~60MB single binary, ~512MB RAM)
-  - Fastest cluster startup (under 30 seconds)
-  - CNCF certified Kubernetes distribution
-  - Built-in local-path storage provisioner and CoreDNS
-  - Runs natively on the host (no Docker dependency for the cluster itself)
-- ⚠️ **Considerations**:
-  - Linux-only (no macOS support)
-  - Single control plane node only (multi-CP not yet supported)
-  - `defaultNodeImage` and `ipFamily` inputs are not applicable
-  - K8s version is determined by the k3s release version
-  - Resource-heavy add-ons (OLM, Istio) may not stabilize on free-tier GitHub Actions runners due to k3s's built-in Flannel CNI constraints; use KinD or Minikube for these workloads
-
-**Recommendation**: Use **KinD** (default) for most CI/CD scenarios. Use **k3s** for the fastest, lightest clusters on Linux runners. Use **Minikube** if you need specific features or driver compatibility.
+**Recommendation**: Use **KinD** (default) for most CI/CD scenarios. Use **Minikube** if you need specific features or driver compatibility.
 
 ## Network Configuration
 
@@ -622,7 +540,6 @@ steps:
 |----------|-------------|
 | KinD | `kind-<clusterName>` (e.g., `kind-kind`) |
 | Minikube | `minikube` |
-| k3s | `default` |
 
 ### Storage Class
 
@@ -630,7 +547,6 @@ steps:
 |----------|----------------------|
 | KinD | `standard` |
 | Minikube | `standard` |
-| k3s | `local-path` |
 
 ## Troubleshooting
 
@@ -638,7 +554,7 @@ steps:
 
 **"No space left on device"**
 - GitHub Actions free-tier runners have ~14GB available disk
-- Reduce cluster footprint: fewer worker nodes, skip OLM/Istio/monitoring, or use k3s
+- Reduce cluster footprint: fewer worker nodes, skip OLM/Istio/monitoring
 - The action runs adaptive cleanup automatically, but very large add-on combinations can still exhaust disk
 
 ### KinD
@@ -657,17 +573,6 @@ steps:
 **Multi-node topology**
 - Minikube's `--nodes=N` creates N identical nodes. There is no control-plane vs worker distinction — all nodes have the same role. If you need explicit topology, use KinD.
 
-### k3s
-
-**"k3s server process died" or agent registration failures**
-- Flannel iptables race condition on multi-node clusters. The action staggers agent startup to mitigate this. If it persists, reduce `numWorkerNodes` or upgrade to the latest action version.
-
-**OLM/Istio pods stuck or OOMKilled**
-- These add-ons are resource-heavy and may not stabilize on free-tier runners with k3s. Use KinD or Minikube instead.
-
-**"Cluster does not have a functional CNI"**
-- Ensure `installCalico: true` (default) or install your own CNI when `installCalico: false`. Check for pending pods with `kubectl get pods -A`.
-
 ### Add-on Issues
 
 **"cert-manager webhook not ready"**
@@ -682,11 +587,11 @@ steps:
 
 **"Local registry not accessible from cluster"**
 - For KinD: registry is automatically connected to the Docker network
-- For Minikube/k3s: local registry connectivity is limited (see [#74](https://github.com/palmsoftware/quick-k8s/issues/74))
+- For Minikube: local registry connectivity is limited (see [#74](https://github.com/palmsoftware/quick-k8s/issues/74))
 
 ## History
 
-Originally built upon [KinD](https://github.com/kubernetes-sigs/kind) and tuned as part of [certsuite-sample-workload](https://github.com/redhat-best-practices-for-k8s/certsuite-sample-workload), the project now supports KinD, [Minikube](https://github.com/kubernetes/minikube), and [k3s](https://github.com/k3s-io/k3s) as cluster providers.
+Originally built upon [KinD](https://github.com/kubernetes-sigs/kind) and tuned as part of [certsuite-sample-workload](https://github.com/redhat-best-practices-for-k8s/certsuite-sample-workload), the project now supports KinD and [Minikube](https://github.com/kubernetes/minikube) as cluster providers.
 
 This action is essentially a wrapper around best practices for deploying Kubernetes environments that run well on GitHub Actions free-tier Ubuntu runners, with intelligent resource management and optimizations for CI/CD workflows.
 
