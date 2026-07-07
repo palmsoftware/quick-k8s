@@ -140,17 +140,18 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
     WORKER_DATA_DIR="/var/lib/rancher/k3s-agent-${i}"
 
     # Each agent on the same machine needs unique ports to avoid conflicts
+    # Server uses: 6443 (API), 10248 (healthz), 10249 (proxy-healthz), 10250 (kubelet)
+    # Workers start at offset +10 from server ports to avoid conflicts
     LB_PORT=$((6444 + i))
-    KUBELET_PORT=$((10250 + i))
+    KUBELET_PORT=$((10260 + i))          # Server uses 10250, workers start at 10261+
+    HEALTHZ_PORT=$((10258 + i))          # Server uses 10248, workers start at 10259+
+    PROXY_HEALTHZ_PORT=$((10266 + i))    # Server uses 10256, workers start at 10267+
+    PROXY_METRICS_PORT=$((10259 + i))    # Server uses 10249, workers start at 10260+
 
     if [ "$i" -gt 1 ]; then
       echo "Waiting 5s before starting next agent (flannel iptables stagger)..."
       sleep 5
     fi
-
-    HEALTHZ_PORT=$((10248 + i))
-    PROXY_HEALTHZ_PORT=$((10256 + i))
-    PROXY_METRICS_PORT=$((10249 + i))
 
     echo "Starting worker node: ${WORKER_NAME}..."
     sudo k3s agent \
