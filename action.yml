@@ -33,9 +33,9 @@ inputs:
     required: false
     default: '1'
   clusterName:
-    description: 'Name for the Kubernetes cluster'
+    description: 'Name for the Kubernetes cluster (defaults to provider name: "kind", "minikube", or "k3s")'
     required: false
-    default: 'kind'
+    default: ''
   clusterProvider:
     description: 'Kubernetes cluster provider (kind, minikube, or k3s)'
     required: false

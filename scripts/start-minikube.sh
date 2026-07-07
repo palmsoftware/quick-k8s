@@ -12,7 +12,8 @@ API_PORT="${4:-6443}"
 NUM_CONTROL_PLANE="${5:-1}"
 NUM_WORKERS="${6:-0}"
 API_SERVER_ADDRESS="${7:-0.0.0.0}"
-CLUSTER_NAME="${8:-minikube}"
+CLUSTER_NAME="${8}"
+CLUSTER_NAME="${CLUSTER_NAME:-minikube}"  # Default to minikube if empty or unset
 
 if [ -z "$NODE_IMAGE" ]; then
   echo "Usage: $0 <node_image> [disable_cni] [driver] [api_port] [num_control_plane] [num_workers]"

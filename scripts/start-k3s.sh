@@ -7,7 +7,8 @@ DISABLE_CNI="${1:-false}"
 API_PORT="${2:-6443}"
 # $3 (num_control_plane) is validated in action.yml; must be 1
 NUM_WORKERS="${4:-0}"
-CLUSTER_NAME="${5:-k3s}"
+CLUSTER_NAME="${5}"
+CLUSTER_NAME="${CLUSTER_NAME:-k3s}"  # Default to k3s if empty or unset
 REGISTRY_PORT="${6:-}"
 
 sudo mkdir -p /etc/rancher/k3s
