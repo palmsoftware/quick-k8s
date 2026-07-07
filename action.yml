@@ -33,9 +33,9 @@ inputs:
     required: false
     default: '1'
   clusterName:
-    description: 'Name for the Kubernetes cluster (defaults to provider name: "kind", "minikube", or "k3s")'
+    description: 'Name for the Kubernetes cluster'
     required: false
-    default: ''
+    default: 'kind'
   clusterProvider:
     description: 'Kubernetes cluster provider (kind, minikube, or k3s)'
     required: false
@@ -860,6 +860,10 @@ runs:
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
       run: |
+        CLUSTER_NAME="${{ inputs.clusterName }}"
+        if [ "$CLUSTER_NAME" = "kind" ]; then
+          CLUSTER_NAME="minikube"
+        fi
         ${{ github.action_path }}/scripts/start-minikube.sh \
           "${{ inputs.defaultNodeImage }}" \
           "${{ inputs.disableDefaultCni }}" \
@@ -868,7 +872,7 @@ runs:
           "${{ inputs.numControlPlaneNodes }}" \
           "${{ inputs.numWorkerNodes }}" \
           "${{ inputs.apiServerAddress }}" \
-          "${{ inputs.clusterName }}"
+          "$CLUSTER_NAME"
 
     - name: Create a new Kubernetes cluster using k3s
       if: ${{ inputs.clusterProvider == 'k3s' }}
@@ -878,12 +882,16 @@ runs:
         if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then
           REGISTRY_PORT="${{ inputs.localRegistryPort }}"
         fi
+        CLUSTER_NAME="${{ inputs.clusterName }}"
+        if [ "$CLUSTER_NAME" = "kind" ]; then
+          CLUSTER_NAME="k3s"
+        fi
         ${{ github.action_path }}/scripts/start-k3s.sh \
           "${{ inputs.disableDefaultCni }}" \
           "${{ inputs.apiServerPort }}" \
           "${{ inputs.numControlPlaneNodes }}" \
           "${{ inputs.numWorkerNodes }}" \
-          "${{ inputs.clusterName }}" \
+          "$CLUSTER_NAME" \
           "$REGISTRY_PORT"
 
     # - name: Bootstrap the runner with kubectl and oc clients
