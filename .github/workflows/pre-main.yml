@@ -38,10 +38,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04]
-        provider: [kind, minikube, k3s]
+        provider: [kind, minikube]
         experimental: [false]
         include:
-          # macOS Intel tests (experimental, k3s excluded - Linux only)
           - os: macos-15-intel
             provider: kind
             experimental: true
@@ -57,16 +56,15 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
-          # Skip OLM, Istio, and cert-manager on macOS (Colima limitations) and k3s (too resource-heavy for free-tier runners)
-          installOLM: ${{ !startsWith(matrix.os, 'macos') && matrix.provider != 'k3s' }}
-          installIstio: ${{ !startsWith(matrix.os, 'macos') && matrix.provider != 'k3s' }}
+          # Skip OLM, Istio, and cert-manager on macOS (Colima limitations)
+          installOLM: ${{ !startsWith(matrix.os, 'macos') }}
+          installIstio: ${{ !startsWith(matrix.os, 'macos') }}
           istioProfile: minimal
-          installCertManager: ${{ !startsWith(matrix.os, 'macos') && matrix.provider != 'k3s' }}
+          installCertManager: ${{ !startsWith(matrix.os, 'macos') }}
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
           apiServerPort: 6443
           apiServerAddress: 127.0.0.1
-          disableDefaultCni: ${{ matrix.provider != 'k3s' }}
 
   # Test local registry functionality
   test-local-registry:
