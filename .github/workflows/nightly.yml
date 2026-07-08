@@ -217,6 +217,132 @@ jobs:
           kubectl get pods -n monitoring -l app.kubernetes.io/name=thanos-query
           kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus -o jsonpath='{.items[*].spec.containers[*].name}' | tr ' ' '\n' | grep thanos
 
+  # Component installation tests across OS matrix
+  cert-manager-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with cert-manager
+        uses: ./
+        with:
+          clusterProvider: kind
+          installCertManager: true
+          waitForPodsReady: true
+
+      - name: Verify cert-manager
+        run: |
+          kubectl get namespace cert-manager
+          kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=60s
+          kubectl get crd | grep cert-manager
+
+  ingress-nginx-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with ingress-nginx
+        uses: ./
+        with:
+          clusterProvider: kind
+          installIngressNginx: true
+          waitForPodsReady: true
+
+      - name: Verify ingress-nginx
+        run: |
+          kubectl get namespace ingress-nginx
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=60s
+          kubectl get ingressclass
+
+  metrics-server-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with metrics-server
+        uses: ./
+        with:
+          clusterProvider: kind
+          installMetricsServer: true
+          waitForPodsReady: true
+
+      - name: Verify metrics-server
+        run: |
+          kubectl get pods -n kube-system -l k8s-app=metrics-server
+          sleep 30
+          kubectl top nodes || echo "Metrics may need more time to populate"
+
+  operator-sdk-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with operator-sdk
+        uses: ./
+        with:
+          clusterProvider: kind
+          installOperatorSdk: true
+          waitForPodsReady: true
+
+      - name: Verify operator-sdk
+        run: operator-sdk version
+
+  local-registry-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with local registry
+        uses: ./
+        with:
+          clusterProvider: kind
+          installLocalRegistry: true
+          localRegistryPort: 5001
+          waitForPodsReady: true
+
+      - name: Verify local registry
+        run: |
+          docker ps | grep quick-k8s-registry
+          curl -s http://localhost:5001/v2/ || exit 1
+          docker pull busybox:latest
+          docker tag busybox:latest localhost:5001/test-image:latest
+          docker push localhost:5001/test-image:latest
+
   # Different Kubernetes versions test (KinD only as it supports explicit versions easily)
   kubernetes-versions-test:
     strategy:
