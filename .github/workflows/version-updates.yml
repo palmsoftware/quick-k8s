@@ -1,0 +1,133 @@
+name: Version Updates Nightly
+
+on:
+  schedule:
+    # Staggered schedules to avoid GitHub API rate limiting
+    - cron: '0 2 * * *'   # Calico, Istio
+    - cron: '10 2 * * *'  # KinD, Minikube
+    - cron: '20 2 * * *'  # cert-manager, metrics-server
+    - cron: '30 2 * * *'  # ingress-nginx, operator-sdk
+    - cron: '40 2 * * *'  # kube-prometheus, Thanos
+  workflow_dispatch:
+    inputs:
+      component:
+        description: 'Run for a specific component (leave empty for all)'
+        required: false
+        type: choice
+        options:
+          - all
+          - calico
+          - kind
+          - minikube
+          - istio
+          - cert-manager
+          - ingress-nginx
+          - metrics-server
+          - operator-sdk
+          - kube-prometheus
+          - thanos
+
+permissions: read-all
+
+jobs:
+  calico:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'calico') || github.event.schedule == '0 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: Calico
+      github_repo: projectcalico/calico
+      action_yml_field: calicoVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  kind:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'kind') || github.event.schedule == '10 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: KinD
+      github_repo: kubernetes-sigs/kind
+      action_yml_field: kindVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  minikube:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'minikube') || github.event.schedule == '10 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: Minikube
+      github_repo: kubernetes/minikube
+      action_yml_field: minikubeVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  istio:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'istio') || github.event.schedule == '0 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: Istio
+      github_repo: istio/istio
+      action_yml_field: istioVersion
+      version_regex: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  cert-manager:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'cert-manager') || github.event.schedule == '20 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: cert-manager
+      github_repo: cert-manager/cert-manager
+      action_yml_field: certManagerVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  ingress-nginx:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'ingress-nginx') || github.event.schedule == '30 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: ingress-nginx
+      github_repo: kubernetes/ingress-nginx
+      action_yml_field: ingressNginxVersion
+      tag_prefix: 'controller-'
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  metrics-server:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'metrics-server') || github.event.schedule == '20 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: metrics-server
+      github_repo: kubernetes-sigs/metrics-server
+      action_yml_field: metricsServerVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  operator-sdk:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'operator-sdk') || github.event.schedule == '30 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: operator-sdk
+      github_repo: operator-framework/operator-sdk
+      action_yml_field: operatorSdkVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  kube-prometheus:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'kube-prometheus') || github.event.schedule == '40 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: kube-prometheus
+      github_repo: prometheus-operator/kube-prometheus
+      action_yml_field: kubePrometheusVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+  thanos:
+    if: github.event_name == 'workflow_dispatch' && (inputs.component == 'all' || inputs.component == 'thanos') || github.event.schedule == '40 2 * * *'
+    uses: ./.github/workflows/reusable-version-update.yml
+    with:
+      component_name: Thanos
+      github_repo: thanos-io/thanos
+      action_yml_field: thanosVersion
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
