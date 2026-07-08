@@ -817,6 +817,14 @@ runs:
       shell: bash
       run: |
         echo "Installing Calico CNI version $CALICO_VERSION..."
+
+        # Detect K8s minor version to auto-pin Calico for older clusters
+        K8S_MINOR=$(kubectl version -o json 2>/dev/null | grep -o '"gitVersion":"v[0-9]*\.[0-9]*' | head -1 | grep -o '\.[0-9]*$' | tr -d '.')
+        if [ -n "$K8S_MINOR" ] && [ "$K8S_MINOR" -lt 31 ] 2>/dev/null; then
+          echo "::warning::K8s minor version $K8S_MINOR (< 31) detected - pinning Calico to v3.28.2 for compatibility"
+          CALICO_VERSION="v3.28.2"
+        fi
+
         CALICO_URL="https://raw.githubusercontent.com/projectcalico/calico/$CALICO_VERSION/manifests/calico.yaml"
         max_attempts=3
         attempt=1
