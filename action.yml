@@ -194,106 +194,21 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.kindVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid KinD version format: ${{ inputs.kindVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/${{ inputs.kindVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "KinD version ${{ inputs.kindVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "KinD version ${{ inputs.kindVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate KinD version ${{ inputs.kindVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "KinD" "kubernetes-sigs/kind" "${{ inputs.kindVersion }}"
 
     - name: Validate Minikube version input
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.minikubeVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid Minikube version format: ${{ inputs.minikubeVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes/minikube/releases/tags/${{ inputs.minikubeVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "Minikube version ${{ inputs.minikubeVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "Minikube version ${{ inputs.minikubeVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate Minikube version ${{ inputs.minikubeVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
-
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Minikube" "kubernetes/minikube" "${{ inputs.minikubeVersion }}"
 
     - name: Validate Calico version input
       if: ${{ inputs.installCalico != 'false' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.calicoVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid Calico version format: ${{ inputs.calicoVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/projectcalico/calico/releases/tags/${{ inputs.calicoVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "Calico version ${{ inputs.calicoVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "Calico version ${{ inputs.calicoVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate Calico version ${{ inputs.calicoVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Calico" "projectcalico/calico" "${{ inputs.calicoVersion }}"
 
     - name: Validate OpenShift release level input
       shell: bash
@@ -308,35 +223,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.istioVersion }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid Istio version format: ${{ inputs.istioVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/istio/istio/releases/tags/${{ inputs.istioVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "Istio version ${{ inputs.istioVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "Istio version ${{ inputs.istioVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate Istio version ${{ inputs.istioVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Istio" "istio/istio" "${{ inputs.istioVersion }}"
 
     - name: Validate Istio profile input
       if: ${{ inputs.installIstio == 'true' }}
@@ -364,35 +251,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.certManagerVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid cert-manager version format: ${{ inputs.certManagerVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/cert-manager/cert-manager/releases/tags/${{ inputs.certManagerVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "cert-manager version ${{ inputs.certManagerVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "cert-manager version ${{ inputs.certManagerVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate cert-manager version ${{ inputs.certManagerVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "cert-manager" "cert-manager/cert-manager" "${{ inputs.certManagerVersion }}"
 
     - name: Validate installIngressNginx input
       shell: bash
@@ -408,36 +267,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.ingressNginxVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid ingress-nginx version format: ${{ inputs.ingressNginxVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        # Note: ingress-nginx uses controller-vX.Y.Z tag format
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes/ingress-nginx/releases/tags/controller-${{ inputs.ingressNginxVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "ingress-nginx version ${{ inputs.ingressNginxVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "ingress-nginx version ${{ inputs.ingressNginxVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate ingress-nginx version ${{ inputs.ingressNginxVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "ingress-nginx" "kubernetes/ingress-nginx" "${{ inputs.ingressNginxVersion }}" "controller-"
 
     - name: Validate installMetricsServer input
       shell: bash
@@ -453,35 +283,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.metricsServerVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid metrics-server version format: ${{ inputs.metricsServerVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/kubernetes-sigs/metrics-server/releases/tags/${{ inputs.metricsServerVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "metrics-server version ${{ inputs.metricsServerVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "metrics-server version ${{ inputs.metricsServerVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate metrics-server version ${{ inputs.metricsServerVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "metrics-server" "kubernetes-sigs/metrics-server" "${{ inputs.metricsServerVersion }}"
 
     - name: Validate installOperatorSdk input
       shell: bash
@@ -497,35 +299,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.operatorSdkVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid operator-sdk version format: ${{ inputs.operatorSdkVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/operator-framework/operator-sdk/releases/tags/${{ inputs.operatorSdkVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "operator-sdk version ${{ inputs.operatorSdkVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "operator-sdk version ${{ inputs.operatorSdkVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate operator-sdk version ${{ inputs.operatorSdkVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "operator-sdk" "operator-framework/operator-sdk" "${{ inputs.operatorSdkVersion }}"
 
     - name: Validate enableClusterMonitoring input
       shell: bash
@@ -541,70 +315,14 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.kubePrometheusVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid kube-prometheus version format: ${{ inputs.kubePrometheusVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/prometheus-operator/kube-prometheus/releases/tags/${{ inputs.kubePrometheusVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "kube-prometheus version ${{ inputs.kubePrometheusVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "kube-prometheus version ${{ inputs.kubePrometheusVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate kube-prometheus version ${{ inputs.kubePrometheusVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "kube-prometheus" "prometheus-operator/kube-prometheus" "${{ inputs.kubePrometheusVersion }}"
 
     - name: Validate Thanos version input
       if: ${{ inputs.enableClusterMonitoring == 'true' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if ! [[ "${{ inputs.thanosVersion }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid Thanos version format: ${{ inputs.thanosVersion }}"
-          exit 1
-        fi
-        # Retry logic for flaky GitHub API calls with exponential backoff
-        max_attempts=5
-        attempt=1
-        delay=2
-        while [ $attempt -le $max_attempts ]; do
-          http_code=$(curl --silent --output /dev/null --write-out "%{http_code}" -L -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/thanos-io/thanos/releases/tags/${{ inputs.thanosVersion }})
-          if [ "$http_code" = "200" ]; then
-            echo "Thanos version ${{ inputs.thanosVersion }} validated successfully"
-            break
-          fi
-          if [ $attempt -eq $max_attempts ]; then
-            if [ "$http_code" = "404" ]; then
-              echo "Thanos version ${{ inputs.thanosVersion }} does not exist on GitHub"
-            else
-              echo "GitHub API failed to validate Thanos version ${{ inputs.thanosVersion }} (HTTP $http_code after $max_attempts attempts)"
-              echo "This may be a temporary GitHub API issue - consider re-running the workflow"
-            fi
-            exit 1
-          fi
-          echo "Attempt $attempt/$max_attempts failed (HTTP $http_code), retrying in $delay seconds..."
-          sleep $delay
-          delay=$((delay * 2))
-          attempt=$((attempt + 1))
-        done
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Thanos" "thanos-io/thanos" "${{ inputs.thanosVersion }}"
 
     - name: Validate installCalico input
       shell: bash
