@@ -41,10 +41,9 @@ Each script handles a single responsibility:
 - `install-kind.sh`, `install-minikube.sh`, `install-k3s.sh` - Binary installation with fallback URLs
 - `generate-kind-config.sh` - Creates KinD YAML config from action inputs
 - `start-minikube.sh` - Starts Minikube with appropriate flags
-- `start-k3s.sh` - Starts k3s server and agent processes
 - `install-calico.sh`, `install-istio.sh`, `install-olm.sh` - Component installers
 - `setup-local-registry.sh` - Docker registry setup with cluster connectivity
-- `proactive-disk-cleanup.sh`, `pre-cluster-optimization.sh` - Disk space management
+- `pre-cluster-optimization.sh` - Disk space management
 - `check-github-status.sh` - GitHub API availability check
 
 ### Version Management
