@@ -132,12 +132,6 @@ check_root(){
 
 check_prereq(){
 
-#Check for wget
-if [ ! "$(command -v wget)" ]; then
-  echo "wget not found. Please install wget."
-  exit 1
-fi
-
 status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/stable/release.txt")
 
 if [[ "$status_code" -ne 200 ]]; then
@@ -370,21 +364,13 @@ nightly() {
 
 download(){
 
-echo -n "Downloading $(echo "$1" | awk -F/ '{ print $NF }'):    "
-wget --progress=dot "$1" -O "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" 2>&1 | \
-    grep --line-buffered "%" | \
-    sed -e "s,\.,,g" | \
-    awk '{printf("\b\b\b\b%4s", $2)}'
-echo -ne "\b\b\b\b"
-echo " Download Complete."
+echo "Downloading ${1##*/}..."
+curl -L -f --progress-bar -o "/tmp/${1##*/}" "$1"
+echo "Download Complete."
 
-echo -n "Downloading $(echo "$2" | awk -F/ '{ print $NF }'):    "
-wget --progress=dot "$2" -O "/tmp/$(echo "$2" | awk -F/ '{ print $NF }')" 2>&1 | \
-    grep --line-buffered "%" | \
-    sed -e "s,\.,,g" | \
-    awk '{printf("\b\b\b\b%4s", $2)}'
-echo -ne "\b\b\b\b"
-echo " Download Complete."
+echo "Downloading ${2##*/}..."
+curl -L -f --progress-bar -o "/tmp/${2##*/}" "$2"
+echo "Download Complete."
 
 backup extract
 
@@ -649,14 +635,10 @@ download_cli(){
 
 check_root
 
-filename=$(echo "$1" | awk -F/ '{ print $NF }')
-echo -n "Downloading $filename:    "
-wget --progress=dot "$1" -O "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" 2>&1 | \
-    grep --line-buffered "%" | \
-    sed -e "s,\.,,g" | \
-    awk '{printf("\b\b\b\b%4s", $2)}'
-echo -ne "\b\b\b\b"
-echo " Download Complete."
+filename="${1##*/}"
+echo "Downloading $filename..."
+curl -L -f --progress-bar -o "/tmp/$filename" "$1"
+echo "Download Complete."
 
 if [[ "$2" == "serverless" ]]; then
   tar -zxf "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" -C ${BIN_PATH}
