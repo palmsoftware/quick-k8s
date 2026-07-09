@@ -16,7 +16,7 @@ while true; do
     break
   else
     echo "Waiting for all pods to be running or completed..."
-    kubectl get pods --all-namespaces --no-headers | awk '{if ($4 != "Running" && $4 != "Completed") print "Pending pod: " $1 " in namespace: " $2}'
+    kubectl get pods --all-namespaces --no-headers | awk '{if ($4 != "Running" && $4 != "Completed") print "Pending pod: " $2 " in namespace: " $1}'
     sleep $interval
     elapsed=$((elapsed + interval))
     if [ $elapsed -ge $timeout ]; then
