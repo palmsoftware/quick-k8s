@@ -14,23 +14,11 @@ for cmd in curl kubectl tar; do
   fi
 done
 
-# Determine architecture
-ARCH=$(uname -m)
-case $ARCH in
-  x86_64)
-    ARCH="amd64"
-    ;;
-  aarch64|arm64)
-    ARCH="arm64"
-    ;;
-  *)
-    echo "Error: Unsupported architecture: $ARCH" >&2
-    exit 1
-    ;;
-esac
-
-# Determine OS (Istio uses 'osx' for macOS, not 'darwin')
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+# shellcheck source=map-platform.sh
+source "$(dirname "$0")/map-platform.sh"
+ARCH=$(map_arch "$(uname -m)")
+OS=$(map_os "$(uname -s)")
+# Istio uses 'osx' instead of 'darwin'
 if [ "$OS" = "darwin" ]; then
   OS="osx"
 fi

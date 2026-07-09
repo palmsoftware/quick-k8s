@@ -33,7 +33,7 @@ lint: tool-precheck
 	@failed=0; \
 	for script in $$(find scripts/ -name "*.sh" -type f); do \
 		echo "Checking: $$script"; \
-		if shellcheck "$$script"; then \
+		if shellcheck -x --source-path=scripts "$$script"; then \
 			echo "✅ $$script passed"; \
 		else \
 			echo "❌ $$script failed"; \

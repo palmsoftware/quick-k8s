@@ -15,23 +15,10 @@ if [ -z "$VERSION" ] || [ -z "$OS" ] || [ -z "$ARCH" ]; then
   exit 1
 fi
 
-# Map OS names (GitHub Actions uses macOS, KinD uses darwin)
-# Convert to lowercase first
-OS=$(echo "$OS" | tr '[:upper:]' '[:lower:]')
-
-# Map macOS to darwin
-if [ "$OS" = "macos" ]; then
-  OS="darwin"
-fi
-
-# Map architecture names (GitHub Actions uses X64/x64/ARM64/arm64, KinD uses amd64/arm64)
-# Convert to lowercase first
-ARCH=$(echo "$ARCH" | tr '[:upper:]' '[:lower:]')
-
-# Then map to KinD's naming convention
-if [ "$ARCH" = "x64" ]; then
-  ARCH="amd64"
-fi
+# shellcheck source=map-platform.sh
+source "$(dirname "$0")/map-platform.sh"
+OS=$(map_os "$OS")
+ARCH=$(map_arch "$ARCH")
 
 # Determine the platform string for KinD
 PLATFORM="${OS}-${ARCH}"
