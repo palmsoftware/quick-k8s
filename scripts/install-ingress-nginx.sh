@@ -17,6 +17,8 @@ done
 # Use provider-specific manifest
 if [ "$CLUSTER_PROVIDER" = "kind" ]; then
   MANIFEST_URL="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/kind/deploy.yaml"
+elif [ "$CLUSTER_PROVIDER" = "minikube" ]; then
+  MANIFEST_URL="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/baremetal/deploy.yaml"
 else
   MANIFEST_URL="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml"
 fi
