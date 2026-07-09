@@ -10,8 +10,10 @@ if ! command -v curl >/dev/null 2>&1; then
   exit 1
 fi
 
-ARCH="$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n "$(uname -m)" ;; esac)"
-OS="$(uname | awk '{print tolower($0)}')"
+# shellcheck source=map-platform.sh
+source "$(dirname "$0")/map-platform.sh"
+ARCH=$(map_arch "$(uname -m)")
+OS=$(map_os "$(uname -s)")
 
 DL_URL="https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_${OS}_${ARCH}"
 
