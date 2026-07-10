@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **quick-k8s** is a GitHub Action for deploying Kubernetes clusters on GitHub Actions runners. It's a composite action using shell scripts that supports KinD (Kubernetes in Docker), Minikube, and k3s as cluster providers, with optional Calico CNI, Istio service mesh, OLM (Operator Lifecycle Manager), and local Docker registry.
 
-**Target Environment**: Linux (Ubuntu 22.04/24.04, x86 and ARM64). macOS has limited support (Intel-only, requires paid runners with Docker nested virtualization).
+**Target Environment**: Linux (Ubuntu 22.04/24.04/26.04, x86 and ARM64).
 
 ## Commands
 
@@ -87,7 +87,6 @@ K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 
 k3s runs as native processes (not in Docker) on the host:
 - **Version format**: `v1.33.1+k3s1` — the `+` must be URL-encoded as `%2B` in GitHub API/download URLs
-- **Linux-only**: No macOS binary exists
 - **Single control plane**: Multi-CP requires embedded etcd, not yet supported
 - **Built-in Traefik/ServiceLB disabled**: To avoid conflicts with action's ingress support
 - **Storage class**: Uses `local-path` (not `standard` like KinD/Minikube)

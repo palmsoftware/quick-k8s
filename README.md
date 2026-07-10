@@ -20,13 +20,6 @@ Supports **KinD** (default) and **Minikube** as cluster providers.
 | `ubuntu-24.04` | x86_64 | ✅ Fully supported |
 | `ubuntu-24.04-arm` | ARM64 | ✅ Fully supported |
 | `ubuntu-26.04` | x86_64 | ✅ Fully supported |
-| `macos-15-intel` | x86_64 | ✅ Supported (see notes) |
-| `macos-14`, `macos-15` | ARM64 (M1) | ❌ Not supported |
-
-**macOS Notes:**
-- Docker is set up automatically via Colima using `douglascamata/setup-docker-macos-action`
-- OLM and Istio installation are not supported on macOS due to Colima networking limitations
-- Apple Silicon runners (`macos-14`, `macos-15`) lack nested virtualization required for Docker
 
 ## Usage:
 
@@ -199,7 +192,6 @@ steps:
 - cert-manager adds 3 pods to the cluster (controller, webhook, cainjector)
 - Requires approximately 200-300MB additional memory
 - Webhook startup may take 30-60 seconds
-- Not supported on macOS due to Colima networking limitations
 
 ### Installing ingress-nginx
 
@@ -449,7 +441,6 @@ Both cluster providers are fully supported and tested. Choose the one that best 
   - Multiple driver options (docker, podman, none)
   - Better local development experience
   - Built-in addons system
-  - GPU support (with krunkit driver on macOS)
 - ⚠️ **Considerations**: 
   - Slightly slower startup, more complex for multi-node setups
   - When disabling default CNI (`disableDefaultCni: true`), uses docker runtime instead of containerd (Minikube requirement)
@@ -592,4 +583,3 @@ This action is essentially a wrapper around best practices for deploying Kuberne
 ## References
 
 - [install-oc-tools.sh](./scripts/install-oc-tools.sh) was a script copied from [install-oc-tools](https://github.com/cptmorgan-rh/install-oc-tools) and slightly modified for `aarch64`.
-- [douglascamata/setup-docker-macos-action@v1-alpha](https://github.com/marketplace/actions/setup-docker-on-macos) is brought to help install Docker on MacOS.

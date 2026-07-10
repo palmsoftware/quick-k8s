@@ -384,23 +384,17 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/check-github-status.sh
 
-    - name: Write temporary docker file (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Write temporary docker file
       shell: bash
       run: |
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
-    - name: Optimize disk space and relocate Docker storage (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Optimize disk space and relocate Docker storage
       uses: palmsoftware/quick-cleanup@v0
       with:
         cleanup-mode: auto
         minimum-free-space: 8
-
-    - name: Setup Docker on Mac
-      if: ${{ runner.os == 'macOS' }}
-      uses: douglascamata/setup-docker-macos-action@v1.1.0
 
     # Cache KinD binary to avoid download failures during outages
     - name: Cache KinD binary
@@ -472,13 +466,11 @@ runs:
       shell: bash
       run: cat ${{ github.action_path }}/kind-config.yaml
 
-    - name: Configure Docker for Kubernetes (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Configure Docker for Kubernetes
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 
     - name: Final pre-cluster disk optimization
-      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/pre-cluster-optimization.sh
 
@@ -511,19 +503,10 @@ runs:
           "${{ inputs.apiServerAddress }}" \
           "${{ inputs.clusterName }}"
 
-    # - name: Bootstrap the runner with kubectl and oc clients
     - name: Bootstrap the runner with kubectl and oc clients
-      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
         sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest ${{ inputs.ocpReleaseLevel }}
-
-    - name: Install oc client on MacOS
-      if: ${{ runner.os == 'macOS' }}
-      shell: bash
-      run: |
-        brew install openshift-cli
-        brew install kubernetes-cli
 
     - name: Apply labels to worker nodes
       if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
@@ -604,18 +587,10 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
 
-    - name: Clean up package manager cache (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Clean up package manager cache
       shell: bash
       run: |
         sudo apt-get clean
-
-    - name: Clean up Homebrew cache (macOS)
-      if: ${{ runner.os == 'macOS' }}
-      shell: bash
-      run: |
-        brew cleanup -s
-        rm -rf ~/Library/Caches/Homebrew
 
     - name: Print cluster deployment summary
       shell: bash
