@@ -29,7 +29,6 @@ jobs:
     needs: lint
     if: ${{ needs.lint.result == 'success' }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental || false }}
     env:
       SHELL: /bin/bash
     strategy:
@@ -37,14 +36,6 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04]
         provider: [kind, minikube]
-        experimental: [false]
-        include:
-          - os: macos-15-intel
-            provider: kind
-            experimental: true
-          - os: macos-15-intel
-            provider: minikube
-            experimental: true
     steps:
       - name: Checkout the code
         uses: actions/checkout@v7
@@ -54,11 +45,10 @@ jobs:
         with:
           clusterProvider: ${{ matrix.provider }}
           waitForPodsReady: true
-          # Skip OLM, Istio, and cert-manager on macOS (Colima limitations)
-          installOLM: ${{ !startsWith(matrix.os, 'macos') }}
-          installIstio: ${{ !startsWith(matrix.os, 'macos') }}
+          installOLM: true
+          installIstio: true
           istioProfile: minimal
-          installCertManager: ${{ !startsWith(matrix.os, 'macos') }}
+          installCertManager: true
           removeDefaultStorageClass: true
           removeControlPlaneTaint: true
           apiServerPort: 6443

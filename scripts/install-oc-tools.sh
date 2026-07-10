@@ -14,9 +14,6 @@ OS=$(uname -s)
 if [ "${OS}" == 'Linux' ]; then
   OS=linux
   OCTOOLSRC="$(getent passwd "$SUDO_USER" | cut -d: -f6)"/.octoolsrc
-elif [ "${OS}" == 'Darwin' ]; then
-  OS=mac
-  OCTOOLSRC="${HOME}"/.octoolsrc
 else
   echo "OS Unsupported: ${OS}"
   exit 99
@@ -263,11 +260,7 @@ version() {
       exit 0
     fi
     CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-client-${OS}.tar.gz"
-    if [ "${ARCH}" == 'arm64' ] && [ "${OS}" == 'Darwin' ]; then
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}-${ARCH}.tar.gz"
-    else
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
-    fi
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   fi
 
@@ -294,13 +287,8 @@ release() {
       exit 0
     fi
 
-    if [ "${ARCH}" == 'arm64' ] && [ "${OS}" == 'mac' ]; then
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-client-${OS}-${ARCH}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-install-${OS}-${ARCH}.tar.gz"
-    else
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-client-${OS}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-install-${OS}.tar.gz"
-    fi
+    CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-client-${OS}.tar.gz"
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   else
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" "$1"
@@ -311,13 +299,8 @@ release() {
       exit 0
     fi
 
-    if [ "${ARCH}" == 'arm64' ] && [ "${OS}" == 'mac' ]; then
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-client-${OS}-${ARCH}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-install-${OS}-${ARCH}.tar.gz"
-    else
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-client-${OS}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-install-${OS}.tar.gz"
-    fi
+    CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-client-${OS}.tar.gz"
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   fi
 
@@ -335,13 +318,8 @@ nightly() {
         exit 0
       fi
 
-    if [ "${ARCH}" == 'arm64' ] && [ "${OS}" == 'mac' ]; then
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-client-${OS}-${ARCH}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}-${ARCH}.tar.gz"
-    else
-      CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-client-${OS}.tar.gz"
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
-    fi
+    CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-client-${OS}.tar.gz"
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   else
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" "$1"
@@ -352,11 +330,7 @@ nightly() {
       exit 0
     fi
     CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/openshift-client-${OS}.tar.gz"
-    if [ "${ARCH}" == 'arm64' ] && [ "${OS}" == 'mac' ]; then
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}-${ARCH}.tar.gz"
-    else
-      INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
-    fi
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   fi
 
@@ -551,10 +525,7 @@ cli_path(){
 
   if [[ "$1" == "butane" ]]
   then
-    if [ "$OS" == "mac" ] && [ "$ARCH" == "x86_64" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/butane/latest/butane-darwin-${ARCH}"
-    elif [ "$OS" != "mac" ] && [ "$ARCH" == "x86_64" ]
+    if [ "$ARCH" == "x86_64" ]
     then
       MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/butane/latest/butane-amd64"
     else
@@ -574,10 +545,7 @@ cli_path(){
 
   if [[ "$1" == "helm" ]]
   then
-    if [ "$OS" == "mac" ] && [ "$ARCH" == "x86_64" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/helm/latest/helm-darwin-${ARCH}"
-    elif [ "$OS" != "mac" ] && [ "$ARCH" == "x86_64" ]
+    if [ "$ARCH" == "x86_64" ]
     then
       MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/helm/latest/helm-linux-amd64"
     else
@@ -587,10 +555,7 @@ cli_path(){
 
   if [[ "$1" == "kam" ]]
   then
-    if [ "$OS" == "mac" ] && [ "$ARCH" == "x86_64" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/kam/latest/kam-darwin-${ARCH}"
-    elif [ "$OS" != "mac" ] && [ "$ARCH" == "x86_64" ]
+    if [ "$ARCH" == "x86_64" ]
     then
       MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/kam/latest/kam-linux-amd64"
     else
@@ -600,13 +565,7 @@ cli_path(){
 
   if [[ "$1" == "odo" ]]
   then
-    if [ "$OS" == "mac" ] && [ "$ARCH" == "x86_64" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/odo/latest/odo-darwin-${ARCH}"
-    elif [ "$OS" == "mac" ] && [ "$ARCH" == "arm64" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/odo/latest/odo-darwin-${ARCH}"
-    elif [ "$ARCH" == "x86_64" ]
+    if [ "$ARCH" == "x86_64" ]
     then
       MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/odo/latest/odo-linux-amd64"
     else
@@ -616,10 +575,7 @@ cli_path(){
 
   if [[ "$1" == "serverless" ]]
   then
-    if [ "$OS" == "mac" ]
-    then
-      MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/serverless/latest/kn-macos-amd64.tar.gz"
-    elif [ "$ARCH" == "x86_64" ]
+    if [ "$ARCH" == "x86_64" ]
     then
       MIRROR_CLI_PATH="${MIRROR_DOMAIN}/pub/openshift-v4/clients/serverless/latest/kn-linux-amd64.tar.gz"
     else

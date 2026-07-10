@@ -18,21 +18,10 @@ done
 source "$(dirname "$0")/map-platform.sh"
 ARCH=$(map_arch "$(uname -m)")
 OS=$(map_os "$(uname -s)")
-# Istio uses 'osx' instead of 'darwin'
-if [ "$OS" = "darwin" ]; then
-  OS="osx"
-fi
 
 echo "Detected OS: $OS, Architecture: $ARCH"
 
-# Download istioctl
-# Istio naming convention: linux-{arch}, osx (universal), osx-arm64
-if [ "$OS" = "osx" ] && [ "$ARCH" = "amd64" ]; then
-  # macOS Intel uses universal 'osx' build (not osx-amd64)
-  ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-osx.tar.gz"
-else
-  ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
-fi
+ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istio-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
 echo "Downloading Istio from: $ISTIO_URL"
 
 if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors "$ISTIO_URL" -o istio.tar.gz; then
