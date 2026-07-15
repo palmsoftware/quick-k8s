@@ -883,6 +883,7 @@ runs:
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
+        K8S_VERSION=$(kubectl version -o json 2>/dev/null | jq -r '.serverVersion.gitVersion' 2>/dev/null) || K8S_VERSION="unknown"
         echo ""
         echo "======================================"
         echo "  Quick-K8s Deployment Summary"
@@ -890,6 +891,7 @@ runs:
         echo ""
         echo "Provider:     ${{ inputs.clusterProvider }}"
         echo "Cluster:      ${{ inputs.clusterName }}"
+        echo "K8s Version:  ${K8S_VERSION}"
         echo "CP Nodes:     ${{ inputs.numControlPlaneNodes }}"
         echo "Worker Nodes: ${{ inputs.numWorkerNodes }}"
         echo "IP Family:    ${{ inputs.ipFamily }}"
