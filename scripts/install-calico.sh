@@ -3,6 +3,9 @@ set -euo pipefail
 
 CALICO_VERSION="${1:?Usage: $0 <calico-version>}"
 
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing Calico CNI version $CALICO_VERSION..."
 
 if ! command -v kubectl >/dev/null 2>&1; then
@@ -37,7 +40,7 @@ while [ $attempt -le $max_attempts ]; do
   fi
 
   if [ $attempt -eq $max_attempts ]; then
-    echo "Calico installation failed after $max_attempts attempts"
+    diagnose_failure "Calico" "$output"
     exit $exit_code
   fi
 

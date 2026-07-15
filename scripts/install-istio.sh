@@ -5,6 +5,9 @@ ISTIO_VERSION="${1:-1.28.1}"
 ISTIO_PROFILE="${2:-minimal}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing Istio version $ISTIO_VERSION with profile $ISTIO_PROFILE"
 
 # Check for required commands
@@ -26,10 +29,7 @@ ISTIO_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/ist
 echo "Downloading Istio from: $ISTIO_URL"
 
 if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors "$ISTIO_URL" -o istio.tar.gz; then
-  echo "Error: Failed to download Istio from $ISTIO_URL after multiple attempts" >&2
-  echo "This may indicate:" >&2
-  echo "  1. Network connectivity issues" >&2
-  echo "  2. Istio version $ISTIO_VERSION may not be available for $OS-$ARCH" >&2
+  echo "::error::Failed to download Istio from $ISTIO_URL after multiple attempts. Check network connectivity or verify Istio version $ISTIO_VERSION is available for $OS-$ARCH."
   rm -f istio.tar.gz
   exit 1
 fi
@@ -61,16 +61,25 @@ istioctl version --remote=false
 
 # Install Istio using the specified profile
 echo "Installing Istio with profile: $ISTIO_PROFILE"
-istioctl install --set profile="$ISTIO_PROFILE" -y
+install_output=$(istioctl install --set profile="$ISTIO_PROFILE" -y 2>&1) || {
+  echo "$install_output"
+  diagnose_failure "Istio" "$install_output"
+  exit 1
+}
+echo "$install_output"
 
 # Wait for Istio pods to be ready
 echo "Waiting for Istio control plane pods to be ready..."
-kubectl wait --for=condition=ready pod \
+wait_output=$(kubectl wait --for=condition=ready pod \
   --all \
   --namespace=istio-system \
-  --timeout="${TIMEOUT}s" || {
-    echo "Warning: Some Istio pods may not be ready yet. Continuing..."
-  }
+  --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "istio-system" "Istio"
+  diagnose_failure "Istio" "$wait_output"
+  exit 1
+}
+echo "$wait_output"
 
 # Show Istio status
 echo "Istio installation complete!"
@@ -81,4 +90,3 @@ echo "Cleaning up installation files..."
 rm -rf istio.tar.gz "$ISTIO_DIR"
 
 echo "Istio $ISTIO_VERSION with profile $ISTIO_PROFILE installed successfully!"
-
