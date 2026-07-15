@@ -798,7 +798,7 @@ runs:
       run: ${{ github.action_path }}/scripts/pre-flight-check.sh
 
     - name: Optimize disk space and relocate Docker storage
-      if: ${{ inputs.dryRun != 'true' }}
+      if: ${{ inputs.dryRun != 'true' && inputs.skipDiskCleanup != 'true' }}
       uses: palmsoftware/quick-cleanup@v0
       with:
         cleanup-mode: auto
@@ -896,7 +896,7 @@ runs:
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 
     - name: Final pre-cluster disk optimization
-      if: ${{ inputs.dryRun != 'true' }}
+      if: ${{ inputs.dryRun != 'true' && inputs.skipDiskCleanup != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/pre-cluster-optimization.sh
 
