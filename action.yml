@@ -144,6 +144,10 @@ inputs:
     description: 'Path to custom KinD configuration file. When provided, uses this instead of auto-generated config'
     required: false
     default: ''
+  extraPortMappings:
+    description: 'Comma-separated list of host:container port mappings for KinD nodes (e.g., "80:30080,443:30443"). Only applies to KinD provider'
+    required: false
+    default: ''
   installLocalRegistry:
     description: 'Install a local Docker registry accessible from the cluster'
     required: false
@@ -462,6 +466,8 @@ runs:
     - name: Populate temporary config file for KinD (auto-generated)
       if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath == '' }}
       shell: bash
+      env:
+        EXTRA_PORT_MAPPINGS: ${{ inputs.extraPortMappings }}
       run: ${{ github.action_path }}/scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }} ${{ github.action_path }}/kind-config.yaml ${{ inputs.clusterName }}
 
     - name: Use custom KinD config file
