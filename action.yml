@@ -745,7 +745,7 @@ runs:
           "${{ inputs.apiServerAddress }}" \
           "${{ inputs.clusterName }}"
 
-    - name: Bootstrap the runner with kubectl and oc clients
+    - name: Bootstrap the runner with kubectl client
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
@@ -862,7 +862,7 @@ runs:
       if: ${{ inputs.removeDefaultStorageClass == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
-        oc delete storageclass standard --ignore-not-found
+        kubectl delete storageclass standard --ignore-not-found
 
     - name: Remove the control plane taint
       if: ${{ inputs.removeControlPlaneTaint == 'true' && inputs.dryRun != 'true' }}
