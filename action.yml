@@ -180,6 +180,14 @@ inputs:
     description: 'Timeout in seconds for component installation (kubectl wait commands)'
     required: false
     default: '300'
+  clusterCPUs:
+    description: 'Number of CPUs to allocate to the cluster (e.g., 2). Only applies to Minikube provider'
+    required: false
+    default: '2'
+  clusterMemory:
+    description: 'Memory in MB to allocate to the cluster (e.g., 4096). Empty means use provider default. Only applies to Minikube provider'
+    required: false
+    default: ''
   dryRun:
     description: 'Preview what the action would do without executing. Prints configuration summary and exits'
     required: false
@@ -562,6 +570,39 @@ runs:
           echo "Must be a positive integer (seconds)"
           exit 1
         fi
+
+    - name: Validate clusterCPUs input
+      shell: bash
+      run: |
+        CPUS="${{ inputs.clusterCPUs }}"
+        if ! [[ "$CPUS" =~ ^[0-9]+$ ]] || [ "$CPUS" -lt 1 ]; then
+          echo "Invalid clusterCPUs: $CPUS"
+          echo "Must be a positive integer"
+          exit 1
+        fi
+
+    - name: Validate clusterMemory input
+      if: ${{ inputs.clusterMemory != '' }}
+      shell: bash
+      run: |
+        MEMORY="${{ inputs.clusterMemory }}"
+        if ! [[ "$MEMORY" =~ ^[0-9]+$ ]] || [ "$MEMORY" -lt 1 ]; then
+          echo "Invalid clusterMemory: $MEMORY"
+          echo "Must be a positive integer (MB)"
+          exit 1
+        fi
+
+    - name: Notice about resource limits for KinD provider
+      if: ${{ inputs.clusterProvider == 'kind' && (inputs.clusterCPUs != '2' || inputs.clusterMemory != '') }}
+      shell: bash
+      run: |
+        echo "::notice::KinD runs as Docker containers. CPU and memory limits are controlled by the Docker daemon configuration, not by clusterCPUs/clusterMemory inputs."
+
+    - name: Notice about resource limits for k3s provider
+      if: ${{ inputs.clusterProvider == 'k3s' && (inputs.clusterCPUs != '2' || inputs.clusterMemory != '') }}
+      shell: bash
+      run: |
+        echo "::notice::k3s runs as native processes on the host. CPU and memory limits are controlled at the OS level, not by clusterCPUs/clusterMemory inputs."
 
     - name: Validate kindConfigPath input
       if: ${{ inputs.kindConfigPath != '' && inputs.clusterProvider == 'kind' }}
