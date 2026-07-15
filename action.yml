@@ -911,6 +911,45 @@ runs:
         echo ""
         echo "======================================"
 
+        # Write deployment summary to GitHub Step Summary
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          COMPONENTS=""
+          if [ "${{ inputs.installCalico }}" = "true" ]; then COMPONENTS="${COMPONENTS}Calico CNI ${{ inputs.calicoVersion }}, "; fi
+          if [ "${{ inputs.installIstio }}" = "true" ]; then COMPONENTS="${COMPONENTS}Istio ${{ inputs.istioVersion }} (${{ inputs.istioProfile }}), "; fi
+          if [ "${{ inputs.installOLM }}" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
+          if [ "${{ inputs.installCertManager }}" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager ${{ inputs.certManagerVersion }}, "; fi
+          if [ "${{ inputs.installIngressNginx }}" = "true" ]; then COMPONENTS="${COMPONENTS}ingress-nginx ${{ inputs.ingressNginxVersion }}, "; fi
+          if [ "${{ inputs.installMetricsServer }}" = "true" ]; then COMPONENTS="${COMPONENTS}metrics-server ${{ inputs.metricsServerVersion }}, "; fi
+          if [ "${{ inputs.installOperatorSdk }}" = "true" ]; then COMPONENTS="${COMPONENTS}operator-sdk ${{ inputs.operatorSdkVersion }}, "; fi
+          if [ "${{ inputs.enableClusterMonitoring }}" = "true" ]; then COMPONENTS="${COMPONENTS}Prometheus/Thanos monitoring, "; fi
+          if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then COMPONENTS="${COMPONENTS}Local registry (localhost:${{ inputs.localRegistryPort }}), "; fi
+          # Remove trailing comma and space
+          COMPONENTS="${COMPONENTS%, }"
+          if [ -z "$COMPONENTS" ]; then COMPONENTS="None"; fi
+
+          {
+            echo "## Cluster Deployment Summary"
+            echo ""
+            echo "| Property | Value |"
+            echo "|----------|-------|"
+            echo "| Provider | ${{ inputs.clusterProvider }} |"
+            echo "| Cluster Name | ${{ inputs.clusterName }} |"
+            echo "| Control Plane Nodes | ${{ inputs.numControlPlaneNodes }} |"
+            echo "| Worker Nodes | ${{ inputs.numWorkerNodes }} |"
+            echo "| IP Family | ${{ inputs.ipFamily }} |"
+            echo "| Components | ${COMPONENTS} |"
+            echo "| Kubeconfig | \`~/.kube/config\` |"
+            echo ""
+            echo "<details>"
+            echo "<summary>Cluster Nodes</summary>"
+            echo ""
+            echo "\`\`\`"
+            kubectl get nodes 2>/dev/null || echo "Unable to retrieve node information"
+            echo "\`\`\`"
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
     - name: Remove temporary files
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
