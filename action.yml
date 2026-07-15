@@ -247,6 +247,60 @@ runs:
           exit 1
         fi
 
+    - name: Validate disableDefaultCni input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.disableDefaultCni }}" != "true" && "${{ inputs.disableDefaultCni }}" != "false" ]]; then
+          echo "Invalid disableDefaultCni value: ${{ inputs.disableDefaultCni }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate installOLM input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installOLM }}" != "true" && "${{ inputs.installOLM }}" != "false" ]]; then
+          echo "Invalid installOLM value: ${{ inputs.installOLM }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate installIstio input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installIstio }}" != "true" && "${{ inputs.installIstio }}" != "false" ]]; then
+          echo "Invalid installIstio value: ${{ inputs.installIstio }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate removeDefaultStorageClass input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.removeDefaultStorageClass }}" != "true" && "${{ inputs.removeDefaultStorageClass }}" != "false" ]]; then
+          echo "Invalid removeDefaultStorageClass value: ${{ inputs.removeDefaultStorageClass }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate removeControlPlaneTaint input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.removeControlPlaneTaint }}" != "true" && "${{ inputs.removeControlPlaneTaint }}" != "false" ]]; then
+          echo "Invalid removeControlPlaneTaint value: ${{ inputs.removeControlPlaneTaint }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate waitForPodsReady input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.waitForPodsReady }}" != "true" && "${{ inputs.waitForPodsReady }}" != "false" ]]; then
+          echo "Invalid waitForPodsReady value: ${{ inputs.waitForPodsReady }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
     - name: Validate installCertManager input
       shell: bash
       run: |
