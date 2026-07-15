@@ -23,6 +23,8 @@ done
 
 # shellcheck source=map-platform.sh
 source "$(dirname "$0")/map-platform.sh"
+# shellcheck source=verify-checksum.sh
+source "$(dirname "$0")/verify-checksum.sh"
 ARCH=$(map_arch "$(uname -m)")
 OS=$(map_os "$(uname -s)")
 
@@ -37,6 +39,15 @@ if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors "$ISTIO_URL" -o isti
   exit 1
 fi
 echo "Istio download succeeded"
+
+# Verify SHA256 checksum
+ISTIO_TARBALL="istio-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
+CHECKSUM_URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/${ISTIO_TARBALL}.sha256"
+if ! download_and_verify_checksum istio.tar.gz "$CHECKSUM_URL"; then
+  echo "::error::Istio tarball checksum verification failed - the download may be corrupted or tampered with"
+  rm -f istio.tar.gz
+  exit 1
+fi
 
 # Extract istioctl
 echo "Extracting istioctl..."

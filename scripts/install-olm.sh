@@ -26,6 +26,8 @@ if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors \
   exit 1
 fi
 
+echo "::warning::Checksum verification skipped for OLM install script - no checksum published for install.sh"
+
 chmod +x install.sh
 install_output=$(./install.sh "$OLM_VERSION" 2>&1) || {
   echo "$install_output"
