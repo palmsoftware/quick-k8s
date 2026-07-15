@@ -111,7 +111,7 @@ inputs:
   metricsServerVersion:
     description: 'The version of metrics-server to install'
     required: false
-    default: 'v0.8.1'
+    default: 'v0.9.0'
   workerNodeLabels:
     description: 'Comma-separated list of key=value labels to apply to worker nodes (e.g., "node-role.kubernetes.io/worker=worker,env=test")'
     required: false
