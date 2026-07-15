@@ -29,38 +29,38 @@ K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 echo "Extracted Kubernetes version: $K8S_VERSION"
 
 # Build minikube start command with appropriate flags
-MINIKUBE_CMD="minikube start"
-MINIKUBE_CMD="$MINIKUBE_CMD --driver=$DRIVER"
+MINIKUBE_CMD=(minikube start)
+MINIKUBE_CMD+=("--driver=$DRIVER")
 
 # Configure CNI and container runtime
 # Note: containerd requires CNI in Minikube, so use docker runtime when CNI is disabled
 if [ "$DISABLE_CNI" = "true" ]; then
   echo "⚠️  Minikube: Using docker runtime (containerd requires CNI)"
-  MINIKUBE_CMD="$MINIKUBE_CMD --container-runtime=docker"
-  MINIKUBE_CMD="$MINIKUBE_CMD --cni=false"
+  MINIKUBE_CMD+=(--container-runtime=docker)
+  MINIKUBE_CMD+=(--cni=false)
 else
-  MINIKUBE_CMD="$MINIKUBE_CMD --container-runtime=containerd"
+  MINIKUBE_CMD+=(--container-runtime=containerd)
 fi
 
-MINIKUBE_CMD="$MINIKUBE_CMD --kubernetes-version=$K8S_VERSION"
+MINIKUBE_CMD+=("--kubernetes-version=$K8S_VERSION")
 
 # Configure network settings
-MINIKUBE_CMD="$MINIKUBE_CMD --apiserver-port=$API_PORT"
+MINIKUBE_CMD+=("--apiserver-port=$API_PORT")
 if [ "$API_SERVER_ADDRESS" != "0.0.0.0" ]; then
-  MINIKUBE_CMD="$MINIKUBE_CMD --apiserver-ips=$API_SERVER_ADDRESS"
+  MINIKUBE_CMD+=("--apiserver-ips=$API_SERVER_ADDRESS")
 fi
 
 if [ "$CLUSTER_NAME" != "minikube" ]; then
-  MINIKUBE_CMD="$MINIKUBE_CMD --profile=$CLUSTER_NAME"
+  MINIKUBE_CMD+=("--profile=$CLUSTER_NAME")
 fi
 
 # Configure nodes
 if [ "$NUM_WORKERS" -gt 0 ]; then
   TOTAL_NODES=$((NUM_CONTROL_PLANE + NUM_WORKERS))
-  MINIKUBE_CMD="$MINIKUBE_CMD --nodes=$TOTAL_NODES"
+  MINIKUBE_CMD+=("--nodes=$TOTAL_NODES")
 fi
 
-echo "Starting Minikube with command: $MINIKUBE_CMD"
-eval "$MINIKUBE_CMD"
+echo "Starting Minikube with command: ${MINIKUBE_CMD[*]}"
+"${MINIKUBE_CMD[@]}"
 
 echo "✅ Minikube cluster started successfully"
