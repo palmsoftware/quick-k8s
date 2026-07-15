@@ -66,6 +66,16 @@ while true; do
     elapsed=$((elapsed + interval))
     if [ $elapsed -ge $timeout ]; then
       echo "Timeout reached: Not all pods are running or completed"
+      echo ""
+      echo "=== Pod State Dump (all namespaces) ==="
+      kubectl get pods -A
+      echo ""
+      echo "=== Describing non-Running pods ==="
+      kubectl get pods -A --no-headers | awk '$4 != "Running" && $4 != "Completed" && $4 != "Succeeded" {print $1, $2}' | while read -r ns pod; do
+        echo "--- Describing ${ns}/${pod} ---"
+        kubectl describe pod "$pod" -n "$ns"
+        echo ""
+      done
       exit 1
     fi
   fi
