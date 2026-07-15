@@ -13,6 +13,9 @@ if [ -z "$IMAGE" ]; then
   exit 1
 fi
 
+echo "::group::Pre-pulling KinD node image"
+trap 'echo "::endgroup::"' EXIT
+
 max_attempts=3
 delay=30
 

@@ -9,6 +9,8 @@ source "$(dirname "$0")/diagnose-failure.sh"
 
 echo "Installing kube-prometheus version $KUBE_PROMETHEUS_VERSION"
 
+echo "::group::Installing kube-prometheus $KUBE_PROMETHEUS_VERSION"
+
 # Verify required tools are available
 for cmd in curl kubectl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -22,7 +24,7 @@ TARBALL_URL="https://github.com/prometheus-operator/kube-prometheus/archive/refs
 KUBE_PROMETHEUS_DIR="/tmp/kube-prometheus-${VERSION_NO_V}"
 
 cleanup() { rm -rf /tmp/kube-prometheus.tar.gz "${KUBE_PROMETHEUS_DIR}"; }
-trap cleanup EXIT
+trap 'cleanup; echo "::endgroup::"' EXIT
 
 echo "Downloading kube-prometheus from: $TARBALL_URL"
 

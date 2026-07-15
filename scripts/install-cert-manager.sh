@@ -7,6 +7,9 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing cert-manager $CERT_MANAGER_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing cert-manager version $CERT_MANAGER_VERSION"
 
 # Verify required tools are available

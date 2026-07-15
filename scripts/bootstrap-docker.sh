@@ -3,6 +3,9 @@ set -euo pipefail
 # Configure Docker for Kubernetes (IPv6 support and file system limits)
 # Note: Docker storage relocation is handled by quick-cleanup action
 
+echo "::group::Configuring Docker for Kubernetes"
+trap 'echo "::endgroup::"' EXIT
+
 for cmd in curl tar jq; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Error: $cmd is not installed." >&2

@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+echo "::group::Pre-cluster optimization"
+trap 'echo "::endgroup::"' EXIT
+
 echo "=============================================="
 echo "⚡ FINAL PRE-CLUSTER OPTIMIZATION"
 echo "=============================================="

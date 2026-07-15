@@ -7,6 +7,9 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing OLM $OLM_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do

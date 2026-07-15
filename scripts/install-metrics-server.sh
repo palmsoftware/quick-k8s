@@ -7,6 +7,9 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing metrics-server $METRICS_SERVER_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing metrics-server version $METRICS_SERVER_VERSION"
 
 # Verify required tools are available
