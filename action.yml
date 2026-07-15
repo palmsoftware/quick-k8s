@@ -120,6 +120,14 @@ inputs:
     description: 'The version of metrics-server to install'
     required: false
     default: 'v0.9.0'
+  installMetalLB:
+    description: 'Install MetalLB for LoadBalancer service support on local clusters'
+    required: false
+    default: 'false'
+  metalLBVersion:
+    description: 'The version of MetalLB to install'
+    required: false
+    default: 'v0.16.0'
   workerNodeLabels:
     description: 'Comma-separated list of key=value labels to apply to worker nodes (e.g., "node-role.kubernetes.io/worker=worker,env=test")'
     required: false
@@ -449,6 +457,22 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
       run: ${{ github.action_path }}/scripts/validate-github-version.sh "metrics-server" "kubernetes-sigs/metrics-server" "$METRICS_SERVER_VERSION"
+
+    - name: Validate installMetalLB input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installMetalLB }}" != "true" && "${{ inputs.installMetalLB }}" != "false" ]]; then
+          echo "Invalid installMetalLB value: ${{ inputs.installMetalLB }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate MetalLB version input
+      if: ${{ inputs.installMetalLB == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "MetalLB" "metallb/metallb" "${{ inputs.metalLBVersion }}"
 
     - name: Validate installOperatorSdk input
       shell: bash
@@ -995,6 +1019,13 @@ runs:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
       run: ${{ github.action_path }}/scripts/install-metrics-server.sh "$METRICS_SERVER_VERSION"
+
+    - name: Install MetalLB
+      if: ${{ inputs.installMetalLB == 'true' && inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+      run: ${{ github.action_path }}/scripts/install-metallb.sh ${{ inputs.metalLBVersion }} ${{ inputs.clusterProvider }}
 
     - name: Install operator-sdk
       if: ${{ inputs.installOperatorSdk == 'true' && inputs.dryRun != 'true' }}
