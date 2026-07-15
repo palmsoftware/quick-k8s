@@ -5,6 +5,9 @@ INGRESS_NGINX_VERSION="${1:-v1.14.3}"
 CLUSTER_PROVIDER="${2:-kind}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing ingress-nginx version $INGRESS_NGINX_VERSION for $CLUSTER_PROVIDER"
 
 # Verify required tools are available
@@ -26,18 +29,24 @@ fi
 
 echo "Downloading ingress-nginx manifest from: $MANIFEST_URL"
 
-if ! kubectl apply --timeout=5m -f "$MANIFEST_URL"; then
-  echo "Error: Failed to apply ingress-nginx manifest" >&2
+apply_output=$(kubectl apply --timeout=5m -f "$MANIFEST_URL" 2>&1) || {
+  echo "$apply_output"
+  diagnose_failure "ingress-nginx" "$apply_output"
   exit 1
-fi
+}
+echo "$apply_output"
 
 echo "Waiting for ingress-nginx controller to be ready..."
-kubectl wait --namespace ingress-nginx \
+wait_output=$(kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout="${TIMEOUT}s" || {
-  echo "Warning: ingress-nginx controller may not be ready yet. Continuing..."
+  --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "ingress-nginx" "ingress-nginx"
+  diagnose_failure "ingress-nginx" "$wait_output"
+  exit 1
 }
+echo "$wait_output"
 
 kubectl get pods -n ingress-nginx
 echo "ingress-nginx $INGRESS_NGINX_VERSION installed successfully!"

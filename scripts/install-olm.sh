@@ -3,6 +3,10 @@ set -euo pipefail
 
 OLM_VERSION="v0.45.0"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do
@@ -15,18 +19,33 @@ done
 if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors \
   "https://github.com/operator-framework/operator-lifecycle-manager/releases/download/$OLM_VERSION/install.sh" \
   -o install.sh; then
-  echo "Error: Failed to download OLM install script for version $OLM_VERSION" >&2
+  echo "::error::Failed to download OLM install script for version $OLM_VERSION. Check network connectivity or verify the OLM version exists."
   exit 1
 fi
 
 chmod +x install.sh
-./install.sh "$OLM_VERSION"
-rm install.sh
+install_output=$(./install.sh "$OLM_VERSION" 2>&1) || {
+  echo "$install_output"
+  diagnose_failure "OLM" "$install_output"
+  rm -f install.sh
+  exit 1
+}
+echo "$install_output"
+rm -f install.sh
 
 echo "Waiting for OLM pods to be ready..."
-kubectl wait --for=condition=ready pod --all --namespace=olm --timeout="${TIMEOUT}s" || {
-  echo "Warning: Some OLM pods may not be ready yet. Continuing..."
+wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=olm --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "olm" "OLM"
+  diagnose_failure "OLM" "$wait_output"
+  exit 1
 }
-kubectl wait --for=condition=ready pod --all --namespace=operators --timeout="${TIMEOUT}s" || {
-  echo "Warning: Some operator pods may not be ready yet. Continuing..."
+echo "$wait_output"
+
+wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=operators --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "operators" "OLM operators"
+  diagnose_failure "OLM" "$wait_output"
+  exit 1
 }
+echo "$wait_output"

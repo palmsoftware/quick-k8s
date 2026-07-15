@@ -4,6 +4,9 @@ set -euo pipefail
 METRICS_SERVER_VERSION="${1:-v0.8.1}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing metrics-server version $METRICS_SERVER_VERSION"
 
 # Verify required tools are available
@@ -19,20 +22,26 @@ echo "Downloading metrics-server manifest from: $MANIFEST_URL"
 
 # Download and patch for local clusters (add --kubelet-insecure-tls)
 # This is required for KinD/Minikube where kubelet uses self-signed certs
-if ! curl -sL "$MANIFEST_URL" | \
+apply_output=$(curl -sL "$MANIFEST_URL" | \
   sed '/args:/a\        - --kubelet-insecure-tls' | \
-  kubectl apply --timeout=5m -f -; then
-  echo "Error: Failed to apply metrics-server manifest" >&2
+  kubectl apply --timeout=5m -f - 2>&1) || {
+  echo "$apply_output"
+  diagnose_failure "metrics-server" "$apply_output"
   exit 1
-fi
+}
+echo "$apply_output"
 
 echo "Waiting for metrics-server to be ready..."
-kubectl wait --namespace kube-system \
+wait_output=$(kubectl wait --namespace kube-system \
   --for=condition=ready pod \
   --selector=k8s-app=metrics-server \
-  --timeout="${TIMEOUT}s" || {
-  echo "Warning: metrics-server may not be ready yet. Continuing..."
+  --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "kube-system" "metrics-server"
+  diagnose_failure "metrics-server" "$wait_output"
+  exit 1
 }
+echo "$wait_output"
 
 kubectl get pods -n kube-system -l k8s-app=metrics-server
 echo "metrics-server $METRICS_SERVER_VERSION installed successfully!"

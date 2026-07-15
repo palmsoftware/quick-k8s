@@ -4,6 +4,9 @@ set -euo pipefail
 KUBE_PROMETHEUS_VERSION="${1:-v0.14.0}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+# shellcheck source=diagnose-failure.sh
+source "$(dirname "$0")/diagnose-failure.sh"
+
 echo "Installing kube-prometheus version $KUBE_PROMETHEUS_VERSION"
 
 # Verify required tools are available
@@ -24,7 +27,7 @@ trap cleanup EXIT
 echo "Downloading kube-prometheus from: $TARBALL_URL"
 
 if ! curl -fSL --retry 3 --retry-delay 5 --retry-all-errors "$TARBALL_URL" -o /tmp/kube-prometheus.tar.gz; then
-  echo "Error: Failed to download kube-prometheus" >&2
+  echo "::error::Failed to download kube-prometheus from $TARBALL_URL. Check network connectivity or verify the version exists."
   exit 1
 fi
 
@@ -41,10 +44,12 @@ grep -rl 'memory:\|cpu:' "${KUBE_PROMETHEUS_DIR}/manifests/" --include="*.yaml" 
   -e 's/cpu: "2"/cpu: 200m/g'
 
 echo "Applying kube-prometheus setup manifests (CRDs, namespace)..."
-if ! kubectl apply --server-side --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/"; then
-  echo "Error: Failed to apply kube-prometheus setup manifests" >&2
+setup_output=$(kubectl apply --server-side --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/" 2>&1) || {
+  echo "$setup_output"
+  diagnose_failure "kube-prometheus" "$setup_output"
   exit 1
-fi
+}
+echo "$setup_output"
 
 echo "Waiting for CRDs to be established..."
 kubectl wait --for condition=Established --all CustomResourceDefinition --timeout=120s
@@ -52,15 +57,21 @@ kubectl wait --for condition=Established --all CustomResourceDefinition --timeou
 # Apply twice — first pass may fail on CRD-to-CR ordering races
 echo "Applying kube-prometheus manifests..."
 kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/" 2>&1 || true
-if ! kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/"; then
-  echo "Error: Failed to apply kube-prometheus manifests" >&2
+apply_output=$(kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/" 2>&1) || {
+  echo "$apply_output"
+  diagnose_failure "kube-prometheus" "$apply_output"
   exit 1
-fi
+}
+echo "$apply_output"
 
 echo "Waiting for monitoring pods to be ready..."
-kubectl wait --for=condition=ready pod --all --namespace=monitoring --timeout="${TIMEOUT}s" || {
-  echo "Warning: Some monitoring pods may not be ready yet. Continuing..."
+wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=monitoring --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "monitoring" "kube-prometheus"
+  diagnose_failure "kube-prometheus" "$wait_output"
+  exit 1
 }
+echo "$wait_output"
 
 kubectl get pods -n monitoring
 echo "kube-prometheus $KUBE_PROMETHEUS_VERSION installed successfully!"
