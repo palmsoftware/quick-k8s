@@ -520,11 +520,43 @@ runs:
       if: ${{ inputs.clusterProvider == 'kind' }}
       shell: bash
       run: |
-        if command -v timeout >/dev/null 2>&1; then
-          timeout 600 kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
-        else
-          kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
-        fi
+        max_attempts=3
+        delay=10
+        attempt=1
+
+        while [ $attempt -le $max_attempts ]; do
+          echo ""
+          echo "🚀 Attempt $attempt/$max_attempts: Creating KinD cluster '${{ inputs.clusterName }}'..."
+
+          set +e
+          if command -v timeout >/dev/null 2>&1; then
+            timeout 600 kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
+          else
+            kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
+          fi
+          exit_code=$?
+          set -e
+
+          if [ $exit_code -eq 0 ]; then
+            echo ""
+            echo "✅ Successfully created KinD cluster"
+            break
+          fi
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo ""
+            echo "❌ Failed to create KinD cluster after $max_attempts attempts (exit code: $exit_code)"
+            exit 1
+          fi
+
+          echo ""
+          echo "⚠️  Cluster creation failed (exit code: $exit_code), cleaning up before retry..."
+          kind delete cluster --name ${{ inputs.clusterName }} 2>/dev/null || true
+          echo "Retrying in ${delay}s..."
+          sleep $delay
+          attempt=$((attempt + 1))
+          delay=$((delay * 2))
+        done
 
     - name: Create a new Kubernetes cluster using Minikube
       if: ${{ inputs.clusterProvider == 'minikube' }}
