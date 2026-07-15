@@ -847,6 +847,11 @@ runs:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-thanos.sh ${{ inputs.thanosVersion }}
 
+    - name: Print monitoring access instructions
+      if: ${{ (inputs.installMetricsServer == 'true' || inputs.enableClusterMonitoring == 'true') && inputs.dryRun != 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/print-monitoring-info.sh "${{ inputs.installMetricsServer }}" "${{ inputs.enableClusterMonitoring }}"
+
     - name: Remove the default storage class
       if: ${{ inputs.removeDefaultStorageClass == 'true' && inputs.dryRun != 'true' }}
       shell: bash
