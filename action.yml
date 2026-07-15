@@ -152,8 +152,12 @@ inputs:
     description: 'The version of Thanos to install'
     required: false
     default: 'v0.42.0'
+  cniPlugin:
+    description: 'CNI plugin to install when default CNI is disabled (calico, cilium, flannel, none). Use none to bring your own CNI'
+    required: false
+    default: 'calico'
   installCalico:
-    description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
+    description: 'Deprecated: use cniPlugin instead. Install Calico CNI when default CNI is disabled'
     required: false
     default: 'true'
   installSampleNetworkPolicies:
@@ -288,7 +292,7 @@ runs:
         fi
 
     - name: Validate Calico version input
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico != 'false' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'calico' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -515,6 +519,23 @@ runs:
           echo "Must be 'true' or 'false'"
           exit 1
         fi
+
+    - name: Validate cniPlugin input
+      shell: bash
+      run: |
+        CNI="${{ inputs.cniPlugin }}"
+        if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "flannel" && "$CNI" != "none" ]]; then
+          echo "Invalid cniPlugin value: $CNI"
+          echo "Must be 'calico', 'cilium', 'flannel', or 'none'"
+          exit 1
+        fi
+
+    - name: Validate Flannel version input
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'flannel' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Flannel" "flannel-io/flannel" "${{ inputs.flannelVersion }}"
 
     - name: Validate installLocalRegistry input
       shell: bash
@@ -934,8 +955,22 @@ runs:
         CALICO_VERSION: ${{ inputs.calicoVersion }}
       run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
 
+    - name: Install Cilium CNI
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'cilium' && inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+      run: ${{ github.action_path }}/scripts/install-cilium.sh
+
+    - name: Install Flannel CNI
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'flannel' && inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+      run: ${{ github.action_path }}/scripts/install-flannel.sh "${{ inputs.flannelVersion }}"
+
     - name: Skip CNI installation (bring your own CNI)
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'false' && inputs.dryRun != 'true' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'none' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         echo "Skipping Calico CNI installation - installCalico is set to false"
