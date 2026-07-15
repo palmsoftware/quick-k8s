@@ -3,6 +3,9 @@ set -euo pipefail
 
 # Script to remove the control plane taint from the control-plane nodes
 
+echo "::group::Removing control-plane taint"
+trap 'echo "::endgroup::"' EXIT
+
 # Command precheck
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "Error: kubectl is not installed." >&2

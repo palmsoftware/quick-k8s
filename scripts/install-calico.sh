@@ -6,6 +6,9 @@ CALICO_VERSION="${1:?Usage: $0 <calico-version>}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing Calico CNI $CALICO_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing Calico CNI version $CALICO_VERSION..."
 
 if ! command -v kubectl >/dev/null 2>&1; then

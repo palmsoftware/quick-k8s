@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "::group::Waiting for pods to be ready"
+trap 'echo "::endgroup::"' EXIT
+
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "Error: kubectl is not installed." >&2
   exit 1

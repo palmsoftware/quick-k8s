@@ -8,6 +8,9 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing Istio $ISTIO_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing Istio version $ISTIO_VERSION with profile $ISTIO_PROFILE"
 
 # Check for required commands

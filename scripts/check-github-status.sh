@@ -32,6 +32,9 @@ check_affected_components() {
   fi
 }
 
+echo "::group::Checking GitHub status"
+trap 'echo "::endgroup::"' EXIT
+
 echo "🔍 Checking GitHub service status..."
 
 # Fetch overall status

@@ -8,6 +8,9 @@ set -euo pipefail
 EXPECTED_WORKERS=${1:?"Usage: $0 <expected-worker-count> <comma-separated-labels>"}
 LABELS_CSV=${2:?"Usage: $0 <expected-worker-count> <comma-separated-labels>"}
 
+echo "::group::Labeling worker nodes"
+trap 'echo "::endgroup::"' EXIT
+
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "Error: kubectl is not installed." >&2
   exit 1

@@ -8,6 +8,9 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 
+echo "::group::Installing ingress-nginx $INGRESS_NGINX_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing ingress-nginx version $INGRESS_NGINX_VERSION for $CLUSTER_PROVIDER"
 
 # Verify required tools are available

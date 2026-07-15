@@ -3,6 +3,9 @@ set -euo pipefail
 
 OPERATOR_SDK_VERSION="${1:?operator-sdk version argument is required}"
 
+echo "::group::Installing operator-sdk $OPERATOR_SDK_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing operator-sdk version $OPERATOR_SDK_VERSION"
 
 if ! command -v curl >/dev/null 2>&1; then

@@ -2,6 +2,9 @@
 
 set -e
 
+echo "::group::Installing OpenShift CLI tools"
+trap 'echo "::endgroup::"' EXIT
+
 for cmd in curl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Error: $cmd is not installed." >&2
