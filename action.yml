@@ -905,7 +905,16 @@ runs:
         if [ "${{ inputs.enableClusterMonitoring }}" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
         if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then echo "  - Local registry @ localhost:${{ inputs.localRegistryPort }}"; fi
         echo ""
-        echo "Kubeconfig: ~/.kube/config"
+        echo "Connection Details:"
+        KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
+        echo "  Kubeconfig:  $KUBECONFIG_PATH"
+        API_SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null) || API_SERVER="unavailable"
+        echo "  API Server:  $API_SERVER"
+        CONTEXT=$(kubectl config current-context 2>/dev/null) || CONTEXT="unavailable"
+        echo "  Context:     $CONTEXT"
+        if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then
+          echo "  Registry:    localhost:${{ inputs.localRegistryPort }}"
+        fi
         echo ""
         kubectl get nodes 2>/dev/null || true
         echo ""
