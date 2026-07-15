@@ -20,6 +20,9 @@ if [ -z "$NODE_IMAGE" ]; then
   exit 1
 fi
 
+echo "::group::Starting Minikube cluster"
+trap 'echo "::endgroup::"' EXIT
+
 # Extract Kubernetes version from the defaultNodeImage
 # Format: 'kindest/node:v1.33.1@sha256:...' -> 'v1.33.1'
 K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')

@@ -15,6 +15,9 @@ if [ -z "$VERSION" ] || [ -z "$OS" ] || [ -z "$ARCH" ]; then
   exit 1
 fi
 
+echo "::group::Installing Minikube $VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 # shellcheck source=map-platform.sh
 source "$(dirname "$0")/map-platform.sh"
 OS=$(map_os "$OS")

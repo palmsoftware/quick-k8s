@@ -4,6 +4,9 @@ set -euo pipefail
 CERT_MANAGER_VERSION="${1:-v1.19.3}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+echo "::group::Installing cert-manager $CERT_MANAGER_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing cert-manager version $CERT_MANAGER_VERSION"
 
 # Verify required tools are available

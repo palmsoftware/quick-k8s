@@ -5,6 +5,9 @@ ISTIO_VERSION="${1:-1.28.1}"
 ISTIO_PROFILE="${2:-minimal}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+echo "::group::Installing Istio $ISTIO_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing Istio version $ISTIO_VERSION with profile $ISTIO_PROFILE"
 
 # Check for required commands

@@ -10,6 +10,9 @@ CLUSTER_PROVIDER="${2:-kind}"
 CLUSTER_NAME="${3:-kind}"
 REGISTRY_NAME="quick-k8s-registry"
 
+echo "::group::Setting up local Docker registry on port ${REGISTRY_PORT}"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Setting up local Docker registry on port ${REGISTRY_PORT}..."
 
 # Check if registry already exists

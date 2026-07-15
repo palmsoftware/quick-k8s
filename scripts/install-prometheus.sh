@@ -4,7 +4,7 @@ set -euo pipefail
 KUBE_PROMETHEUS_VERSION="${1:-v0.14.0}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
-echo "Installing kube-prometheus version $KUBE_PROMETHEUS_VERSION"
+echo "::group::Installing kube-prometheus $KUBE_PROMETHEUS_VERSION"
 
 # Verify required tools are available
 for cmd in curl kubectl tar; do
@@ -19,7 +19,7 @@ TARBALL_URL="https://github.com/prometheus-operator/kube-prometheus/archive/refs
 KUBE_PROMETHEUS_DIR="/tmp/kube-prometheus-${VERSION_NO_V}"
 
 cleanup() { rm -rf /tmp/kube-prometheus.tar.gz "${KUBE_PROMETHEUS_DIR}"; }
-trap cleanup EXIT
+trap 'cleanup; echo "::endgroup::"' EXIT
 
 echo "Downloading kube-prometheus from: $TARBALL_URL"
 

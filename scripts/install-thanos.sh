@@ -4,6 +4,9 @@ set -euo pipefail
 THANOS_VERSION="${1:-v0.37.2}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+echo "::group::Installing Thanos $THANOS_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing Thanos version $THANOS_VERSION"
 
 # Verify required tools are available

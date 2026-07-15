@@ -3,6 +3,10 @@ set -euo pipefail
 
 OLM_VERSION="v0.45.0"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+
+echo "::group::Installing OLM $OLM_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do

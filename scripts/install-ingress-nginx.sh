@@ -5,6 +5,9 @@ INGRESS_NGINX_VERSION="${1:-v1.14.3}"
 CLUSTER_PROVIDER="${2:-kind}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+echo "::group::Installing ingress-nginx $INGRESS_NGINX_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing ingress-nginx version $INGRESS_NGINX_VERSION for $CLUSTER_PROVIDER"
 
 # Verify required tools are available

@@ -4,6 +4,9 @@ set -euo pipefail
 METRICS_SERVER_VERSION="${1:-v0.8.1}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
+echo "::group::Installing metrics-server $METRICS_SERVER_VERSION"
+trap 'echo "::endgroup::"' EXIT
+
 echo "Installing metrics-server version $METRICS_SERVER_VERSION"
 
 # Verify required tools are available
