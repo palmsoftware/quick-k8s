@@ -180,6 +180,16 @@ runs:
       run: |
         echo "::warning::ipFamily '${{ inputs.ipFamily }}' is only fully supported with KinD. ${{ inputs.clusterProvider }} will use default networking (ipv4)."
 
+    - name: Validate apiServerPort input
+      shell: bash
+      run: |
+        PORT="${{ inputs.apiServerPort }}"
+        if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
+          echo "Invalid apiServerPort: $PORT"
+          echo "Must be a number between 1024 and 65535"
+          exit 1
+        fi
+
     - name: Validate API server address input
       shell: bash
       run: |
