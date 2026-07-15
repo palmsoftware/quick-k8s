@@ -497,6 +497,12 @@ runs:
           exit 1
         fi
 
+    - name: Warn about Minikube multi-control-plane limitation
+      if: ${{ inputs.clusterProvider == 'minikube' && inputs.numControlPlaneNodes > 1 }}
+      shell: bash
+      run: |
+        echo "::warning::Minikube does not support true multi-control-plane HA. Setting numControlPlaneNodes > 1 creates additional generic nodes, not actual control planes."
+
     - name: Validate number of worker nodes
       shell: bash
       run: |
