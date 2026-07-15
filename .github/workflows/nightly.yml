@@ -8,6 +8,10 @@ on:
   #   branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 permissions: read-all
 
 jobs:
