@@ -1,0 +1,123 @@
+name: Update KinD Node Image Nightly
+on:
+  schedule:
+    - cron: '0 2 * * *' # Every day at 2am UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  update-kind-node-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Get latest kindest/node image
+        id: get_image
+        run: |
+          # Function to get the latest kindest/node image with retries
+          get_latest_node_image() {
+            local retries=3
+            local delay=5
+
+            for ((i=1; i<=retries; i++)); do
+              echo "Attempt $i to fetch latest kindest/node tag..."
+
+              # Fetch tags from Docker Hub API (most recently updated first)
+              response=$(curl -s --max-time 30 \
+                "https://hub.docker.com/v2/repositories/kindest/node/tags/?page_size=100&ordering=-last_updated")
+
+              if [ $? -eq 0 ] && [ -n "$response" ]; then
+                # Extract the latest stable version tag (vX.Y.Z format only)
+                latest_tag=$(echo "$response" | jq -r '.results[].name' | \
+                  grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+                if [ -n "$latest_tag" ] && [ "$latest_tag" != "null" ]; then
+                  # Get the digest for this tag
+                  digest=$(echo "$response" | jq -r --arg tag "$latest_tag" \
+                    '.results[] | select(.name == $tag) | .digest')
+
+                  if [ -n "$digest" ] && [ "$digest" != "null" ]; then
+                    image="kindest/node:${latest_tag}@${digest}"
+                    echo "Successfully determined latest node image: $image"
+                    echo "image=$image" >> $GITHUB_OUTPUT
+                    echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+                    return 0
+                  else
+                    echo "Could not get digest for tag '$latest_tag'"
+                  fi
+                else
+                  echo "No valid stable tag found"
+                fi
+              else
+                echo "API call failed or returned empty response"
+              fi
+
+              if [ $i -lt $retries ]; then
+                echo "Retrying in $delay seconds..."
+                sleep $delay
+              fi
+            done
+
+            echo "Failed to fetch latest kindest/node image after $retries attempts"
+            exit 1
+          }
+
+          get_latest_node_image
+
+      - name: Update node image in action.yml
+        id: update_image
+        run: |
+          new_image="${{ steps.get_image.outputs.image }}"
+
+          if [ -z "$new_image" ] || [ "$new_image" = "null" ]; then
+            echo "Error: Invalid node image '$new_image' - aborting update"
+            exit 1
+          fi
+
+          echo "Updating default node image to: $new_image"
+
+          # Get current image from action.yml
+          current_image=$(sed -n "/^  defaultNodeImage:$/,/^  [a-zA-Z]\+:/p" action.yml | grep -o "default: '[^']*'" | sed "s/default: '\(.*\)'/\1/")
+
+          if [ -z "$current_image" ]; then
+            echo "Could not determine current node image from action.yml"
+            exit 1
+          fi
+
+          echo "Current image: $current_image"
+
+          if [ "$current_image" = "$new_image" ]; then
+            echo "Node image is already up to date"
+            echo "updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Update the image (using | as sed delimiter since image contains /)
+          sed -i.bak -E "/^  defaultNodeImage:$/,/^  [a-zA-Z]+:/{s|(default: ')[^']+(')|\1${new_image}\2|}" action.yml
+          rm action.yml.bak
+
+          echo "Successfully updated node image from:"
+          echo "  $current_image"
+          echo "to:"
+          echo "  $new_image"
+          echo "updated=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.update_image.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "Update KinD default node image to ${{ steps.get_image.outputs.tag }}"
+          title: "Update KinD default node image to ${{ steps.get_image.outputs.tag }}"
+          body: "Automated PR to update default KinD node image in action.yml to the latest release."
+          branch: "update-kind-node-image-${{ steps.get_image.outputs.tag }}"
+          delete-branch: true
