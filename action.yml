@@ -116,6 +116,14 @@ inputs:
     description: 'Comma-separated list of key=value labels to apply to worker nodes (e.g., "node-role.kubernetes.io/worker=worker,env=test")'
     required: false
     default: ''
+  controlPlaneTaints:
+    description: 'Comma-separated list of taints to apply to control-plane nodes (e.g., "key1=value1:NoSchedule,key2=value2:NoExecute")'
+    required: false
+    default: ''
+  workerNodeTaints:
+    description: 'Comma-separated list of taints to apply to worker nodes (e.g., "key1=value1:NoSchedule,key2=value2:NoExecute")'
+    required: false
+    default: ''
   installOperatorSdk:
     description: 'Install operator-sdk CLI for building and testing Kubernetes operators'
     required: false
@@ -524,6 +532,30 @@ runs:
       if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
       shell: bash
       run: ${{ github.action_path }}/scripts/label-worker-nodes.sh ${{ inputs.numWorkerNodes }} "${{ inputs.workerNodeLabels }}"
+
+    - name: Apply custom taints to control-plane nodes
+      if: ${{ inputs.controlPlaneTaints != '' }}
+      shell: bash
+      run: |
+        IFS=',' read -ra TAINTS <<< "${{ inputs.controlPlaneTaints }}"
+        for node in $(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].metadata.name}'); do
+          for taint in "${TAINTS[@]}"; do
+            echo "Applying taint $taint to control-plane node $node"
+            kubectl taint nodes "$node" "$taint" --overwrite
+          done
+        done
+
+    - name: Apply custom taints to worker nodes
+      if: ${{ inputs.workerNodeTaints != '' && inputs.numWorkerNodes != '0' }}
+      shell: bash
+      run: |
+        IFS=',' read -ra TAINTS <<< "${{ inputs.workerNodeTaints }}"
+        for node in $(kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].metadata.name}'); do
+          for taint in "${TAINTS[@]}"; do
+            echo "Applying taint $taint to worker node $node"
+            kubectl taint nodes "$node" "$taint" --overwrite
+          done
+        done
 
     - name: Install calico CNI if default CNI is disabled and installCalico is true
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
