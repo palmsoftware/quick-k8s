@@ -176,6 +176,10 @@ inputs:
     description: 'Timeout in seconds for component installation (kubectl wait commands)'
     required: false
     default: '300'
+  dryRun:
+    description: 'Preview what the action would do without executing. Prints configuration summary and exits'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -457,6 +461,15 @@ runs:
           exit 1
         fi
 
+    - name: Validate dryRun input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.dryRun }}" != "true" && "${{ inputs.dryRun }}" != "false" ]]; then
+          echo "Invalid dryRun value: ${{ inputs.dryRun }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
     - name: Validate localRegistryPort input
       if: ${{ inputs.installLocalRegistry == 'true' }}
       shell: bash
@@ -505,23 +518,77 @@ runs:
           exit 1
         fi
 
+    - name: Dry-run summary
+      if: ${{ inputs.dryRun == 'true' }}
+      shell: bash
+      run: |
+        echo "=============================================="
+        echo "  quick-k8s Dry Run Summary"
+        echo "=============================================="
+        echo ""
+        echo "Cluster Provider: ${{ inputs.clusterProvider }}"
+        echo "Node Image: ${{ inputs.defaultNodeImage }}"
+        echo "API Server Port: ${{ inputs.apiServerPort }}"
+        echo "API Server Address: ${{ inputs.apiServerAddress }}"
+        echo "IP Family: ${{ inputs.ipFamily }}"
+        echo "Control-Plane Nodes: ${{ inputs.numControlPlaneNodes }}"
+        echo "Worker Nodes: ${{ inputs.numWorkerNodes }}"
+        echo ""
+        echo "Components to install:"
+        echo "  Calico CNI: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}"
+        echo "  OLM: ${{ inputs.installOLM }}"
+        echo "  Istio: ${{ inputs.installIstio }} (profile: ${{ inputs.istioProfile }})"
+        echo "  Cert-Manager: ${{ inputs.installCertManager }}"
+        echo "  Ingress-Nginx: ${{ inputs.installIngressNginx }}"
+        echo "  Metrics Server: ${{ inputs.installMetricsServer }}"
+        echo "  Local Registry: ${{ inputs.installLocalRegistry }} (port: ${{ inputs.localRegistryPort }})"
+        echo "  Cluster Monitoring: ${{ inputs.enableClusterMonitoring }}"
+        echo ""
+        echo "Options:"
+        echo "  Disable Default CNI: ${{ inputs.disableDefaultCni }}"
+        echo "  Remove Default StorageClass: ${{ inputs.removeDefaultStorageClass }}"
+        echo "  Remove Control-Plane Taint: ${{ inputs.removeControlPlaneTaint }}"
+        echo "  Wait for Pods Ready: ${{ inputs.waitForPodsReady }}"
+        echo ""
+        if [ "${{ inputs.clusterProvider }}" = "kind" ]; then
+          echo "KinD Settings:"
+          echo "  KinD Version: ${{ inputs.kindVersion }}"
+          if [ -n "${{ inputs.kindConfigPath }}" ]; then
+            echo "  Custom Config: ${{ inputs.kindConfigPath }}"
+          else
+            echo "  Custom Config: auto-generated"
+          fi
+        elif [ "${{ inputs.clusterProvider }}" = "minikube" ]; then
+          echo "Minikube Settings:"
+          echo "  Minikube Version: ${{ inputs.minikubeVersion }}"
+          echo "  Driver: ${{ inputs.minikubeDriver }}"
+        fi
+        echo ""
+        echo "=============================================="
+        echo "  Dry run complete - no changes were made"
+        echo "=============================================="
+
     - name: Check GitHub service status
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/check-github-status.sh
 
     - name: Write temporary docker file
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
     - name: Pre-flight environment check
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       env:
         API_SERVER_PORT: ${{ inputs.apiServerPort }}
       run: ${{ github.action_path }}/scripts/pre-flight-check.sh
 
     - name: Optimize disk space and relocate Docker storage
+      if: ${{ inputs.dryRun != 'true' }}
       uses: palmsoftware/quick-cleanup@v0
       with:
         cleanup-mode: auto
@@ -529,7 +596,7 @@ runs:
 
     # Cache KinD binary to avoid download failures during outages
     - name: Cache KinD binary
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       id: cache-kind
       uses: actions/cache@v6
       with:
@@ -538,14 +605,14 @@ runs:
 
     # Install KinD binary (unified script for all platforms)
     - name: Install KinD
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
         ${{ github.action_path }}/scripts/install-kind.sh ${{ inputs.kindVersion }} "$OS" ${{ runner.arch }}
 
     - name: Add error handling for KinD installation
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         if ! command -v kind &> /dev/null; then
@@ -555,7 +622,7 @@ runs:
 
     # Cache Minikube binary to avoid download failures during outages
     - name: Cache Minikube binary
-      if: ${{ inputs.clusterProvider == 'minikube' }}
+      if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       id: cache-minikube
       uses: actions/cache@v6
       with:
@@ -564,14 +631,14 @@ runs:
 
     # Install Minikube binary (unified script for all platforms)
     - name: Install Minikube
-      if: ${{ inputs.clusterProvider == 'minikube' }}
+      if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
         ${{ github.action_path }}/scripts/install-minikube.sh ${{ inputs.minikubeVersion }} "$OS" ${{ runner.arch }}
 
     - name: Add error handling for Minikube installation
-      if: ${{ inputs.clusterProvider == 'minikube' }}
+      if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         if ! command -v minikube &> /dev/null; then
@@ -581,39 +648,41 @@ runs:
 
     # Create a new Kubernetes cluster using KinD
     - name: Populate temporary config file for KinD (auto-generated)
-      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath == '' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath == '' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         EXTRA_PORT_MAPPINGS: ${{ inputs.extraPortMappings }}
       run: ${{ github.action_path }}/scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }} ${{ github.action_path }}/kind-config.yaml ${{ inputs.clusterName }}
 
     - name: Use custom KinD config file
-      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath != '' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath != '' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         echo "Using custom KinD configuration from: ${{ inputs.kindConfigPath }}"
         cp "${{ inputs.kindConfigPath }}" "${{ github.action_path }}/kind-config.yaml"
 
     - name: Print the KinD config
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
       run: cat ${{ github.action_path }}/kind-config.yaml
 
     - name: Configure Docker for Kubernetes
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/bootstrap-docker.sh
 
     - name: Final pre-cluster disk optimization
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/pre-cluster-optimization.sh
 
     - name: Pre-pull Kind node image with retry
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/pull-kind-image.sh "${{ inputs.defaultNodeImage }}"
 
     - name: Create a new Kubernetes cluster using KinD
-      if: ${{ inputs.clusterProvider == 'kind' }}
+      if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         max_attempts=3
@@ -655,7 +724,7 @@ runs:
         done
 
     - name: Create a new Kubernetes cluster using Minikube
-      if: ${{ inputs.clusterProvider == 'minikube' }}
+      if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -671,17 +740,18 @@ runs:
           "${{ inputs.clusterName }}"
 
     - name: Bootstrap the runner with kubectl and oc clients
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
         sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest ${{ inputs.ocpReleaseLevel }}
 
     - name: Apply labels to worker nodes
-      if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 }}
+      if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 && inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/label-worker-nodes.sh ${{ inputs.numWorkerNodes }} "${{ inputs.workerNodeLabels }}"
 
     - name: Apply custom taints to control-plane nodes
-      if: ${{ inputs.controlPlaneTaints != '' }}
+      if: ${{ inputs.controlPlaneTaints != '' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         IFS=',' read -ra TAINTS <<< "${{ inputs.controlPlaneTaints }}"
@@ -693,7 +763,7 @@ runs:
         done
 
     - name: Apply custom taints to worker nodes
-      if: ${{ inputs.workerNodeTaints != '' && inputs.numWorkerNodes != '0' }}
+      if: ${{ inputs.workerNodeTaints != '' && inputs.numWorkerNodes != '0' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         IFS=',' read -ra TAINTS <<< "${{ inputs.workerNodeTaints }}"
@@ -705,92 +775,92 @@ runs:
         done
 
     - name: Install calico CNI if default CNI is disabled and installCalico is true
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-calico.sh "${{ inputs.calicoVersion }}"
 
     - name: Skip CNI installation (bring your own CNI)
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'false' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'false' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         echo "⚠️  Skipping Calico CNI installation - installCalico is set to false"
         echo "   You must install your own CNI (e.g., Multus, OVN, Cilium) for the cluster to be functional"
 
     - name: Setup local Docker registry
-      if: ${{ inputs.installLocalRegistry == 'true' }}
+      if: ${{ inputs.installLocalRegistry == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/setup-local-registry.sh ${{ inputs.localRegistryPort }} ${{ inputs.clusterProvider }} ${{ inputs.clusterName }}
 
     - name: Install OLM
-      if: ${{ inputs.installOLM == 'true' }}
+      if: ${{ inputs.installOLM == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-olm.sh
 
     - name: Install Istio
-      if: ${{ inputs.installIstio == 'true' }}
+      if: ${{ inputs.installIstio == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-istio.sh ${{ inputs.istioVersion }} ${{ inputs.istioProfile }}
 
     - name: Install cert-manager
-      if: ${{ inputs.installCertManager == 'true' }}
+      if: ${{ inputs.installCertManager == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-cert-manager.sh ${{ inputs.certManagerVersion }}
 
     - name: Install ingress-nginx
-      if: ${{ inputs.installIngressNginx == 'true' }}
+      if: ${{ inputs.installIngressNginx == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh ${{ inputs.ingressNginxVersion }} ${{ inputs.clusterProvider }}
 
     - name: Install metrics-server
-      if: ${{ inputs.installMetricsServer == 'true' }}
+      if: ${{ inputs.installMetricsServer == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-metrics-server.sh ${{ inputs.metricsServerVersion }}
 
     - name: Install operator-sdk
-      if: ${{ inputs.installOperatorSdk == 'true' }}
+      if: ${{ inputs.installOperatorSdk == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       run: ${{ github.action_path }}/scripts/install-operator-sdk.sh ${{ inputs.operatorSdkVersion }}
 
     - name: Install Prometheus monitoring stack
-      if: ${{ inputs.enableClusterMonitoring == 'true' }}
+      if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-prometheus.sh ${{ inputs.kubePrometheusVersion }}
 
     - name: Install Thanos
-      if: ${{ inputs.enableClusterMonitoring == 'true' }}
+      if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-thanos.sh ${{ inputs.thanosVersion }}
 
     - name: Remove the default storage class
-      if: ${{ inputs.removeDefaultStorageClass == 'true' }}
+      if: ${{ inputs.removeDefaultStorageClass == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         oc delete storageclass standard --ignore-not-found
 
     - name: Remove the control plane taint
-      if: ${{ inputs.removeControlPlaneTaint == 'true' }}
+      if: ${{ inputs.removeControlPlaneTaint == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/remove-control-plane-taint.sh
 
     - name: Wait for all pods to be ready
-      if: ${{ inputs.waitForPodsReady == 'true' }}
+      if: ${{ inputs.waitForPodsReady == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         WAIT_NAMESPACES: ${{ inputs.waitForPodsNamespaces }}
@@ -798,11 +868,13 @@ runs:
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
 
     - name: Clean up package manager cache
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
         sudo apt-get clean
 
     - name: Print cluster deployment summary
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
         echo ""
@@ -834,6 +906,7 @@ runs:
         echo "======================================"
 
     - name: Remove temporary files
+      if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
         rm -f ${{ github.action_path }}/kind-config.yaml || true
