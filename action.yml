@@ -400,6 +400,12 @@ runs:
         mkdir -p /home/runner/.docker
         touch /home/runner/.docker/config
 
+    - name: Pre-flight environment check
+      shell: bash
+      env:
+        API_SERVER_PORT: ${{ inputs.apiServerPort }}
+      run: ${{ github.action_path }}/scripts/pre-flight-check.sh
+
     - name: Optimize disk space and relocate Docker storage
       uses: palmsoftware/quick-cleanup@v0
       with:
