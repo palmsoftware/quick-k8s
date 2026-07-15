@@ -52,6 +52,21 @@ cat >> "${FILE_NAME}" <<EOF
   - role: control-plane
     image: "${DEFAULT_NODE_IMAGE}"
 EOF
+
+  # Add extraPortMappings to control-plane nodes if specified
+  if [ -n "${EXTRA_PORT_MAPPINGS:-}" ]; then
+    echo "    extraPortMappings:" >> "${FILE_NAME}"
+    IFS=',' read -ra MAPPINGS <<< "${EXTRA_PORT_MAPPINGS}"
+    for mapping in "${MAPPINGS[@]}"; do
+      host_port="${mapping%%:*}"
+      container_port="${mapping##*:}"
+      cat >> "${FILE_NAME}" <<EOF
+      - containerPort: ${container_port}
+        hostPort: ${host_port}
+        protocol: TCP
+EOF
+    done
+  fi
 done
 
 for ((i=1; i<="${NUM_WORKER_NODES}"; i++)); do
