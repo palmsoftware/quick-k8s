@@ -29,3 +29,21 @@ kubectl wait --for=condition=ready pod --all --namespace=cert-manager --timeout=
 
 kubectl get pods -n cert-manager
 echo "cert-manager $CERT_MANAGER_VERSION installed successfully!"
+
+echo "Creating self-signed ClusterIssuer for TLS testing..."
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+EOF
+
+echo "Waiting for ClusterIssuer to be ready..."
+kubectl wait --for=condition=Ready clusterissuer/selfsigned-issuer --timeout=60s || {
+  echo "Warning: ClusterIssuer may not be ready yet. Current status:"
+  kubectl get clusterissuer selfsigned-issuer -o wide 2>/dev/null || true
+}
+
+echo "Self-signed ClusterIssuer configured successfully!"
