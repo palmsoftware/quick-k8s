@@ -2,6 +2,7 @@
 set -euo pipefail
 
 OLM_VERSION="v0.45.0"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do
@@ -23,9 +24,9 @@ chmod +x install.sh
 rm install.sh
 
 echo "Waiting for OLM pods to be ready..."
-kubectl wait --for=condition=ready pod --all --namespace=olm --timeout=300s || {
+kubectl wait --for=condition=ready pod --all --namespace=olm --timeout="${TIMEOUT}s" || {
   echo "Warning: Some OLM pods may not be ready yet. Continuing..."
 }
-kubectl wait --for=condition=ready pod --all --namespace=operators --timeout=60s || {
+kubectl wait --for=condition=ready pod --all --namespace=operators --timeout="${TIMEOUT}s" || {
   echo "Warning: Some operator pods may not be ready yet. Continuing..."
 }

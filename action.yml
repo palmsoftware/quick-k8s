@@ -152,6 +152,10 @@ inputs:
     description: 'Port for the local Docker registry'
     required: false
     default: '5001'
+  componentTimeout:
+    description: 'Timeout in seconds for component installation (kubectl wait commands)'
+    required: false
+    default: '300'
 
 runs:
   using: 'composite'
@@ -363,6 +367,16 @@ runs:
           exit 1
         fi
 
+    - name: Validate componentTimeout input
+      shell: bash
+      run: |
+        TIMEOUT="${{ inputs.componentTimeout }}"
+        if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 1 ]; then
+          echo "Invalid componentTimeout: $TIMEOUT"
+          echo "Must be a positive integer (seconds)"
+          exit 1
+        fi
+
     - name: Validate kindConfigPath input
       if: ${{ inputs.kindConfigPath != '' && inputs.clusterProvider == 'kind' }}
       shell: bash
@@ -528,6 +542,8 @@ runs:
     - name: Install calico CNI if default CNI is disabled and installCalico is true
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-calico.sh "${{ inputs.calicoVersion }}"
 
     - name: Skip CNI installation (bring your own CNI)
@@ -545,26 +561,36 @@ runs:
     - name: Install OLM
       if: ${{ inputs.installOLM == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-olm.sh
 
     - name: Install Istio
       if: ${{ inputs.installIstio == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-istio.sh ${{ inputs.istioVersion }} ${{ inputs.istioProfile }}
 
     - name: Install cert-manager
       if: ${{ inputs.installCertManager == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-cert-manager.sh ${{ inputs.certManagerVersion }}
 
     - name: Install ingress-nginx
       if: ${{ inputs.installIngressNginx == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh ${{ inputs.ingressNginxVersion }} ${{ inputs.clusterProvider }}
 
     - name: Install metrics-server
       if: ${{ inputs.installMetricsServer == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-metrics-server.sh ${{ inputs.metricsServerVersion }}
 
     - name: Install operator-sdk
@@ -575,11 +601,15 @@ runs:
     - name: Install Prometheus monitoring stack
       if: ${{ inputs.enableClusterMonitoring == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-prometheus.sh ${{ inputs.kubePrometheusVersion }}
 
     - name: Install Thanos
       if: ${{ inputs.enableClusterMonitoring == 'true' }}
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-thanos.sh ${{ inputs.thanosVersion }}
 
     - name: Remove the default storage class

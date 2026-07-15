@@ -2,6 +2,7 @@
 set -euo pipefail
 
 THANOS_VERSION="${1:-v0.37.2}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing Thanos version $THANOS_VERSION"
 
@@ -118,12 +119,12 @@ spec:
 EOF
 
 echo "Waiting for Prometheus to restart with Thanos sidecar..."
-kubectl rollout status statefulset/prometheus-k8s -n monitoring --timeout=300s || {
+kubectl rollout status statefulset/prometheus-k8s -n monitoring --timeout="${TIMEOUT}s" || {
   echo "Warning: Prometheus may still be restarting. Continuing..."
 }
 
 echo "Waiting for Thanos Query to be ready..."
-kubectl rollout status deployment/thanos-query -n monitoring --timeout=300s || {
+kubectl rollout status deployment/thanos-query -n monitoring --timeout="${TIMEOUT}s" || {
   echo "Warning: Thanos Query may not be ready yet. Continuing..."
 }
 

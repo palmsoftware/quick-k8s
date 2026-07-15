@@ -2,6 +2,7 @@
 set -euo pipefail
 
 CERT_MANAGER_VERSION="${1:-v1.19.3}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing cert-manager version $CERT_MANAGER_VERSION"
 
@@ -22,7 +23,7 @@ if ! kubectl apply --timeout=5m -f "$MANIFEST_URL"; then
 fi
 
 echo "Waiting for cert-manager pods to be ready..."
-kubectl wait --for=condition=ready pod --all --namespace=cert-manager --timeout=300s || {
+kubectl wait --for=condition=ready pod --all --namespace=cert-manager --timeout="${TIMEOUT}s" || {
   echo "Warning: Some cert-manager pods may not be ready yet. Continuing..."
 }
 
