@@ -193,11 +193,27 @@ runs:
     - name: Validate API server address input
       shell: bash
       run: |
-        if ! python3 -c "import ipaddress; ipaddress.ip_address('${{ inputs.apiServerAddress }}')" 2>/dev/null; then
-          echo "::error::Invalid API server address: ${{ inputs.apiServerAddress }}"
-          echo "Must be a valid IPv4 or IPv6 address"
-          exit 1
+        ADDR="${{ inputs.apiServerAddress }}"
+        # IPv4: exactly 4 decimal octets 0-255
+        if [[ "$ADDR" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+          IFS='.' read -ra OCTETS <<< "$ADDR"
+          VALID=true
+          for octet in "${OCTETS[@]}"; do
+            if [ "$octet" -gt 255 ]; then
+              VALID=false
+              break
+            fi
+          done
+          if [ "$VALID" = "true" ]; then
+            exit 0
+          fi
+        # IPv6: colons and hex digits, at least one colon
+        elif [[ "$ADDR" =~ ^[0-9a-fA-F:]+$ ]] && [[ "$ADDR" == *:* ]]; then
+          exit 0
         fi
+        echo "::error::Invalid API server address: $ADDR"
+        echo "Must be a valid IPv4 or IPv6 address"
+        exit 1
 
     - name: Validate KinD version input
       if: ${{ inputs.clusterProvider == 'kind' }}
