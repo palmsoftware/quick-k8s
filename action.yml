@@ -780,6 +780,11 @@ runs:
           done
         done
 
+    - name: Cluster health check
+      if: ${{ inputs.dryRun != 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/cluster-health-check.sh
+
     - name: Install calico CNI if default CNI is disabled and installCalico is true
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' && inputs.dryRun != 'true' }}
       shell: bash
