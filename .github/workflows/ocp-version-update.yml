@@ -4,6 +4,10 @@ on:
     - cron: '0 4 * * *' # Every day at 4am UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 permissions: read-all
 
 jobs:
