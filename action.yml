@@ -213,6 +213,17 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: ${{ github.action_path }}/scripts/validate-github-version.sh "Minikube" "kubernetes/minikube" "${{ inputs.minikubeVersion }}"
 
+    - name: Validate minikubeDriver input
+      if: ${{ inputs.clusterProvider == 'minikube' }}
+      shell: bash
+      run: |
+        DRIVER="${{ inputs.minikubeDriver }}"
+        if [[ "$DRIVER" != "docker" && "$DRIVER" != "podman" && "$DRIVER" != "none" ]]; then
+          echo "Invalid minikubeDriver: $DRIVER"
+          echo "Must be 'docker', 'podman', or 'none'"
+          exit 1
+        fi
+
     - name: Validate Calico version input
       if: ${{ inputs.installCalico != 'false' }}
       shell: bash
