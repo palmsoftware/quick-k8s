@@ -3,6 +3,7 @@ set -euo pipefail
 
 ISTIO_VERSION="${1:-1.28.1}"
 ISTIO_PROFILE="${2:-minimal}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing Istio version $ISTIO_VERSION with profile $ISTIO_PROFILE"
 
@@ -67,7 +68,7 @@ echo "Waiting for Istio control plane pods to be ready..."
 kubectl wait --for=condition=ready pod \
   --all \
   --namespace=istio-system \
-  --timeout=300s || {
+  --timeout="${TIMEOUT}s" || {
     echo "Warning: Some Istio pods may not be ready yet. Continuing..."
   }
 

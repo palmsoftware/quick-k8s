@@ -2,6 +2,7 @@
 set -euo pipefail
 
 METRICS_SERVER_VERSION="${1:-v0.8.1}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing metrics-server version $METRICS_SERVER_VERSION"
 
@@ -29,7 +30,7 @@ echo "Waiting for metrics-server to be ready..."
 kubectl wait --namespace kube-system \
   --for=condition=ready pod \
   --selector=k8s-app=metrics-server \
-  --timeout=300s || {
+  --timeout="${TIMEOUT}s" || {
   echo "Warning: metrics-server may not be ready yet. Continuing..."
 }
 

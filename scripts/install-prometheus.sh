@@ -2,6 +2,7 @@
 set -euo pipefail
 
 KUBE_PROMETHEUS_VERSION="${1:-v0.14.0}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing kube-prometheus version $KUBE_PROMETHEUS_VERSION"
 
@@ -57,7 +58,7 @@ if ! kubectl apply --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/"; then
 fi
 
 echo "Waiting for monitoring pods to be ready..."
-kubectl wait --for=condition=ready pod --all --namespace=monitoring --timeout=300s || {
+kubectl wait --for=condition=ready pod --all --namespace=monitoring --timeout="${TIMEOUT}s" || {
   echo "Warning: Some monitoring pods may not be ready yet. Continuing..."
 }
 

@@ -3,6 +3,7 @@ set -euo pipefail
 
 INGRESS_NGINX_VERSION="${1:-v1.14.3}"
 CLUSTER_PROVIDER="${2:-kind}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 echo "Installing ingress-nginx version $INGRESS_NGINX_VERSION for $CLUSTER_PROVIDER"
 
@@ -34,7 +35,7 @@ echo "Waiting for ingress-nginx controller to be ready..."
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=300s || {
+  --timeout="${TIMEOUT}s" || {
   echo "Warning: ingress-nginx controller may not be ready yet. Continuing..."
 }
 
