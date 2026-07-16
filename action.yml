@@ -838,6 +838,14 @@ runs:
         echo "  Dry run complete - no changes were made"
         echo "=============================================="
 
+    - name: Initialize timing metrics
+      if: ${{ inputs.dryRun != 'true' }}
+      shell: bash
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        init_timing
+
     - name: Check GitHub service status
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
@@ -973,6 +981,10 @@ runs:
       env:
         CLUSTER_NAME: ${{ inputs.clusterName }}
       run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Cluster creation (KinD)"
+
         max_attempts=3
         delay=10
         attempt=1
@@ -1018,6 +1030,8 @@ runs:
           delay=$((delay * 2))
         done
 
+        end_timer "Cluster creation (KinD)"
+
     - name: Create a new Kubernetes cluster using Minikube
       if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       shell: bash
@@ -1032,6 +1046,10 @@ runs:
         API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
         CLUSTER_NAME: ${{ inputs.clusterName }}
       run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Cluster creation (Minikube)"
+
         ${{ github.action_path }}/scripts/start-minikube.sh \
           "$DEFAULT_NODE_IMAGE" \
           "$DISABLE_DEFAULT_CNI" \
@@ -1041,6 +1059,8 @@ runs:
           "$NUM_WORKER_NODES" \
           "$API_SERVER_ADDRESS" \
           "$CLUSTER_NAME"
+
+        end_timer "Cluster creation (Minikube)"
 
     - name: Bootstrap the runner with kubectl client
       if: ${{ inputs.dryRun != 'true' }}
@@ -1244,6 +1264,14 @@ runs:
       shell: bash
       run: |
         sudo apt-get clean
+
+    - name: Print timing summary
+      if: ${{ inputs.dryRun != 'true' }}
+      shell: bash
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        print_timing_summary
 
     - name: Print cluster deployment summary
       if: ${{ inputs.dryRun != 'true' }}
