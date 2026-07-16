@@ -495,3 +495,60 @@ jobs:
         run: |
           kubectl get pods -n monitoring -o wide
           kubectl get svc -n monitoring
+
+  # Test MetalLB installation
+  test-metallb:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run the action with MetalLB
+        uses: ./
+        with:
+          clusterProvider: kind
+          installMetalLB: true
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify MetalLB is running
+        run: |
+          echo "Checking metallb-system namespace..."
+          kubectl get namespace metallb-system
+          echo "Checking MetalLB pods..."
+          kubectl get pods -n metallb-system
+          echo "Verifying controller is ready..."
+          kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=controller --timeout=60s
+          echo "Verifying speaker pods are ready..."
+          kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=speaker --timeout=60s
+          echo "Checking IPAddressPool..."
+          kubectl get ipaddresspool -n metallb-system
+          echo "Checking L2Advertisement..."
+          kubectl get l2advertisement -n metallb-system
+          echo "MetalLB installation verified!"
+
+      - name: Test LoadBalancer service gets external IP
+        run: |
+          echo "Creating a test LoadBalancer service..."
+          kubectl create deployment nginx-test --image=nginx:latest
+          kubectl expose deployment nginx-test --port=80 --type=LoadBalancer
+          echo "Waiting for external IP assignment..."
+          for i in $(seq 1 30); do
+            EXTERNAL_IP=$(kubectl get svc nginx-test -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+            if [ -n "$EXTERNAL_IP" ]; then
+              echo "LoadBalancer service assigned external IP: $EXTERNAL_IP"
+              kubectl get svc nginx-test
+              echo "MetalLB LoadBalancer test passed!"
+              exit 0
+            fi
+            echo "Attempt $i/30: Waiting for external IP..."
+            sleep 5
+          done
+          echo "FAIL: LoadBalancer service did not receive an external IP"
+          kubectl get svc nginx-test -o yaml
+          exit 1
