@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Script to start Minikube cluster with configuration
-# Usage: start-minikube.sh <node_image> <disable_cni> <driver> <api_port> <num_control_plane> <num_workers> [api_server_address] [cluster_name]
-# Example: start-minikube.sh "kindest/node:v1.34.0@sha256:..." true docker 6443 1 1 0.0.0.0 minikube
+# Usage: start-minikube.sh <node_image> <disable_cni> <driver> <api_port> <num_control_plane> <num_workers> [api_server_address] [cluster_name] [cpus] [memory]
+# Example: start-minikube.sh "kindest/node:v1.34.0@sha256:..." true docker 6443 1 1 0.0.0.0 minikube 2 4096
 
 NODE_IMAGE="${1:-}"
 DISABLE_CNI="${2:-false}"
@@ -13,6 +13,8 @@ NUM_CONTROL_PLANE="${5:-1}"
 NUM_WORKERS="${6:-0}"
 API_SERVER_ADDRESS="${7:-0.0.0.0}"
 CLUSTER_NAME="${8:-minikube}"
+CLUSTER_CPUS="${9:-2}"
+CLUSTER_MEMORY="${10:-}"
 
 if [ -z "$NODE_IMAGE" ]; then
   echo "Usage: $0 <node_image> [disable_cni] [driver] [api_port] [num_control_plane] [num_workers]"
