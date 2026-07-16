@@ -27,7 +27,7 @@ Basic Usage:
 ```
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
 ```
 
 This will create you a default 1 worker and 1 control-plane cluster with calico CNI installed.  For additional feature enablement, please refer to the flags below:
@@ -39,7 +39,7 @@ To use Minikube instead of KinD:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       clusterProvider: minikube
       minikubeVersion: v1.38.1
@@ -53,7 +53,7 @@ With KinD (default):
 ```yaml
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       clusterProvider: kind
       clusterName: kind
@@ -73,21 +73,37 @@ steps:
       istioVersion: 1.30.2
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.20.3
+      certManagerVersion: v1.21.0
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
-      metricsServerVersion: v0.8.1
+      metricsServerVersion: v0.9.0
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
+      # Monitoring
+      enableClusterMonitoring: false
+      kubePrometheusVersion: v0.18.0
+      thanosVersion: v0.42.0
+
+      # MetalLB
+      installMetalLB: false
+      metalLBVersion: v0.16.0
+
       # Advanced options
-      installCalico: true           # Set to false to bring your own CNI
+      cniPlugin: calico             # calico, cilium, flannel, or none
       kindConfigPath: ''            # Path to custom KinD config file
       installLocalRegistry: false   # Enable local Docker registry
       localRegistryPort: 5001       # Port for local registry
+      olmVersion: v0.45.0           # OLM version (when installOLM: true)
+      createPersistentVolumes: false # Create sample PVs for testing
+      persistentVolumeCount: 5
+      persistentVolumeSize: 10Gi
+      installSampleNetworkPolicies: false
+      waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
+      dryRun: false                 # Preview configuration without executing
 ```
 
 With Minikube:
@@ -95,7 +111,7 @@ With Minikube:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       clusterProvider: minikube
       clusterName: minikube
@@ -113,11 +129,11 @@ steps:
       istioVersion: 1.30.2
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.20.3
+      certManagerVersion: v1.21.0
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
-      metricsServerVersion: v0.8.1
+      metricsServerVersion: v0.9.0
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
       removeDefaultStorageClass: false
@@ -133,7 +149,7 @@ Enable Istio installation to test service mesh functionality:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Istio
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installIstio: true
       istioVersion: 1.30.2
@@ -161,10 +177,10 @@ Enable cert-manager for automatic TLS certificate management:
 ```yaml
 steps:
   - name: Set up Quick-K8s with cert-manager
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installCertManager: true
-      certManagerVersion: v1.20.3
+      certManagerVersion: v1.21.0
 ```
 
 **Features**:
@@ -200,7 +216,7 @@ Enable NGINX Ingress controller for HTTP/HTTPS routing to your services:
 ```yaml
 steps:
   - name: Set up Quick-K8s with ingress-nginx
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installIngressNginx: true
       ingressNginxVersion: v1.15.1
@@ -251,10 +267,10 @@ Enable metrics-server for resource monitoring and HPA (Horizontal Pod Autoscaler
 ```yaml
 steps:
   - name: Set up Quick-K8s with metrics-server
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installMetricsServer: true
-      metricsServerVersion: v0.8.1
+      metricsServerVersion: v0.9.0
 ```
 
 **Features**:
@@ -295,7 +311,7 @@ Enable operator-sdk CLI installation for building and testing Kubernetes operato
 ```yaml
 steps:
   - name: Set up Quick-K8s with operator-sdk
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installOperatorSdk: true
       operatorSdkVersion: v1.42.3
@@ -321,6 +337,122 @@ steps:
 - Requires approximately 100MB disk space for the binary
 - For full operator development workflows, consider also enabling OLM (`installOLM: true`)
 
+### Installing MetalLB
+
+Enable MetalLB for LoadBalancer service support on local clusters:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with MetalLB
+    uses: palmsoftware/quick-k8s@v0
+    with:
+      installMetalLB: true
+      metalLBVersion: v0.16.0
+```
+
+**Features**:
+- Provides LoadBalancer service support in local/CI Kubernetes clusters
+- Automatically configures an IP address pool from the Docker bridge network
+- L2 advertisement mode for simple, no-BGP-required operation
+- Works with both KinD and Minikube providers
+
+**Example: Create a LoadBalancer service**:
+```yaml
+- name: Deploy with LoadBalancer
+  run: |
+    kubectl create deployment nginx --image=nginx:latest
+    kubectl expose deployment nginx --type=LoadBalancer --port=80
+    kubectl wait --for=condition=ready pod -l app=nginx --timeout=60s
+    # MetalLB will assign an external IP from the configured pool
+    kubectl get svc nginx
+```
+
+**⚠️ Resource Considerations**:
+- MetalLB adds 2 pods (controller + speaker daemonset) to the `metallb-system` namespace
+- Requires approximately 100-200MB additional memory
+- Address pool is automatically derived from the Docker bridge subnet
+
+### Cluster Monitoring (kube-prometheus + Thanos)
+
+Enable the full monitoring stack with Prometheus, Thanos, Alertmanager, and Grafana:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with monitoring
+    uses: palmsoftware/quick-k8s@v0
+    with:
+      enableClusterMonitoring: true
+      kubePrometheusVersion: v0.18.0
+      thanosVersion: v0.42.0
+```
+
+**Features**:
+- Full kube-prometheus stack: Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics
+- Thanos sidecar for long-term storage and multi-cluster querying
+- Pre-configured dashboards and alerting rules
+- Resource requests automatically patched down to fit CI runners
+
+**What gets deployed**:
+| Component | Namespace | Purpose |
+|-----------|-----------|---------|
+| Prometheus | `monitoring` | Metrics collection and storage |
+| Alertmanager | `monitoring` | Alert routing and deduplication |
+| Grafana | `monitoring` | Dashboards and visualization |
+| node-exporter | `monitoring` | Host-level metrics |
+| kube-state-metrics | `monitoring` | Kubernetes object metrics |
+| Thanos Sidecar | `monitoring` | Long-term storage interface |
+
+**Example: Access monitoring data**:
+```yaml
+- name: Query Prometheus metrics
+  run: |
+    # Port-forward to Prometheus
+    kubectl port-forward -n monitoring svc/prometheus-k8s 9090:9090 &
+    sleep 5
+    curl -s http://localhost:9090/api/v1/query?query=up | jq '.data.result | length'
+```
+
+**⚠️ Resource Considerations**:
+- The monitoring stack is resource-intensive (~1-2GB RAM, 2+ CPU cores)
+- Resource requests are automatically reduced for CI environments
+- Consider using a runner with more resources or reducing other components
+- Not recommended to combine with Istio on free-tier runners
+
+### Choosing a CNI Plugin
+
+The action supports multiple CNI plugins. Use the `cniPlugin` input to select one:
+
+```yaml
+steps:
+  # Calico (default)
+  - uses: palmsoftware/quick-k8s@v0
+    with:
+      cniPlugin: calico
+
+  # Cilium
+  - uses: palmsoftware/quick-k8s@v0
+    with:
+      cniPlugin: cilium
+
+  # Flannel
+  - uses: palmsoftware/quick-k8s@v0
+    with:
+      cniPlugin: flannel
+
+  # No CNI (bring your own)
+  - uses: palmsoftware/quick-k8s@v0
+    with:
+      cniPlugin: none
+      waitForPodsReady: false
+```
+
+| CNI Plugin | Best For | Network Policies | Resource Usage |
+|------------|----------|-----------------|----------------|
+| **Calico** (default) | General purpose, policy enforcement | ✅ Full support | ~200MB |
+| **Cilium** | eBPF-based networking, advanced observability | ✅ Full support | ~300-500MB |
+| **Flannel** | Simple overlay networking, minimal overhead | ❌ Not supported | ~100MB |
+| **none** | Bring your own CNI | Depends on CNI | N/A |
+
 ### Bring Your Own CNI (Skip Calico)
 
 For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes, Cilium), you can skip the default Calico installation:
@@ -328,7 +460,7 @@ For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes, C
 ```yaml
 steps:
   - name: Set up Quick-K8s without Calico
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       disableDefaultCni: true
       installCalico: false  # Skip Calico installation
@@ -373,7 +505,7 @@ steps:
       EOF
 
   - name: Set up Quick-K8s with custom config
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       kindConfigPath: ${{ github.workspace }}/my-kind-config.yaml
 ```
@@ -394,7 +526,7 @@ Enable a local Docker registry for faster image pulls and testing:
 ```yaml
 steps:
   - name: Set up Quick-K8s with local registry
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       installLocalRegistry: true
       localRegistryPort: 5001  # Default port
@@ -441,9 +573,11 @@ Both cluster providers are fully supported and tested. Choose the one that best 
   - Multiple driver options (docker, podman, none)
   - Better local development experience
   - Built-in addons system
+  - Configurable CPU/memory limits (`clusterCPUs`, `clusterMemory`)
 - ⚠️ **Considerations**: 
   - Slightly slower startup, more complex for multi-node setups
   - When disabling default CNI (`disableDefaultCni: true`), uses docker runtime instead of containerd (Minikube requirement)
+  - **Multi-node limitation**: Minikube's `--nodes=N` creates N identical nodes with no control-plane vs worker distinction. All nodes have the same role regardless of `numControlPlaneNodes` and `numWorkerNodes` settings. If you need explicit control-plane/worker topology, use KinD.
 
 **Recommendation**: Use **KinD** (default) for most CI/CD scenarios. Use **Minikube** if you need specific features or driver compatibility.
 
@@ -456,7 +590,7 @@ The action supports multiple IP family configurations for Kubernetes clusters:
 ```yaml
 steps:
   - name: Set up Quick-K8s with IP family
-    uses: palmsoftware/quick-k8s@v0.0.73
+    uses: palmsoftware/quick-k8s@v0
     with:
       ipFamily: dual  # Options: dual, ipv4, ipv6
 ```
@@ -501,7 +635,7 @@ The action installs `kubectl` (and `oc` on Linux) and configures kubeconfig auto
 
 ```yaml
 steps:
-  - uses: palmsoftware/quick-k8s@v0.0.73
+  - uses: palmsoftware/quick-k8s@v0
 
   - name: Verify cluster
     run: |
@@ -533,6 +667,36 @@ steps:
 | KinD | `standard` |
 | Minikube | `standard` |
 
+## Resource Requirements
+
+Approximate resource requirements for common configurations on GitHub Actions free-tier runners (~7GB RAM, ~14GB disk):
+
+| Configuration | RAM | Disk | Startup Time | Notes |
+|--------------|-----|------|-------------|-------|
+| Basic cluster (1 CP + 1 worker) | ~2GB | ~4GB | ~1-2 min | Fits comfortably on free-tier |
+| + Calico CNI | +200MB | +50MB | +30s | Default configuration |
+| + OLM | +500MB | +200MB | +1-2 min | Adds operator catalog pod |
+| + Istio (minimal) | +300MB | +500MB | +2-3 min | Use `minimal` profile for CI |
+| + Istio (demo) | +500MB | +800MB | +3-5 min | Not recommended for free-tier |
+| + cert-manager | +200MB | +100MB | +30-60s | 3 pods (controller, webhook, cainjector) |
+| + ingress-nginx | +100MB | +50MB | +1-2 min | 1-2 pods |
+| + metrics-server | +50MB | +20MB | +30s | Lightweight |
+| + MetalLB | +100MB | +50MB | +30s | Controller + speaker |
+| + Monitoring stack | +1.5GB | +500MB | +3-5 min | Prometheus, Grafana, Thanos, etc. |
+| + operator-sdk | N/A | +100MB | N/A | CLI only, no cluster pods |
+
+**Recommended combinations for free-tier runners**:
+- ✅ Basic + Calico + OLM + cert-manager (~3GB RAM)
+- ✅ Basic + Calico + Istio minimal (~2.5GB RAM)
+- ✅ Basic + Calico + ingress-nginx + metrics-server (~2.5GB RAM)
+- ⚠️ Basic + Calico + OLM + Istio (~3.5GB RAM, tight fit)
+- ❌ Basic + monitoring stack + Istio (~4.5GB RAM, likely OOM)
+
+**Tips**:
+- Use `numWorkerNodes: 0` for single-node clusters to save ~1GB RAM
+- Use `skipDiskCleanup: true` on self-hosted runners with ample disk
+- The `dryRun: true` option previews the configuration without creating anything
+
 ## Troubleshooting
 
 ### Disk Space
@@ -557,6 +721,10 @@ steps:
 
 **Multi-node topology**
 - Minikube's `--nodes=N` creates N identical nodes. There is no control-plane vs worker distinction — all nodes have the same role. If you need explicit topology, use KinD.
+- The action passes `numControlPlaneNodes + numWorkerNodes` as the total node count to Minikube, but all nodes are functionally equivalent.
+
+**"Specified Kubernetes version X is newer than the newest supported version"**
+- The action automatically falls back to Minikube's latest supported Kubernetes version when this happens. A `::warning::` annotation will appear in the logs.
 
 ### Add-on Issues
 
@@ -573,6 +741,25 @@ steps:
 **"Local registry not accessible from cluster"**
 - For KinD: registry is automatically connected to the Docker network
 - For Minikube: local registry connectivity is limited (see [#74](https://github.com/palmsoftware/quick-k8s/issues/74))
+
+## Examples
+
+The [`examples/`](./examples/) directory contains copy-paste-ready workflow recipes:
+
+| Example | Description |
+|---------|-------------|
+| [basic-cluster.yml](./examples/basic-cluster.yml) | Minimal cluster for CI testing |
+| [istio-service-mesh.yml](./examples/istio-service-mesh.yml) | Cluster with Istio and sidecar injection |
+| [monitoring-stack.yml](./examples/monitoring-stack.yml) | Full Prometheus/Thanos/Grafana stack |
+| [multi-node-cluster.yml](./examples/multi-node-cluster.yml) | Multi-node with labels and topology spread |
+| [custom-cni.yml](./examples/custom-cni.yml) | Cilium and Flannel CNI examples |
+| [local-registry.yml](./examples/local-registry.yml) | Local Docker registry for image builds |
+| [operator-development.yml](./examples/operator-development.yml) | OLM + operator-sdk + cert-manager |
+| [full-stack.yml](./examples/full-stack.yml) | All components combined |
+
+## Version Compatibility
+
+See [COMPATIBILITY.md](./COMPATIBILITY.md) for the full component version compatibility matrix, including tested combinations and known issues.
 
 ## History
 

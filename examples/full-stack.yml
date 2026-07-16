@@ -1,0 +1,37 @@
+# Full-featured cluster with multiple components
+# Best on runners with extra resources (e.g., ubuntu-latest-xl)
+name: Full Stack Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create full-featured cluster
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          numWorkerNodes: 1
+          installIstio: true
+          istioProfile: minimal
+          installCertManager: true
+          installIngressNginx: true
+          installMetricsServer: true
+          installMetalLB: true
+          removeControlPlaneTaint: true
+          waitForPodsReady: true
+
+      - name: Verify all components
+        run: |
+          echo "=== Nodes ==="
+          kubectl get nodes
+          echo ""
+          echo "=== All Pods ==="
+          kubectl get pods --all-namespaces
+          echo ""
+          echo "=== Metrics ==="
+          kubectl top nodes || true

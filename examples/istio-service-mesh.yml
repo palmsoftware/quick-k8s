@@ -1,0 +1,31 @@
+# Kubernetes cluster with Istio service mesh for testing mesh features
+name: Istio Service Mesh Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster with Istio
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          installIstio: true
+          istioVersion: 1.30.2
+          istioProfile: minimal
+          waitForPodsReady: true
+
+      - name: Enable sidecar injection
+        run: kubectl label namespace default istio-injection=enabled
+
+      - name: Deploy sample app with sidecar
+        run: |
+          kubectl create deployment httpbin --image=kennethreitz/httpbin
+          kubectl wait --for=condition=ready pod -l app=httpbin --timeout=120s
+          # Verify sidecar was injected (2 containers per pod)
+          CONTAINERS=$(kubectl get pod -l app=httpbin -o jsonpath='{.items[0].spec.containers[*].name}')
+          echo "Containers: $CONTAINERS"

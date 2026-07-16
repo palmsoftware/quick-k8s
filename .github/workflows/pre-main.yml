@@ -448,6 +448,8 @@ jobs:
           waitForPodsReady: true
           installOLM: false
           installIstio: false
+          numWorkerNodes: 0
+          componentTimeout: 600
 
       - name: Verify Prometheus is running
         run: |

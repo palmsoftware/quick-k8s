@@ -1,0 +1,58 @@
+# Multi-node cluster for testing pod scheduling, affinity, and topology
+name: Multi-Node Cluster Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create multi-node cluster
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          numControlPlaneNodes: 1
+          numWorkerNodes: 2
+          workerNodeLabels: 'env=test,tier=worker'
+          removeControlPlaneTaint: true
+          waitForPodsReady: true
+
+      - name: Verify node topology
+        run: |
+          kubectl get nodes --show-labels
+          # Verify worker labels were applied
+          kubectl get nodes -l env=test
+
+      - name: Test pod anti-affinity
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: spread-test
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: spread-test
+            template:
+              metadata:
+                labels:
+                  app: spread-test
+              spec:
+                topologySpreadConstraints:
+                  - maxSkew: 1
+                    topologyKey: kubernetes.io/hostname
+                    whenUnsatisfiable: DoNotSchedule
+                    labelSelector:
+                      matchLabels:
+                        app: spread-test
+                containers:
+                  - name: nginx
+                    image: nginx:latest
+          EOF
+          kubectl wait --for=condition=ready pod -l app=spread-test --timeout=120s
+          kubectl get pods -l app=spread-test -o wide

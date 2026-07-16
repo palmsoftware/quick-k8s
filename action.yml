@@ -224,6 +224,18 @@ inputs:
     description: 'Size of each PersistentVolume (e.g., 10Gi, 1Gi, 500Mi)'
     required: false
     default: '10Gi'
+  skipDiskCleanup:
+    description: 'Skip disk cleanup steps. Useful for self-hosted runners with ample disk space'
+    required: false
+    default: 'false'
+  enableCleanup:
+    description: 'Generate a cleanup script at /tmp/quick-k8s-cleanup.sh for post-run cluster teardown'
+    required: false
+    default: 'false'
+  flannelVersion:
+    description: 'The version of Flannel CNI to install (when cniPlugin is flannel)'
+    required: false
+    default: 'v0.28.7'
 
 runs:
   using: 'composite'
@@ -619,9 +631,22 @@ runs:
 
     - name: Validate enableCleanup input
       shell: bash
+      env:
+        ENABLE_CLEANUP: ${{ inputs.enableCleanup }}
       run: |
-        if [[ "${{ inputs.enableCleanup }}" != "true" && "${{ inputs.enableCleanup }}" != "false" ]]; then
-          echo "Invalid enableCleanup value: ${{ inputs.enableCleanup }}"
+        if [[ "$ENABLE_CLEANUP" != "true" && "$ENABLE_CLEANUP" != "false" ]]; then
+          echo "Invalid enableCleanup value: $ENABLE_CLEANUP"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate skipDiskCleanup input
+      shell: bash
+      env:
+        SKIP_DISK_CLEANUP: ${{ inputs.skipDiskCleanup }}
+      run: |
+        if [[ "$SKIP_DISK_CLEANUP" != "true" && "$SKIP_DISK_CLEANUP" != "false" ]]; then
+          echo "Invalid skipDiskCleanup value: $SKIP_DISK_CLEANUP"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -719,12 +744,6 @@ runs:
       shell: bash
       run: |
         echo "::notice::KinD runs as Docker containers. CPU and memory limits are controlled by the Docker daemon configuration, not by clusterCPUs/clusterMemory inputs."
-
-    - name: Notice about resource limits for k3s provider
-      if: ${{ inputs.clusterProvider == 'k3s' && (inputs.clusterCPUs != '2' || inputs.clusterMemory != '') }}
-      shell: bash
-      run: |
-        echo "::notice::k3s runs as native processes on the host. CPU and memory limits are controlled at the OS level, not by clusterCPUs/clusterMemory inputs."
 
     - name: Validate kindConfigPath input
       if: ${{ inputs.kindConfigPath != '' && inputs.clusterProvider == 'kind' }}
@@ -1054,6 +1073,8 @@ runs:
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
         API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
         CLUSTER_NAME: ${{ inputs.clusterName }}
+        CLUSTER_CPUS: ${{ inputs.clusterCPUs }}
+        CLUSTER_MEMORY: ${{ inputs.clusterMemory }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
@@ -1067,7 +1088,9 @@ runs:
           "$NUM_CONTROL_PLANE_NODES" \
           "$NUM_WORKER_NODES" \
           "$API_SERVER_ADDRESS" \
-          "$CLUSTER_NAME"
+          "$CLUSTER_NAME" \
+          "$CLUSTER_CPUS" \
+          "$CLUSTER_MEMORY"
 
         end_timer "Cluster creation (Minikube)"
 
@@ -1118,6 +1141,8 @@ runs:
     - name: Cluster health check
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
       run: ${{ github.action_path }}/scripts/cluster-health-check.sh
 
     - name: Install calico CNI if default CNI is disabled and installCalico is true
@@ -1309,6 +1334,7 @@ runs:
         INSTALL_SAMPLE_NETWORK_POLICIES: ${{ inputs.installSampleNetworkPolicies }}
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
+        ENABLE_CLEANUP: ${{ inputs.enableCleanup }}
       run: |
         K8S_VERSION=$(kubectl version -o json 2>/dev/null | jq -r '.serverVersion.gitVersion' 2>/dev/null) || K8S_VERSION="unknown"
         echo ""
@@ -1345,7 +1371,7 @@ runs:
         if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then
           echo "  Registry:    localhost:$LOCAL_REGISTRY_PORT"
         fi
-        if [ "${{ inputs.enableCleanup }}" = "true" ]; then
+        if [ "$ENABLE_CLEANUP" = "true" ]; then
           echo "  Cleanup:     /tmp/quick-k8s-cleanup.sh"
         fi
         echo ""
@@ -1392,6 +1418,13 @@ runs:
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
         fi
+
+    - name: Generate cleanup script
+      if: ${{ inputs.enableCleanup == 'true' && inputs.dryRun != 'true' }}
+      shell: bash
+      run: |
+        cp "${{ github.action_path }}/scripts/cleanup-cluster.sh" /tmp/quick-k8s-cleanup.sh
+        chmod +x /tmp/quick-k8s-cleanup.sh
 
     - name: Remove temporary files
       if: ${{ inputs.dryRun != 'true' }}
