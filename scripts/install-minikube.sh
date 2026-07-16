@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script to install Minikube binary with caching support
+# Script to install Minikube binary with caching and fallback support
 # Usage: install-minikube.sh <version> <os> <arch>
 # Example: install-minikube.sh v1.37.0 linux amd64
 
@@ -38,26 +38,40 @@ if [ -f /tmp/minikube-binary ]; then
   exit 0
 fi
 
-# Download the binary
-DOWNLOAD_URL="https://storage.googleapis.com/minikube/releases/${VERSION}/minikube-${PLATFORM}"
-
+# Download the binary with fallback
 echo "Downloading Minikube ${VERSION} for ${PLATFORM}..."
-echo "📥 Attempting download from: ${DOWNLOAD_URL}"
 
-if ! curl -fsSL -o minikube "${DOWNLOAD_URL}"; then
-  echo "❌ Failed to download Minikube binary"
-  echo ""
-  echo "Attempted URL: ${DOWNLOAD_URL}"
-  echo ""
-  echo "This may be due to:"
-  echo "  1. Network connectivity issues"
-  echo "  2. Google Cloud Storage outage"
-  echo "  3. Invalid version: ${VERSION}"
-  echo "  4. Unsupported platform: ${PLATFORM}"
-  echo ""
-  echo "💡 Tip: Try re-running the workflow later"
-  echo "        The binary will be cached for future runs once successfully downloaded"
-  exit 1
+# Primary URL
+PRIMARY_URL="https://github.com/kubernetes/minikube/releases/download/${VERSION}/minikube-${PLATFORM}"
+FALLBACK_URL="https://storage.googleapis.com/minikube/releases/${VERSION}/minikube-${PLATFORM}"
+
+echo "📥 Attempting download from: ${PRIMARY_URL}"
+
+# Try primary source
+if curl -fsSL -o minikube "${PRIMARY_URL}"; then
+  echo "✅ Downloaded from GitHub releases"
+# Try Google Cloud Storage as fallback
+else
+  echo "⚠️  Primary URL failed, trying fallback: ${FALLBACK_URL}"
+  if curl -fsSL -o minikube "${FALLBACK_URL}"; then
+    echo "✅ Downloaded from Google Cloud Storage (fallback)"
+  else
+    echo "❌ Failed to download Minikube binary from both sources"
+    echo ""
+    echo "Attempted URLs:"
+    echo "  Primary:  ${PRIMARY_URL}"
+    echo "  Fallback: ${FALLBACK_URL}"
+    echo ""
+    echo "This may be due to:"
+    echo "  1. GitHub service outage (check output above for status)"
+    echo "  2. Network connectivity issues"
+    echo "  3. Invalid version: ${VERSION}"
+    echo "  4. Unsupported platform: ${PLATFORM}"
+    echo ""
+    echo "💡 Tip: If GitHub is experiencing issues, try re-running the workflow later"
+    echo "        The binary will be cached for future runs once successfully downloaded"
+    exit 1
+  fi
 fi
 
 echo "✅ Successfully downloaded Minikube binary"
