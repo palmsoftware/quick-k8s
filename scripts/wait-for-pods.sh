@@ -13,6 +13,80 @@ timeout=1200  # 20 minutes in seconds
 elapsed=0
 interval=10
 
+# Format elapsed seconds as human-readable time (e.g., "2m 30s")
+format_time() {
+  local secs=$1
+  local mins=$((secs / 60))
+  local rem=$((secs % 60))
+  if [ "$mins" -gt 0 ]; then
+    echo "${mins}m ${rem}s"
+  else
+    echo "${rem}s"
+  fi
+}
+
+# Print a progress summary of pod states
+print_pod_progress() {
+  local pods=$1
+  local time_str=$2
+
+  local total=0
+  local ready=0
+  local pending=0
+  local initializing=0
+  local failed=0
+  local other=0
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    total=$((total + 1))
+    local status
+    status=$(echo "$line" | awk '{print $4}')
+    case "$status" in
+      Running|Completed|Succeeded)
+        ready=$((ready + 1))
+        ;;
+      Pending)
+        pending=$((pending + 1))
+        ;;
+      Init:*|PodInitializing)
+        initializing=$((initializing + 1))
+        ;;
+      Error|CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerError|InvalidImageName)
+        failed=$((failed + 1))
+        ;;
+      *)
+        other=$((other + 1))
+        ;;
+    esac
+  done <<< "$pods"
+
+  # Build detail string
+  local details=""
+  if [ "$pending" -gt 0 ]; then
+    details="${pending} pending"
+  fi
+  if [ "$initializing" -gt 0 ]; then
+    [ -n "$details" ] && details="${details}, "
+    details="${details}${initializing} initializing"
+  fi
+  if [ "$failed" -gt 0 ]; then
+    [ -n "$details" ] && details="${details}, "
+    details="${details}${failed} failed"
+  fi
+  if [ "$other" -gt 0 ]; then
+    [ -n "$details" ] && details="${details}, "
+    details="${details}${other} other"
+  fi
+
+  echo "[${time_str}] Pods: ${ready}/${total} ready (${details})"
+
+  # List pods that are not ready
+  echo "$pods" | awk '$4 != "Running" && $4 != "Completed" && $4 != "Succeeded" {
+    printf "  Not ready: %-50s %-20s %s\n", $2, $4, "(ns: " $1 ")"
+  }'
+}
+
 # Build the list of namespaces to monitor
 get_namespaces() {
   if [ -n "${WAIT_NAMESPACES:-}" ]; then
@@ -60,11 +134,12 @@ fi
 while true; do
   pod_output=$(get_pods)
   if [ -z "$pod_output" ] || echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed") exit 1}'; then
-    echo "All pods are running or completed"
+    time_str=$(format_time "$elapsed")
+    echo "[${time_str}] All pods are running or completed"
     break
   else
-    echo "Waiting for all pods to be running or completed..."
-    echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed") print "Pending pod: " $2 " in namespace: " $1}'
+    time_str=$(format_time "$elapsed")
+    print_pod_progress "$pod_output" "$time_str"
     sleep $interval
     elapsed=$((elapsed + interval))
     if [ $elapsed -ge $timeout ]; then
