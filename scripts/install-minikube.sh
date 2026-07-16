@@ -20,6 +20,8 @@ trap 'echo "::endgroup::"' EXIT
 
 # shellcheck source=map-platform.sh
 source "$(dirname "$0")/map-platform.sh"
+# shellcheck source=verify-checksum.sh
+source "$(dirname "$0")/verify-checksum.sh"
 OS=$(map_os "$OS")
 ARCH=$(map_arch "$ARCH")
 
@@ -59,6 +61,14 @@ if ! curl -fsSL -o minikube "${DOWNLOAD_URL}"; then
 fi
 
 echo "✅ Successfully downloaded Minikube binary"
+
+# Verify SHA256 checksum
+CHECKSUM_URL="https://github.com/kubernetes/minikube/releases/download/${VERSION}/minikube-${PLATFORM}.sha256"
+if ! download_and_verify_checksum minikube "$CHECKSUM_URL"; then
+  echo "::error::Minikube binary checksum verification failed - the download may be corrupted or tampered with"
+  rm -f minikube
+  exit 1
+fi
 
 # Install the binary
 chmod +x minikube

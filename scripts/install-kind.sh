@@ -20,6 +20,8 @@ trap 'echo "::endgroup::"' EXIT
 
 # shellcheck source=map-platform.sh
 source "$(dirname "$0")/map-platform.sh"
+# shellcheck source=verify-checksum.sh
+source "$(dirname "$0")/verify-checksum.sh"
 OS=$(map_os "$OS")
 ARCH=$(map_arch "$ARCH")
 
@@ -75,6 +77,14 @@ fi
 # Verify it's a binary, not HTML
 if file kind | grep -q "HTML"; then
   echo "ERROR: Downloaded file is HTML, not a binary"
+  exit 1
+fi
+
+# Verify SHA256 checksum
+CHECKSUM_URL="https://github.com/kubernetes-sigs/kind/releases/download/${VERSION}/kind-${PLATFORM}.sha256sum"
+if ! download_and_verify_checksum kind "$CHECKSUM_URL"; then
+  echo "::error::KinD binary checksum verification failed - the download may be corrupted or tampered with"
+  rm -f kind
   exit 1
 fi
 
