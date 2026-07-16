@@ -28,6 +28,18 @@ trap 'echo "::endgroup::"' EXIT
 K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 echo "Extracted Kubernetes version: $K8S_VERSION"
 
+# Validate that the extracted K8s version is supported by this Minikube binary
+MINIKUBE_DEFAULT_K8S=$(minikube config defaults kubernetes-version 2>/dev/null | tr -d '[:space:]' || true)
+if [ -n "$MINIKUBE_DEFAULT_K8S" ]; then
+  HIGHEST=$(printf '%s\n%s\n' "$K8S_VERSION" "$MINIKUBE_DEFAULT_K8S" | sort -V | tail -n1)
+  if [ "$HIGHEST" != "$MINIKUBE_DEFAULT_K8S" ]; then
+    echo "::warning::Minikube does not support Kubernetes $K8S_VERSION (max supported: $MINIKUBE_DEFAULT_K8S). Falling back to $MINIKUBE_DEFAULT_K8S."
+    K8S_VERSION="$MINIKUBE_DEFAULT_K8S"
+  fi
+else
+  echo "::warning::Unable to query Minikube's supported Kubernetes versions. Proceeding with $K8S_VERSION."
+fi
+
 # Build minikube start command with appropriate flags
 MINIKUBE_CMD=(minikube start)
 MINIKUBE_CMD+=("--driver=$DRIVER")
