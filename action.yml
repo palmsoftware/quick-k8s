@@ -186,18 +186,22 @@ runs:
   steps:
     - name: Validate cluster provider input
       shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
       run: |
-        if [[ "${{ inputs.clusterProvider }}" != "kind" && "${{ inputs.clusterProvider }}" != "minikube" ]]; then
-          echo "Invalid cluster provider: ${{ inputs.clusterProvider }}"
+        if [[ "$CLUSTER_PROVIDER" != "kind" && "$CLUSTER_PROVIDER" != "minikube" ]]; then
+          echo "Invalid cluster provider: $CLUSTER_PROVIDER"
           echo "Must be 'kind' or 'minikube'"
           exit 1
         fi
 
     - name: Validate IP family input
       shell: bash
+      env:
+        IP_FAMILY: ${{ inputs.ipFamily }}
       run: |
-        if [[ "${{ inputs.ipFamily }}" != "dual" && "${{ inputs.ipFamily }}" != "ipv4" && "${{ inputs.ipFamily }}" != "ipv6" ]]; then
-          echo "Invalid IP family: ${{ inputs.ipFamily }}"
+        if [[ "$IP_FAMILY" != "dual" && "$IP_FAMILY" != "ipv4" && "$IP_FAMILY" != "ipv6" ]]; then
+          echo "Invalid IP family: $IP_FAMILY"
           echo "Must be 'dual', 'ipv4', or 'ipv6'"
           exit 1
         fi
@@ -205,13 +209,18 @@ runs:
     - name: Warn about ipFamily support for non-KinD providers
       if: ${{ inputs.clusterProvider != 'kind' && inputs.ipFamily != 'ipv4' }}
       shell: bash
+      env:
+        IP_FAMILY: ${{ inputs.ipFamily }}
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
       run: |
-        echo "::warning::ipFamily '${{ inputs.ipFamily }}' is only fully supported with KinD. ${{ inputs.clusterProvider }} will use default networking (ipv4)."
+        echo "::warning::ipFamily '$IP_FAMILY' is only fully supported with KinD. $CLUSTER_PROVIDER will use default networking (ipv4)."
 
     - name: Validate apiServerPort input
       shell: bash
+      env:
+        API_SERVER_PORT: ${{ inputs.apiServerPort }}
       run: |
-        PORT="${{ inputs.apiServerPort }}"
+        PORT="$API_SERVER_PORT"
         if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
           echo "Invalid apiServerPort: $PORT"
           echo "Must be a number between 1024 and 65535"
@@ -220,8 +229,10 @@ runs:
 
     - name: Validate API server address input
       shell: bash
+      env:
+        API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
       run: |
-        ADDR="${{ inputs.apiServerAddress }}"
+        ADDR="$API_SERVER_ADDRESS"
         # IPv4: exactly 4 decimal octets 0-255
         if [[ "$ADDR" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
           IFS='.' read -ra OCTETS <<< "$ADDR"
@@ -248,20 +259,24 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "KinD" "kubernetes-sigs/kind" "${{ inputs.kindVersion }}"
+        KIND_VERSION: ${{ inputs.kindVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "KinD" "kubernetes-sigs/kind" "$KIND_VERSION"
 
     - name: Validate Minikube version input
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Minikube" "kubernetes/minikube" "${{ inputs.minikubeVersion }}"
+        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Minikube" "kubernetes/minikube" "$MINIKUBE_VERSION"
 
     - name: Validate minikubeDriver input
       if: ${{ inputs.clusterProvider == 'minikube' }}
       shell: bash
+      env:
+        MINIKUBE_DRIVER: ${{ inputs.minikubeDriver }}
       run: |
-        DRIVER="${{ inputs.minikubeDriver }}"
+        DRIVER="$MINIKUBE_DRIVER"
         if [[ "$DRIVER" != "docker" && "$DRIVER" != "podman" && "$DRIVER" != "none" ]]; then
           echo "Invalid minikubeDriver: $DRIVER"
           echo "Must be 'docker', 'podman', or 'none'"
@@ -273,13 +288,16 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Calico" "projectcalico/calico" "${{ inputs.calicoVersion }}"
+        CALICO_VERSION: ${{ inputs.calicoVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Calico" "projectcalico/calico" "$CALICO_VERSION"
 
     - name: Validate OpenShift release level input
       shell: bash
+      env:
+        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
       run: |
-        if ! [[ "${{ inputs.ocpReleaseLevel }}" =~ ^[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid OpenShift release level format: ${{ inputs.ocpReleaseLevel }}"
+        if ! [[ "$OCP_RELEASE_LEVEL" =~ ^[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid OpenShift release level format: $OCP_RELEASE_LEVEL"
           exit 1
         fi
 
@@ -288,14 +306,17 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Istio" "istio/istio" "${{ inputs.istioVersion }}"
+        ISTIO_VERSION: ${{ inputs.istioVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Istio" "istio/istio" "$ISTIO_VERSION"
 
     - name: Validate Istio profile input
       if: ${{ inputs.installIstio == 'true' }}
       shell: bash
+      env:
+        ISTIO_PROFILE: ${{ inputs.istioProfile }}
       run: |
         VALID_PROFILES=("minimal" "demo" "default" "preview" "ambient" "empty")
-        PROFILE="${{ inputs.istioProfile }}"
+        PROFILE="$ISTIO_PROFILE"
         if [[ ! " ${VALID_PROFILES[@]} " =~ " ${PROFILE} " ]]; then
           echo "Invalid Istio profile: $PROFILE"
           echo "Valid profiles are: ${VALID_PROFILES[*]}"
@@ -304,63 +325,77 @@ runs:
 
     - name: Validate disableDefaultCni input
       shell: bash
+      env:
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
       run: |
-        if [[ "${{ inputs.disableDefaultCni }}" != "true" && "${{ inputs.disableDefaultCni }}" != "false" ]]; then
-          echo "Invalid disableDefaultCni value: ${{ inputs.disableDefaultCni }}"
+        if [[ "$DISABLE_DEFAULT_CNI" != "true" && "$DISABLE_DEFAULT_CNI" != "false" ]]; then
+          echo "Invalid disableDefaultCni value: $DISABLE_DEFAULT_CNI"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate installOLM input
       shell: bash
+      env:
+        INSTALL_OLM: ${{ inputs.installOLM }}
       run: |
-        if [[ "${{ inputs.installOLM }}" != "true" && "${{ inputs.installOLM }}" != "false" ]]; then
-          echo "Invalid installOLM value: ${{ inputs.installOLM }}"
+        if [[ "$INSTALL_OLM" != "true" && "$INSTALL_OLM" != "false" ]]; then
+          echo "Invalid installOLM value: $INSTALL_OLM"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate installIstio input
       shell: bash
+      env:
+        INSTALL_ISTIO: ${{ inputs.installIstio }}
       run: |
-        if [[ "${{ inputs.installIstio }}" != "true" && "${{ inputs.installIstio }}" != "false" ]]; then
-          echo "Invalid installIstio value: ${{ inputs.installIstio }}"
+        if [[ "$INSTALL_ISTIO" != "true" && "$INSTALL_ISTIO" != "false" ]]; then
+          echo "Invalid installIstio value: $INSTALL_ISTIO"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate removeDefaultStorageClass input
       shell: bash
+      env:
+        REMOVE_DEFAULT_STORAGE_CLASS: ${{ inputs.removeDefaultStorageClass }}
       run: |
-        if [[ "${{ inputs.removeDefaultStorageClass }}" != "true" && "${{ inputs.removeDefaultStorageClass }}" != "false" ]]; then
-          echo "Invalid removeDefaultStorageClass value: ${{ inputs.removeDefaultStorageClass }}"
+        if [[ "$REMOVE_DEFAULT_STORAGE_CLASS" != "true" && "$REMOVE_DEFAULT_STORAGE_CLASS" != "false" ]]; then
+          echo "Invalid removeDefaultStorageClass value: $REMOVE_DEFAULT_STORAGE_CLASS"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate removeControlPlaneTaint input
       shell: bash
+      env:
+        REMOVE_CONTROL_PLANE_TAINT: ${{ inputs.removeControlPlaneTaint }}
       run: |
-        if [[ "${{ inputs.removeControlPlaneTaint }}" != "true" && "${{ inputs.removeControlPlaneTaint }}" != "false" ]]; then
-          echo "Invalid removeControlPlaneTaint value: ${{ inputs.removeControlPlaneTaint }}"
+        if [[ "$REMOVE_CONTROL_PLANE_TAINT" != "true" && "$REMOVE_CONTROL_PLANE_TAINT" != "false" ]]; then
+          echo "Invalid removeControlPlaneTaint value: $REMOVE_CONTROL_PLANE_TAINT"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate waitForPodsReady input
       shell: bash
+      env:
+        WAIT_FOR_PODS_READY: ${{ inputs.waitForPodsReady }}
       run: |
-        if [[ "${{ inputs.waitForPodsReady }}" != "true" && "${{ inputs.waitForPodsReady }}" != "false" ]]; then
-          echo "Invalid waitForPodsReady value: ${{ inputs.waitForPodsReady }}"
+        if [[ "$WAIT_FOR_PODS_READY" != "true" && "$WAIT_FOR_PODS_READY" != "false" ]]; then
+          echo "Invalid waitForPodsReady value: $WAIT_FOR_PODS_READY"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate installCertManager input
       shell: bash
+      env:
+        INSTALL_CERT_MANAGER: ${{ inputs.installCertManager }}
       run: |
-        if [[ "${{ inputs.installCertManager }}" != "true" && "${{ inputs.installCertManager }}" != "false" ]]; then
-          echo "Invalid installCertManager value: ${{ inputs.installCertManager }}"
+        if [[ "$INSTALL_CERT_MANAGER" != "true" && "$INSTALL_CERT_MANAGER" != "false" ]]; then
+          echo "Invalid installCertManager value: $INSTALL_CERT_MANAGER"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -370,13 +405,16 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "cert-manager" "cert-manager/cert-manager" "${{ inputs.certManagerVersion }}"
+        CERT_MANAGER_VERSION: ${{ inputs.certManagerVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "cert-manager" "cert-manager/cert-manager" "$CERT_MANAGER_VERSION"
 
     - name: Validate installIngressNginx input
       shell: bash
+      env:
+        INSTALL_INGRESS_NGINX: ${{ inputs.installIngressNginx }}
       run: |
-        if [[ "${{ inputs.installIngressNginx }}" != "true" && "${{ inputs.installIngressNginx }}" != "false" ]]; then
-          echo "Invalid installIngressNginx value: ${{ inputs.installIngressNginx }}"
+        if [[ "$INSTALL_INGRESS_NGINX" != "true" && "$INSTALL_INGRESS_NGINX" != "false" ]]; then
+          echo "Invalid installIngressNginx value: $INSTALL_INGRESS_NGINX"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -386,13 +424,16 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "ingress-nginx" "kubernetes/ingress-nginx" "${{ inputs.ingressNginxVersion }}" "controller-"
+        INGRESS_NGINX_VERSION: ${{ inputs.ingressNginxVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "ingress-nginx" "kubernetes/ingress-nginx" "$INGRESS_NGINX_VERSION" "controller-"
 
     - name: Validate installMetricsServer input
       shell: bash
+      env:
+        INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
       run: |
-        if [[ "${{ inputs.installMetricsServer }}" != "true" && "${{ inputs.installMetricsServer }}" != "false" ]]; then
-          echo "Invalid installMetricsServer value: ${{ inputs.installMetricsServer }}"
+        if [[ "$INSTALL_METRICS_SERVER" != "true" && "$INSTALL_METRICS_SERVER" != "false" ]]; then
+          echo "Invalid installMetricsServer value: $INSTALL_METRICS_SERVER"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -402,13 +443,16 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "metrics-server" "kubernetes-sigs/metrics-server" "${{ inputs.metricsServerVersion }}"
+        METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "metrics-server" "kubernetes-sigs/metrics-server" "$METRICS_SERVER_VERSION"
 
     - name: Validate installOperatorSdk input
       shell: bash
+      env:
+        INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
       run: |
-        if [[ "${{ inputs.installOperatorSdk }}" != "true" && "${{ inputs.installOperatorSdk }}" != "false" ]]; then
-          echo "Invalid installOperatorSdk value: ${{ inputs.installOperatorSdk }}"
+        if [[ "$INSTALL_OPERATOR_SDK" != "true" && "$INSTALL_OPERATOR_SDK" != "false" ]]; then
+          echo "Invalid installOperatorSdk value: $INSTALL_OPERATOR_SDK"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -418,13 +462,16 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "operator-sdk" "operator-framework/operator-sdk" "${{ inputs.operatorSdkVersion }}"
+        OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "operator-sdk" "operator-framework/operator-sdk" "$OPERATOR_SDK_VERSION"
 
     - name: Validate enableClusterMonitoring input
       shell: bash
+      env:
+        ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
       run: |
-        if [[ "${{ inputs.enableClusterMonitoring }}" != "true" && "${{ inputs.enableClusterMonitoring }}" != "false" ]]; then
-          echo "Invalid enableClusterMonitoring value: ${{ inputs.enableClusterMonitoring }}"
+        if [[ "$ENABLE_CLUSTER_MONITORING" != "true" && "$ENABLE_CLUSTER_MONITORING" != "false" ]]; then
+          echo "Invalid enableClusterMonitoring value: $ENABLE_CLUSTER_MONITORING"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -434,38 +481,46 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "kube-prometheus" "prometheus-operator/kube-prometheus" "${{ inputs.kubePrometheusVersion }}"
+        KUBE_PROMETHEUS_VERSION: ${{ inputs.kubePrometheusVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "kube-prometheus" "prometheus-operator/kube-prometheus" "$KUBE_PROMETHEUS_VERSION"
 
     - name: Validate Thanos version input
       if: ${{ inputs.enableClusterMonitoring == 'true' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Thanos" "thanos-io/thanos" "${{ inputs.thanosVersion }}"
+        THANOS_VERSION: ${{ inputs.thanosVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Thanos" "thanos-io/thanos" "$THANOS_VERSION"
 
     - name: Validate installCalico input
       shell: bash
+      env:
+        INSTALL_CALICO: ${{ inputs.installCalico }}
       run: |
-        if [[ "${{ inputs.installCalico }}" != "true" && "${{ inputs.installCalico }}" != "false" ]]; then
-          echo "Invalid installCalico value: ${{ inputs.installCalico }}"
+        if [[ "$INSTALL_CALICO" != "true" && "$INSTALL_CALICO" != "false" ]]; then
+          echo "Invalid installCalico value: $INSTALL_CALICO"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate installLocalRegistry input
       shell: bash
+      env:
+        INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
       run: |
-        if [[ "${{ inputs.installLocalRegistry }}" != "true" && "${{ inputs.installLocalRegistry }}" != "false" ]]; then
-          echo "Invalid installLocalRegistry value: ${{ inputs.installLocalRegistry }}"
+        if [[ "$INSTALL_LOCAL_REGISTRY" != "true" && "$INSTALL_LOCAL_REGISTRY" != "false" ]]; then
+          echo "Invalid installLocalRegistry value: $INSTALL_LOCAL_REGISTRY"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
 
     - name: Validate dryRun input
       shell: bash
+      env:
+        DRY_RUN: ${{ inputs.dryRun }}
       run: |
-        if [[ "${{ inputs.dryRun }}" != "true" && "${{ inputs.dryRun }}" != "false" ]]; then
-          echo "Invalid dryRun value: ${{ inputs.dryRun }}"
+        if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+          echo "Invalid dryRun value: $DRY_RUN"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
@@ -473,8 +528,10 @@ runs:
     - name: Validate localRegistryPort input
       if: ${{ inputs.installLocalRegistry == 'true' }}
       shell: bash
+      env:
+        LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
       run: |
-        PORT="${{ inputs.localRegistryPort }}"
+        PORT="$LOCAL_REGISTRY_PORT"
         if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
           echo "Invalid localRegistryPort: $PORT"
           echo "Must be a number between 1024 and 65535"
@@ -483,8 +540,10 @@ runs:
 
     - name: Validate componentTimeout input
       shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: |
-        TIMEOUT="${{ inputs.componentTimeout }}"
+        TIMEOUT="$COMPONENT_TIMEOUT"
         if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 1 ]; then
           echo "Invalid componentTimeout: $TIMEOUT"
           echo "Must be a positive integer (seconds)"
@@ -494,8 +553,10 @@ runs:
     - name: Validate kindConfigPath input
       if: ${{ inputs.kindConfigPath != '' && inputs.clusterProvider == 'kind' }}
       shell: bash
+      env:
+        KIND_CONFIG_PATH: ${{ inputs.kindConfigPath }}
       run: |
-        CONFIG_PATH="${{ inputs.kindConfigPath }}"
+        CONFIG_PATH="$KIND_CONFIG_PATH"
         if [ ! -f "$CONFIG_PATH" ]; then
           echo "Custom KinD config file not found: $CONFIG_PATH"
           exit 1
@@ -504,8 +565,10 @@ runs:
 
     - name: Validate number of control-plane nodes
       shell: bash
+      env:
+        NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
       run: |
-        if [[ "${{ inputs.numControlPlaneNodes }}" -lt 1 ]]; then
+        if [[ "$NUM_CONTROL_PLANE_NODES" -lt 1 ]]; then
           echo "The number of control-plane nodes cannot be less than 1."
           exit 1
         fi
@@ -518,8 +581,10 @@ runs:
 
     - name: Validate number of worker nodes
       shell: bash
+      env:
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
       run: |
-        if [[ "${{ inputs.numWorkerNodes }}" -lt 0 ]]; then
+        if [[ "$NUM_WORKER_NODES" -lt 0 ]]; then
           echo "The number of worker nodes cannot be negative."
           exit 1
         fi
@@ -527,47 +592,73 @@ runs:
     - name: Dry-run summary
       if: ${{ inputs.dryRun == 'true' }}
       shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        DEFAULT_NODE_IMAGE: ${{ inputs.defaultNodeImage }}
+        API_SERVER_PORT: ${{ inputs.apiServerPort }}
+        API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
+        IP_FAMILY: ${{ inputs.ipFamily }}
+        NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
+        INSTALL_CALICO: ${{ inputs.installCalico }}
+        INSTALL_OLM: ${{ inputs.installOLM }}
+        INSTALL_ISTIO: ${{ inputs.installIstio }}
+        ISTIO_PROFILE: ${{ inputs.istioProfile }}
+        INSTALL_CERT_MANAGER: ${{ inputs.installCertManager }}
+        INSTALL_INGRESS_NGINX: ${{ inputs.installIngressNginx }}
+        INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
+        INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
+        LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
+        ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
+        WAIT_FOR_PODS_READY: ${{ inputs.waitForPodsReady }}
+        REMOVE_DEFAULT_STORAGE_CLASS: ${{ inputs.removeDefaultStorageClass }}
+        REMOVE_CONTROL_PLANE_TAINT: ${{ inputs.removeControlPlaneTaint }}
+        KIND_VERSION: ${{ inputs.kindVersion }}
+        KIND_CONFIG_PATH: ${{ inputs.kindConfigPath }}
+        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+        MINIKUBE_DRIVER: ${{ inputs.minikubeDriver }}
       run: |
         echo "=============================================="
         echo "  quick-k8s Dry Run Summary"
         echo "=============================================="
         echo ""
-        echo "Cluster Provider: ${{ inputs.clusterProvider }}"
-        echo "Node Image: ${{ inputs.defaultNodeImage }}"
-        echo "API Server Port: ${{ inputs.apiServerPort }}"
-        echo "API Server Address: ${{ inputs.apiServerAddress }}"
-        echo "IP Family: ${{ inputs.ipFamily }}"
-        echo "Control-Plane Nodes: ${{ inputs.numControlPlaneNodes }}"
-        echo "Worker Nodes: ${{ inputs.numWorkerNodes }}"
+        echo "Cluster Provider: $CLUSTER_PROVIDER"
+        echo "Node Image: $DEFAULT_NODE_IMAGE"
+        echo "API Server Port: $API_SERVER_PORT"
+        echo "API Server Address: $API_SERVER_ADDRESS"
+        echo "IP Family: $IP_FAMILY"
+        echo "Control-Plane Nodes: $NUM_CONTROL_PLANE_NODES"
+        echo "Worker Nodes: $NUM_WORKER_NODES"
         echo ""
         echo "Components to install:"
-        echo "  Calico CNI: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' }}"
-        echo "  OLM: ${{ inputs.installOLM }}"
-        echo "  Istio: ${{ inputs.installIstio }} (profile: ${{ inputs.istioProfile }})"
-        echo "  Cert-Manager: ${{ inputs.installCertManager }}"
-        echo "  Ingress-Nginx: ${{ inputs.installIngressNginx }}"
-        echo "  Metrics Server: ${{ inputs.installMetricsServer }}"
-        echo "  Local Registry: ${{ inputs.installLocalRegistry }} (port: ${{ inputs.localRegistryPort }})"
-        echo "  Cluster Monitoring: ${{ inputs.enableClusterMonitoring }}"
+        echo "  Calico CNI: $([ "$DISABLE_DEFAULT_CNI" = "true" ] && [ "$INSTALL_CALICO" = "true" ] && echo "true" || echo "false")"
+        echo "  OLM: $INSTALL_OLM"
+        echo "  Istio: $INSTALL_ISTIO (profile: $ISTIO_PROFILE)"
+        echo "  Cert-Manager: $INSTALL_CERT_MANAGER"
+        echo "  Ingress-Nginx: $INSTALL_INGRESS_NGINX"
+        echo "  Metrics Server: $INSTALL_METRICS_SERVER"
+        echo "  Local Registry: $INSTALL_LOCAL_REGISTRY (port: $LOCAL_REGISTRY_PORT)"
+        echo "  Cluster Monitoring: $ENABLE_CLUSTER_MONITORING"
         echo ""
         echo "Options:"
-        echo "  Disable Default CNI: ${{ inputs.disableDefaultCni }}"
-        echo "  Remove Default StorageClass: ${{ inputs.removeDefaultStorageClass }}"
-        echo "  Remove Control-Plane Taint: ${{ inputs.removeControlPlaneTaint }}"
-        echo "  Wait for Pods Ready: ${{ inputs.waitForPodsReady }}"
+        echo "  Disable Default CNI: $DISABLE_DEFAULT_CNI"
+        echo "  Remove Default StorageClass: $REMOVE_DEFAULT_STORAGE_CLASS"
+        echo "  Remove Control-Plane Taint: $REMOVE_CONTROL_PLANE_TAINT"
+        echo "  Wait for Pods Ready: $WAIT_FOR_PODS_READY"
         echo ""
-        if [ "${{ inputs.clusterProvider }}" = "kind" ]; then
+        if [ "$CLUSTER_PROVIDER" = "kind" ]; then
           echo "KinD Settings:"
-          echo "  KinD Version: ${{ inputs.kindVersion }}"
-          if [ -n "${{ inputs.kindConfigPath }}" ]; then
-            echo "  Custom Config: ${{ inputs.kindConfigPath }}"
+          echo "  KinD Version: $KIND_VERSION"
+          if [ -n "$KIND_CONFIG_PATH" ]; then
+            echo "  Custom Config: $KIND_CONFIG_PATH"
           else
             echo "  Custom Config: auto-generated"
           fi
-        elif [ "${{ inputs.clusterProvider }}" = "minikube" ]; then
+        elif [ "$CLUSTER_PROVIDER" = "minikube" ]; then
           echo "Minikube Settings:"
-          echo "  Minikube Version: ${{ inputs.minikubeVersion }}"
-          echo "  Driver: ${{ inputs.minikubeDriver }}"
+          echo "  Minikube Version: $MINIKUBE_VERSION"
+          echo "  Driver: $MINIKUBE_DRIVER"
         fi
         echo ""
         echo "=============================================="
@@ -613,9 +704,11 @@ runs:
     - name: Install KinD
       if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        KIND_VERSION: ${{ inputs.kindVersion }}
       run: |
         OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-        ${{ github.action_path }}/scripts/install-kind.sh ${{ inputs.kindVersion }} "$OS" ${{ runner.arch }}
+        ${{ github.action_path }}/scripts/install-kind.sh "$KIND_VERSION" "$OS" ${{ runner.arch }}
 
     - name: Add error handling for KinD installation
       if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
@@ -639,9 +732,11 @@ runs:
     - name: Install Minikube
       if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
       run: |
         OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-        ${{ github.action_path }}/scripts/install-minikube.sh ${{ inputs.minikubeVersion }} "$OS" ${{ runner.arch }}
+        ${{ github.action_path }}/scripts/install-minikube.sh "$MINIKUBE_VERSION" "$OS" ${{ runner.arch }}
 
     - name: Add error handling for Minikube installation
       if: ${{ inputs.clusterProvider == 'minikube' && inputs.dryRun != 'true' }}
@@ -658,14 +753,24 @@ runs:
       shell: bash
       env:
         EXTRA_PORT_MAPPINGS: ${{ inputs.extraPortMappings }}
-      run: ${{ github.action_path }}/scripts/generate-kind-config.sh ${{ inputs.apiServerPort }} ${{ inputs.apiServerAddress }} ${{ inputs.disableDefaultCni }} ${{ inputs.ipFamily }} ${{ inputs.defaultNodeImage }} ${{ inputs.numControlPlaneNodes }} ${{ inputs.numWorkerNodes }} ${{ github.action_path }}/kind-config.yaml ${{ inputs.clusterName }}
+        API_SERVER_PORT: ${{ inputs.apiServerPort }}
+        API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
+        IP_FAMILY: ${{ inputs.ipFamily }}
+        DEFAULT_NODE_IMAGE: ${{ inputs.defaultNodeImage }}
+        NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
+      run: ${{ github.action_path }}/scripts/generate-kind-config.sh "$API_SERVER_PORT" "$API_SERVER_ADDRESS" "$DISABLE_DEFAULT_CNI" "$IP_FAMILY" "$DEFAULT_NODE_IMAGE" "$NUM_CONTROL_PLANE_NODES" "$NUM_WORKER_NODES" ${{ github.action_path }}/kind-config.yaml "$CLUSTER_NAME"
 
     - name: Use custom KinD config file
       if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath != '' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        KIND_CONFIG_PATH: ${{ inputs.kindConfigPath }}
       run: |
-        echo "Using custom KinD configuration from: ${{ inputs.kindConfigPath }}"
-        cp "${{ inputs.kindConfigPath }}" "${{ github.action_path }}/kind-config.yaml"
+        echo "Using custom KinD configuration from: $KIND_CONFIG_PATH"
+        cp "$KIND_CONFIG_PATH" "${{ github.action_path }}/kind-config.yaml"
 
     - name: Print the KinD config
       if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
@@ -685,11 +790,15 @@ runs:
     - name: Pre-pull Kind node image with retry
       if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/pull-kind-image.sh "${{ inputs.defaultNodeImage }}"
+      env:
+        DEFAULT_NODE_IMAGE: ${{ inputs.defaultNodeImage }}
+      run: ${{ github.action_path }}/scripts/pull-kind-image.sh "$DEFAULT_NODE_IMAGE"
 
     - name: Create a new Kubernetes cluster using KinD
       if: ${{ inputs.clusterProvider == 'kind' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        CLUSTER_NAME: ${{ inputs.clusterName }}
       run: |
         max_attempts=3
         delay=10
@@ -697,32 +806,32 @@ runs:
 
         while [ $attempt -le $max_attempts ]; do
           echo ""
-          echo "🚀 Attempt $attempt/$max_attempts: Creating KinD cluster '${{ inputs.clusterName }}'..."
+          echo "Attempt $attempt/$max_attempts: Creating KinD cluster '$CLUSTER_NAME'..."
 
           set +e
           if command -v timeout >/dev/null 2>&1; then
-            timeout 600 kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
+            timeout 600 kind create cluster --name "$CLUSTER_NAME" --config ${{ github.action_path }}/kind-config.yaml
           else
-            kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml
+            kind create cluster --name "$CLUSTER_NAME" --config ${{ github.action_path }}/kind-config.yaml
           fi
           exit_code=$?
           set -e
 
           if [ $exit_code -eq 0 ]; then
             echo ""
-            echo "✅ Successfully created KinD cluster"
+            echo "Successfully created KinD cluster"
             break
           fi
 
           if [ $attempt -eq $max_attempts ]; then
             echo ""
-            echo "❌ Failed to create KinD cluster after $max_attempts attempts (exit code: $exit_code)"
+            echo "Failed to create KinD cluster after $max_attempts attempts (exit code: $exit_code)"
             exit 1
           fi
 
           echo ""
-          echo "⚠️  Cluster creation failed (exit code: $exit_code), cleaning up before retry..."
-          kind delete cluster --name ${{ inputs.clusterName }} 2>/dev/null || true
+          echo "Cluster creation failed (exit code: $exit_code), cleaning up before retry..."
+          kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
           echo "Retrying in ${delay}s..."
           sleep $delay
           attempt=$((attempt + 1))
@@ -734,33 +843,48 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        DEFAULT_NODE_IMAGE: ${{ inputs.defaultNodeImage }}
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
+        MINIKUBE_DRIVER: ${{ inputs.minikubeDriver }}
+        API_SERVER_PORT: ${{ inputs.apiServerPort }}
+        NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
       run: |
         ${{ github.action_path }}/scripts/start-minikube.sh \
-          "${{ inputs.defaultNodeImage }}" \
-          "${{ inputs.disableDefaultCni }}" \
-          "${{ inputs.minikubeDriver }}" \
-          "${{ inputs.apiServerPort }}" \
-          "${{ inputs.numControlPlaneNodes }}" \
-          "${{ inputs.numWorkerNodes }}" \
-          "${{ inputs.apiServerAddress }}" \
-          "${{ inputs.clusterName }}"
+          "$DEFAULT_NODE_IMAGE" \
+          "$DISABLE_DEFAULT_CNI" \
+          "$MINIKUBE_DRIVER" \
+          "$API_SERVER_PORT" \
+          "$NUM_CONTROL_PLANE_NODES" \
+          "$NUM_WORKER_NODES" \
+          "$API_SERVER_ADDRESS" \
+          "$CLUSTER_NAME"
 
     - name: Bootstrap the runner with kubectl client
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
       run: |
-        sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest ${{ inputs.ocpReleaseLevel }}
+        sudo ${{ github.action_path }}/scripts/install-oc-tools.sh --latest "$OCP_RELEASE_LEVEL"
 
     - name: Apply labels to worker nodes
       if: ${{ inputs.workerNodeLabels != '' && inputs.numWorkerNodes > 0 && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/label-worker-nodes.sh ${{ inputs.numWorkerNodes }} "${{ inputs.workerNodeLabels }}"
+      env:
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        WORKER_NODE_LABELS: ${{ inputs.workerNodeLabels }}
+      run: ${{ github.action_path }}/scripts/label-worker-nodes.sh "$NUM_WORKER_NODES" "$WORKER_NODE_LABELS"
 
     - name: Apply custom taints to control-plane nodes
       if: ${{ inputs.controlPlaneTaints != '' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        CONTROL_PLANE_TAINTS: ${{ inputs.controlPlaneTaints }}
       run: |
-        IFS=',' read -ra TAINTS <<< "${{ inputs.controlPlaneTaints }}"
+        IFS=',' read -ra TAINTS <<< "$CONTROL_PLANE_TAINTS"
         for node in $(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].metadata.name}'); do
           for taint in "${TAINTS[@]}"; do
             echo "Applying taint $taint to control-plane node $node"
@@ -771,8 +895,10 @@ runs:
     - name: Apply custom taints to worker nodes
       if: ${{ inputs.workerNodeTaints != '' && inputs.numWorkerNodes != '0' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        WORKER_NODE_TAINTS: ${{ inputs.workerNodeTaints }}
       run: |
-        IFS=',' read -ra TAINTS <<< "${{ inputs.workerNodeTaints }}"
+        IFS=',' read -ra TAINTS <<< "$WORKER_NODE_TAINTS"
         for node in $(kubectl get nodes --selector='!node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].metadata.name}'); do
           for taint in "${TAINTS[@]}"; do
             echo "Applying taint $taint to worker node $node"
@@ -785,19 +911,24 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-calico.sh "${{ inputs.calicoVersion }}"
+        CALICO_VERSION: ${{ inputs.calicoVersion }}
+      run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
 
     - name: Skip CNI installation (bring your own CNI)
       if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'false' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
-        echo "⚠️  Skipping Calico CNI installation - installCalico is set to false"
+        echo "Skipping Calico CNI installation - installCalico is set to false"
         echo "   You must install your own CNI (e.g., Multus, OVN, Cilium) for the cluster to be functional"
 
     - name: Setup local Docker registry
       if: ${{ inputs.installLocalRegistry == 'true' && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/setup-local-registry.sh ${{ inputs.localRegistryPort }} ${{ inputs.clusterProvider }} ${{ inputs.clusterName }}
+      env:
+        LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
+      run: ${{ github.action_path }}/scripts/setup-local-registry.sh "$LOCAL_REGISTRY_PORT" "$CLUSTER_PROVIDER" "$CLUSTER_NAME"
 
     - name: Install OLM
       if: ${{ inputs.installOLM == 'true' && inputs.dryRun != 'true' }}
@@ -811,52 +942,65 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-istio.sh ${{ inputs.istioVersion }} ${{ inputs.istioProfile }}
+        ISTIO_VERSION: ${{ inputs.istioVersion }}
+        ISTIO_PROFILE: ${{ inputs.istioProfile }}
+      run: ${{ github.action_path }}/scripts/install-istio.sh "$ISTIO_VERSION" "$ISTIO_PROFILE"
 
     - name: Install cert-manager
       if: ${{ inputs.installCertManager == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-cert-manager.sh ${{ inputs.certManagerVersion }}
+        CERT_MANAGER_VERSION: ${{ inputs.certManagerVersion }}
+      run: ${{ github.action_path }}/scripts/install-cert-manager.sh "$CERT_MANAGER_VERSION"
 
     - name: Install ingress-nginx
       if: ${{ inputs.installIngressNginx == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh ${{ inputs.ingressNginxVersion }} ${{ inputs.clusterProvider }}
+        INGRESS_NGINX_VERSION: ${{ inputs.ingressNginxVersion }}
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+      run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh "$INGRESS_NGINX_VERSION" "$CLUSTER_PROVIDER"
 
     - name: Install metrics-server
       if: ${{ inputs.installMetricsServer == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-metrics-server.sh ${{ inputs.metricsServerVersion }}
+        METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
+      run: ${{ github.action_path }}/scripts/install-metrics-server.sh "$METRICS_SERVER_VERSION"
 
     - name: Install operator-sdk
       if: ${{ inputs.installOperatorSdk == 'true' && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/install-operator-sdk.sh ${{ inputs.operatorSdkVersion }}
+      env:
+        OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
+      run: ${{ github.action_path }}/scripts/install-operator-sdk.sh "$OPERATOR_SDK_VERSION"
 
     - name: Install Prometheus monitoring stack
       if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-prometheus.sh ${{ inputs.kubePrometheusVersion }}
+        KUBE_PROMETHEUS_VERSION: ${{ inputs.kubePrometheusVersion }}
+      run: ${{ github.action_path }}/scripts/install-prometheus.sh "$KUBE_PROMETHEUS_VERSION"
 
     - name: Install Thanos
       if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-thanos.sh ${{ inputs.thanosVersion }}
+        THANOS_VERSION: ${{ inputs.thanosVersion }}
+      run: ${{ github.action_path }}/scripts/install-thanos.sh "$THANOS_VERSION"
 
     - name: Print monitoring access instructions
       if: ${{ (inputs.installMetricsServer == 'true' || inputs.enableClusterMonitoring == 'true') && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/print-monitoring-info.sh "${{ inputs.installMetricsServer }}" "${{ inputs.enableClusterMonitoring }}"
+      env:
+        INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
+        ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
+      run: ${{ github.action_path }}/scripts/print-monitoring-info.sh "$INSTALL_METRICS_SERVER" "$ENABLE_CLUSTER_MONITORING"
 
     - name: Remove the default storage class
       if: ${{ inputs.removeDefaultStorageClass == 'true' && inputs.dryRun != 'true' }}
@@ -887,6 +1031,29 @@ runs:
     - name: Print cluster deployment summary
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
+        NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
+        NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        IP_FAMILY: ${{ inputs.ipFamily }}
+        INSTALL_CALICO: ${{ inputs.installCalico }}
+        CALICO_VERSION: ${{ inputs.calicoVersion }}
+        INSTALL_ISTIO: ${{ inputs.installIstio }}
+        ISTIO_VERSION: ${{ inputs.istioVersion }}
+        ISTIO_PROFILE: ${{ inputs.istioProfile }}
+        INSTALL_OLM: ${{ inputs.installOLM }}
+        INSTALL_CERT_MANAGER: ${{ inputs.installCertManager }}
+        CERT_MANAGER_VERSION: ${{ inputs.certManagerVersion }}
+        INSTALL_INGRESS_NGINX: ${{ inputs.installIngressNginx }}
+        INGRESS_NGINX_VERSION: ${{ inputs.ingressNginxVersion }}
+        INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
+        METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
+        INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
+        OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
+        ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
+        INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
+        LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
       run: |
         K8S_VERSION=$(kubectl version -o json 2>/dev/null | jq -r '.serverVersion.gitVersion' 2>/dev/null) || K8S_VERSION="unknown"
         echo ""
@@ -894,23 +1061,23 @@ runs:
         echo "  Quick-K8s Deployment Summary"
         echo "======================================"
         echo ""
-        echo "Provider:     ${{ inputs.clusterProvider }}"
-        echo "Cluster:      ${{ inputs.clusterName }}"
+        echo "Provider:     $CLUSTER_PROVIDER"
+        echo "Cluster:      $CLUSTER_NAME"
         echo "K8s Version:  ${K8S_VERSION}"
-        echo "CP Nodes:     ${{ inputs.numControlPlaneNodes }}"
-        echo "Worker Nodes: ${{ inputs.numWorkerNodes }}"
-        echo "IP Family:    ${{ inputs.ipFamily }}"
+        echo "CP Nodes:     $NUM_CONTROL_PLANE_NODES"
+        echo "Worker Nodes: $NUM_WORKER_NODES"
+        echo "IP Family:    $IP_FAMILY"
         echo ""
         echo "Components:"
-        if [ "${{ inputs.installCalico }}" = "true" ]; then echo "  - Calico CNI ${{ inputs.calicoVersion }}"; fi
-        if [ "${{ inputs.installIstio }}" = "true" ]; then echo "  - Istio ${{ inputs.istioVersion }} (${{ inputs.istioProfile }})"; fi
-        if [ "${{ inputs.installOLM }}" = "true" ]; then echo "  - OLM"; fi
-        if [ "${{ inputs.installCertManager }}" = "true" ]; then echo "  - cert-manager ${{ inputs.certManagerVersion }}"; fi
-        if [ "${{ inputs.installIngressNginx }}" = "true" ]; then echo "  - ingress-nginx ${{ inputs.ingressNginxVersion }}"; fi
-        if [ "${{ inputs.installMetricsServer }}" = "true" ]; then echo "  - metrics-server ${{ inputs.metricsServerVersion }}"; fi
-        if [ "${{ inputs.installOperatorSdk }}" = "true" ]; then echo "  - operator-sdk ${{ inputs.operatorSdkVersion }}"; fi
-        if [ "${{ inputs.enableClusterMonitoring }}" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
-        if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then echo "  - Local registry @ localhost:${{ inputs.localRegistryPort }}"; fi
+        if [ "$INSTALL_CALICO" = "true" ]; then echo "  - Calico CNI $CALICO_VERSION"; fi
+        if [ "$INSTALL_ISTIO" = "true" ]; then echo "  - Istio $ISTIO_VERSION ($ISTIO_PROFILE)"; fi
+        if [ "$INSTALL_OLM" = "true" ]; then echo "  - OLM"; fi
+        if [ "$INSTALL_CERT_MANAGER" = "true" ]; then echo "  - cert-manager $CERT_MANAGER_VERSION"; fi
+        if [ "$INSTALL_INGRESS_NGINX" = "true" ]; then echo "  - ingress-nginx $INGRESS_NGINX_VERSION"; fi
+        if [ "$INSTALL_METRICS_SERVER" = "true" ]; then echo "  - metrics-server $METRICS_SERVER_VERSION"; fi
+        if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then echo "  - operator-sdk $OPERATOR_SDK_VERSION"; fi
+        if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
+        if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then echo "  - Local registry @ localhost:$LOCAL_REGISTRY_PORT"; fi
         echo ""
         echo "Connection Details:"
         KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
@@ -919,8 +1086,8 @@ runs:
         echo "  API Server:  $API_SERVER"
         CONTEXT=$(kubectl config current-context 2>/dev/null) || CONTEXT="unavailable"
         echo "  Context:     $CONTEXT"
-        if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then
-          echo "  Registry:    localhost:${{ inputs.localRegistryPort }}"
+        if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then
+          echo "  Registry:    localhost:$LOCAL_REGISTRY_PORT"
         fi
         echo ""
         kubectl get nodes 2>/dev/null || true
@@ -930,15 +1097,15 @@ runs:
         # Write deployment summary to GitHub Step Summary
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
           COMPONENTS=""
-          if [ "${{ inputs.installCalico }}" = "true" ]; then COMPONENTS="${COMPONENTS}Calico CNI ${{ inputs.calicoVersion }}, "; fi
-          if [ "${{ inputs.installIstio }}" = "true" ]; then COMPONENTS="${COMPONENTS}Istio ${{ inputs.istioVersion }} (${{ inputs.istioProfile }}), "; fi
-          if [ "${{ inputs.installOLM }}" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
-          if [ "${{ inputs.installCertManager }}" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager ${{ inputs.certManagerVersion }}, "; fi
-          if [ "${{ inputs.installIngressNginx }}" = "true" ]; then COMPONENTS="${COMPONENTS}ingress-nginx ${{ inputs.ingressNginxVersion }}, "; fi
-          if [ "${{ inputs.installMetricsServer }}" = "true" ]; then COMPONENTS="${COMPONENTS}metrics-server ${{ inputs.metricsServerVersion }}, "; fi
-          if [ "${{ inputs.installOperatorSdk }}" = "true" ]; then COMPONENTS="${COMPONENTS}operator-sdk ${{ inputs.operatorSdkVersion }}, "; fi
-          if [ "${{ inputs.enableClusterMonitoring }}" = "true" ]; then COMPONENTS="${COMPONENTS}Prometheus/Thanos monitoring, "; fi
-          if [ "${{ inputs.installLocalRegistry }}" = "true" ]; then COMPONENTS="${COMPONENTS}Local registry (localhost:${{ inputs.localRegistryPort }}), "; fi
+          if [ "$INSTALL_CALICO" = "true" ]; then COMPONENTS="${COMPONENTS}Calico CNI $CALICO_VERSION, "; fi
+          if [ "$INSTALL_ISTIO" = "true" ]; then COMPONENTS="${COMPONENTS}Istio $ISTIO_VERSION ($ISTIO_PROFILE), "; fi
+          if [ "$INSTALL_OLM" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
+          if [ "$INSTALL_CERT_MANAGER" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager $CERT_MANAGER_VERSION, "; fi
+          if [ "$INSTALL_INGRESS_NGINX" = "true" ]; then COMPONENTS="${COMPONENTS}ingress-nginx $INGRESS_NGINX_VERSION, "; fi
+          if [ "$INSTALL_METRICS_SERVER" = "true" ]; then COMPONENTS="${COMPONENTS}metrics-server $METRICS_SERVER_VERSION, "; fi
+          if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then COMPONENTS="${COMPONENTS}operator-sdk $OPERATOR_SDK_VERSION, "; fi
+          if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then COMPONENTS="${COMPONENTS}Prometheus/Thanos monitoring, "; fi
+          if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then COMPONENTS="${COMPONENTS}Local registry (localhost:$LOCAL_REGISTRY_PORT), "; fi
           # Remove trailing comma and space
           COMPONENTS="${COMPONENTS%, }"
           if [ -z "$COMPONENTS" ]; then COMPONENTS="None"; fi
@@ -948,11 +1115,11 @@ runs:
             echo ""
             echo "| Property | Value |"
             echo "|----------|-------|"
-            echo "| Provider | ${{ inputs.clusterProvider }} |"
-            echo "| Cluster Name | ${{ inputs.clusterName }} |"
-            echo "| Control Plane Nodes | ${{ inputs.numControlPlaneNodes }} |"
-            echo "| Worker Nodes | ${{ inputs.numWorkerNodes }} |"
-            echo "| IP Family | ${{ inputs.ipFamily }} |"
+            echo "| Provider | $CLUSTER_PROVIDER |"
+            echo "| Cluster Name | $CLUSTER_NAME |"
+            echo "| Control Plane Nodes | $NUM_CONTROL_PLANE_NODES |"
+            echo "| Worker Nodes | $NUM_WORKER_NODES |"
+            echo "| IP Family | $IP_FAMILY |"
             echo "| Components | ${COMPONENTS} |"
             echo "| Kubeconfig | \`~/.kube/config\` |"
             echo ""
