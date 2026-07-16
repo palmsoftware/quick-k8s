@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OLM_VERSION="v0.45.0"
+OLM_VERSION="${1:-v0.45.0}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh

@@ -64,6 +64,10 @@ inputs:
     description: 'Install the Operator Lifecycle Manager'
     required: false
     default: 'false'
+  olmVersion:
+    description: 'The version of OLM to install'
+    required: false
+    default: 'v0.45.0'
   removeDefaultStorageClass:
     description: 'Remove the default storage class'
     required: false
@@ -376,6 +380,13 @@ runs:
           echo "Must be 'true' or 'false'"
           exit 1
         fi
+
+    - name: Validate OLM version input
+      if: ${{ inputs.installOLM == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "OLM" "operator-framework/operator-lifecycle-manager" "${{ inputs.olmVersion }}"
 
     - name: Validate installIstio input
       shell: bash
@@ -1093,7 +1104,7 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-olm.sh
+      run: ${{ github.action_path }}/scripts/install-olm.sh ${{ inputs.olmVersion }}
 
     - name: Install Istio
       if: ${{ inputs.installIstio == 'true' && inputs.dryRun != 'true' }}
