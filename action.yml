@@ -829,6 +829,10 @@ runs:
           echo "  Minikube Version: $MINIKUBE_VERSION"
           echo "  Driver: $MINIKUBE_DRIVER"
         fi
+        if [ -n "$EXTRA_PROVIDER_ARGS" ]; then
+          echo ""
+          echo "Extra Provider Args: $EXTRA_PROVIDER_ARGS"
+        fi
         echo ""
         echo "=============================================="
         echo "  Dry run complete - no changes were made"
@@ -972,6 +976,13 @@ runs:
         max_attempts=3
         delay=10
         attempt=1
+
+        # Build the base kind create command
+        KIND_CMD="kind create cluster --name ${{ inputs.clusterName }} --config ${{ github.action_path }}/kind-config.yaml"
+        if [ -n "$EXTRA_PROVIDER_ARGS" ]; then
+          echo "Appending extra provider args: $EXTRA_PROVIDER_ARGS"
+          KIND_CMD="$KIND_CMD $EXTRA_PROVIDER_ARGS"
+        fi
 
         while [ $attempt -le $max_attempts ]; do
           echo ""
