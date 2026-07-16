@@ -617,6 +617,15 @@ runs:
           exit 1
         fi
 
+    - name: Validate enableCleanup input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.enableCleanup }}" != "true" && "${{ inputs.enableCleanup }}" != "false" ]]; then
+          echo "Invalid enableCleanup value: ${{ inputs.enableCleanup }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
     - name: Validate dryRun input
       shell: bash
       env:
@@ -1335,6 +1344,9 @@ runs:
         echo "  Context:     $CONTEXT"
         if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then
           echo "  Registry:    localhost:$LOCAL_REGISTRY_PORT"
+        fi
+        if [ "${{ inputs.enableCleanup }}" = "true" ]; then
+          echo "  Cleanup:     /tmp/quick-k8s-cleanup.sh"
         fi
         echo ""
         kubectl get nodes 2>/dev/null || true
