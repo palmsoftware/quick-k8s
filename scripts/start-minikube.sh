@@ -29,7 +29,7 @@ K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 echo "Extracted Kubernetes version: $K8S_VERSION"
 
 # Validate that the extracted K8s version is supported by this Minikube binary
-MINIKUBE_DEFAULT_K8S=$(minikube config defaults kubernetes-version 2>/dev/null | tr -d '[:space:]')
+MINIKUBE_DEFAULT_K8S=$(minikube config defaults kubernetes-version 2>/dev/null | tr -d '[:space:]' || true)
 if [ -n "$MINIKUBE_DEFAULT_K8S" ]; then
   HIGHEST=$(printf '%s\n%s\n' "$K8S_VERSION" "$MINIKUBE_DEFAULT_K8S" | sort -V | tail -n1)
   if [ "$HIGHEST" != "$MINIKUBE_DEFAULT_K8S" ]; then
