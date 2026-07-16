@@ -184,6 +184,18 @@ inputs:
     description: 'Preview what the action would do without executing. Prints configuration summary and exits'
     required: false
     default: 'false'
+  createPersistentVolumes:
+    description: 'Create sample PersistentVolumes using hostPath for testing'
+    required: false
+    default: 'false'
+  persistentVolumeCount:
+    description: 'Number of PersistentVolumes to create'
+    required: false
+    default: '5'
+  persistentVolumeSize:
+    description: 'Size of each PersistentVolume (e.g., 10Gi, 1Gi, 500Mi)'
+    required: false
+    default: '10Gi'
 
 runs:
   using: 'composite'
@@ -535,6 +547,37 @@ runs:
         if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
           echo "Invalid dryRun value: $DRY_RUN"
           echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate createPersistentVolumes input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.createPersistentVolumes }}" != "true" && "${{ inputs.createPersistentVolumes }}" != "false" ]]; then
+          echo "Invalid createPersistentVolumes value: ${{ inputs.createPersistentVolumes }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate persistentVolumeCount input
+      if: ${{ inputs.createPersistentVolumes == 'true' }}
+      shell: bash
+      run: |
+        COUNT="${{ inputs.persistentVolumeCount }}"
+        if ! [[ "$COUNT" =~ ^[0-9]+$ ]] || [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 100 ]; then
+          echo "Invalid persistentVolumeCount: $COUNT"
+          echo "Must be a number between 1 and 100"
+          exit 1
+        fi
+
+    - name: Validate persistentVolumeSize input
+      if: ${{ inputs.createPersistentVolumes == 'true' }}
+      shell: bash
+      run: |
+        SIZE="${{ inputs.persistentVolumeSize }}"
+        if ! [[ "$SIZE" =~ ^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei)?$ ]]; then
+          echo "Invalid persistentVolumeSize: $SIZE"
+          echo "Must be a valid Kubernetes quantity (e.g., 10Gi, 1Gi, 500Mi)"
           exit 1
         fi
 
@@ -1032,6 +1075,11 @@ runs:
       shell: bash
       run: |
         kubectl delete storageclass standard --ignore-not-found
+
+    - name: Create persistent volumes
+      if: ${{ inputs.createPersistentVolumes == 'true' && inputs.dryRun != 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/create-persistent-volumes.sh "${{ inputs.persistentVolumeCount }}" "${{ inputs.persistentVolumeSize }}"
 
     - name: Remove the control plane taint
       if: ${{ inputs.removeControlPlaneTaint == 'true' && inputs.dryRun != 'true' }}
