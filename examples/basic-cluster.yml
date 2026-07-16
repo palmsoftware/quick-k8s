@@ -1,0 +1,29 @@
+# Basic Kubernetes cluster for CI testing
+# Creates a 1 CP + 1 worker cluster with Calico CNI
+name: Basic Cluster Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Kubernetes cluster
+        uses: palmsoftware/quick-k8s@v0
+
+      - name: Verify cluster
+        run: |
+          kubectl get nodes
+          kubectl cluster-info
+          kubectl get pods --all-namespaces
+
+      - name: Deploy test application
+        run: |
+          kubectl create deployment nginx --image=nginx:latest
+          kubectl wait --for=condition=ready pod -l app=nginx --timeout=60s
+          kubectl get pods

@@ -1,0 +1,34 @@
+# Kubernetes cluster with full monitoring stack (Prometheus, Thanos, Grafana)
+# Note: Resource-intensive — use a runner with at least 8GB RAM
+name: Monitoring Stack Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster with monitoring
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          enableClusterMonitoring: true
+          kubePrometheusVersion: v0.18.0
+          thanosVersion: v0.42.0
+          numWorkerNodes: 0  # Single-node to save resources
+          waitForPodsReady: true
+
+      - name: Verify monitoring stack
+        run: |
+          kubectl get pods -n monitoring
+          kubectl get svc -n monitoring
+
+      - name: Query Prometheus metrics
+        run: |
+          kubectl port-forward -n monitoring svc/prometheus-k8s 9090:9090 &
+          sleep 5
+          # Check that Prometheus is scraping targets
+          curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets | length'

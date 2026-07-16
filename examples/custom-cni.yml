@@ -1,0 +1,39 @@
+# Cluster with Cilium CNI for eBPF-based networking
+name: Custom CNI Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  cilium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster with Cilium
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          cniPlugin: cilium
+          waitForPodsReady: true
+
+      - name: Verify Cilium is running
+        run: |
+          kubectl get pods -n kube-system -l k8s-app=cilium
+          kubectl get pods --all-namespaces
+
+  flannel:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster with Flannel
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          cniPlugin: flannel
+          waitForPodsReady: true
+
+      - name: Verify Flannel is running
+        run: |
+          kubectl get pods -n kube-flannel
+          kubectl get pods --all-namespaces

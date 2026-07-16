@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-FLANNEL_VERSION="${1:-v0.26.7}"
+FLANNEL_VERSION="${1:-v0.28.7}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh

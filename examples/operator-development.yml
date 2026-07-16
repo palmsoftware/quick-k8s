@@ -1,0 +1,31 @@
+# Complete operator development environment with OLM and operator-sdk
+name: Operator Development Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster for operator development
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          installOLM: true
+          installOperatorSdk: true
+          installCertManager: true
+          waitForPodsReady: true
+
+      - name: Verify OLM is running
+        run: |
+          kubectl get pods -n olm
+          kubectl get csv -n olm
+
+      - name: Verify operator-sdk is available
+        run: operator-sdk version
+
+      - name: List available operators
+        run: kubectl get packagemanifests --no-headers | head -10

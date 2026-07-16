@@ -66,7 +66,9 @@ else
   NETWORK_NAME="bridge"
 fi
 
-SUBNET=$(docker network inspect "$NETWORK_NAME" -f '{{(index .IPAM.Config 0).Subnet}}' 2>/dev/null) || {
+# Use the first IPv4 subnet (skip any IPv6 entries in dual-stack networks)
+SUBNET=$(docker network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
+  | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1) || {
   echo "Warning: Could not detect Docker network subnet, using default 172.18.255.200-172.18.255.250"
   SUBNET=""
 }

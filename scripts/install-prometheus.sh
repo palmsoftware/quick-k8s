@@ -11,6 +11,14 @@ echo "Installing kube-prometheus version $KUBE_PROMETHEUS_VERSION"
 
 echo "::group::Installing kube-prometheus $KUBE_PROMETHEUS_VERSION"
 
+# Wait for CNI to be fully ready before deploying the monitoring stack.
+# kube-prometheus creates many pods at once; if Calico hasn't finished
+# initializing, pod sandbox creation fails and containers CrashLoop.
+if kubectl get daemonset calico-node -n kube-system &>/dev/null; then
+  echo "Waiting for Calico CNI to be fully ready..."
+  kubectl rollout status daemonset/calico-node -n kube-system --timeout=120s || true
+fi
+
 # Verify required tools are available
 for cmd in curl kubectl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -44,6 +52,14 @@ grep -rl 'memory:\|cpu:' "${KUBE_PROMETHEUS_DIR}/manifests/" --include="*.yaml" 
   -e 's/memory: 200Mi/memory: 128Mi/g' \
   -e 's/cpu: 500m/cpu: 100m/g' \
   -e 's/cpu: "2"/cpu: 200m/g'
+
+# Scale down Grafana to 0 replicas — it's too resource-heavy for free-tier
+# runners and is not required to validate core monitoring functionality.
+GRAFANA_DEPLOY="${KUBE_PROMETHEUS_DIR}/manifests/grafana-deployment.yaml"
+if [ -f "$GRAFANA_DEPLOY" ]; then
+  echo "Scaling down Grafana (too resource-heavy for CI runners)..."
+  sed -i 's/replicas: 1/replicas: 0/' "$GRAFANA_DEPLOY"
+fi
 
 echo "Applying kube-prometheus setup manifests (CRDs, namespace)..."
 setup_output=$(kubectl apply --server-side --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/" 2>&1) || {

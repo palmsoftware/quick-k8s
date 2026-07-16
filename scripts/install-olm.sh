@@ -47,10 +47,15 @@ wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=olm --tim
 }
 echo "$wait_output"
 
-wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=operators --timeout="${TIMEOUT}s" 2>&1) || {
+pod_count=$(kubectl get pods --namespace=operators --no-headers 2>/dev/null | wc -l)
+if [ "$pod_count" -gt 0 ]; then
+  wait_output=$(kubectl wait --for=condition=ready pod --all --namespace=operators --timeout="${TIMEOUT}s" 2>&1) || {
+    echo "$wait_output"
+    dump_pod_status "operators" "OLM operators"
+    diagnose_failure "OLM" "$wait_output"
+    exit 1
+  }
   echo "$wait_output"
-  dump_pod_status "operators" "OLM operators"
-  diagnose_failure "OLM" "$wait_output"
-  exit 1
-}
-echo "$wait_output"
+else
+  echo "No pods in operators namespace (expected — pods appear when operators are installed)"
+fi

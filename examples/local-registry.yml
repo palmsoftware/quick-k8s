@@ -1,0 +1,30 @@
+# Cluster with local Docker registry for testing container builds
+name: Local Registry Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create cluster with local registry
+        uses: palmsoftware/quick-k8s@v0
+        with:
+          installLocalRegistry: true
+          localRegistryPort: 5001
+
+      - name: Build and push to local registry
+        run: |
+          # Create a simple test image
+          echo 'FROM nginx:latest' | docker build -t localhost:5001/my-app:v1 -
+          docker push localhost:5001/my-app:v1
+
+      - name: Deploy from local registry
+        run: |
+          kubectl create deployment my-app --image=localhost:5001/my-app:v1
+          kubectl wait --for=condition=ready pod -l app=my-app --timeout=60s
+          kubectl get pods

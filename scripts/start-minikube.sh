@@ -68,6 +68,12 @@ if [ "$CLUSTER_NAME" != "minikube" ]; then
   MINIKUBE_CMD+=("--profile=$CLUSTER_NAME")
 fi
 
+# Configure resource limits
+MINIKUBE_CMD+=("--cpus=$CLUSTER_CPUS")
+if [ -n "$CLUSTER_MEMORY" ]; then
+  MINIKUBE_CMD+=("--memory=${CLUSTER_MEMORY}m")
+fi
+
 # Configure nodes
 if [ "$NUM_WORKERS" -gt 0 ]; then
   TOTAL_NODES=$((NUM_CONTROL_PLANE + NUM_WORKERS))
