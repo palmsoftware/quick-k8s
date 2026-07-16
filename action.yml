@@ -84,6 +84,10 @@ inputs:
     description: 'Comma-separated list of namespaces to exclude from pod readiness monitoring'
     required: false
     default: ''
+  waitForPodsTimeout:
+    description: 'Timeout in seconds for waiting for pods to be ready (default: 1200 = 20 minutes)'
+    required: false
+    default: '1200'
   installIstio:
     description: 'Install Istio service mesh'
     required: false
@@ -410,6 +414,16 @@ runs:
         if [[ "$WAIT_FOR_PODS_READY" != "true" && "$WAIT_FOR_PODS_READY" != "false" ]]; then
           echo "Invalid waitForPodsReady value: $WAIT_FOR_PODS_READY"
           echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
+    - name: Validate waitForPodsTimeout input
+      shell: bash
+      run: |
+        TIMEOUT="${{ inputs.waitForPodsTimeout }}"
+        if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 60 ] || [ "$TIMEOUT" -gt 7200 ]; then
+          echo "Invalid waitForPodsTimeout: $TIMEOUT"
+          echo "Must be a number between 60 and 7200 (1 minute to 2 hours)"
           exit 1
         fi
 
@@ -1134,6 +1148,7 @@ runs:
       env:
         WAIT_NAMESPACES: ${{ inputs.waitForPodsNamespaces }}
         EXCLUDE_NAMESPACES: ${{ inputs.waitForPodsExcludeNamespaces }}
+        WAIT_TIMEOUT: ${{ inputs.waitForPodsTimeout }}
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
 
     - name: Clean up package manager cache

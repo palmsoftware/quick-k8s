@@ -9,7 +9,7 @@ if ! command -v kubectl >/dev/null 2>&1; then
   exit 1
 fi
 
-timeout=1200  # 20 minutes in seconds
+timeout="${WAIT_TIMEOUT:-1200}"  # Default: 20 minutes in seconds
 elapsed=0
 interval=10
 
@@ -142,7 +142,7 @@ while true; do
     print_pod_progress "$pod_output" "$time_str"
     sleep $interval
     elapsed=$((elapsed + interval))
-    if [ $elapsed -ge $timeout ]; then
+    if [ $elapsed -ge "$timeout" ]; then
       echo "Timeout reached: Not all pods are running or completed"
       echo ""
       echo "=== Pod State Dump (all namespaces) ==="
