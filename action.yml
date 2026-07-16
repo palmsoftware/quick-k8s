@@ -156,6 +156,10 @@ inputs:
     description: 'Install Calico CNI when default CNI is disabled. Set to false to bring your own CNI (e.g., Multus, OVN)'
     required: false
     default: 'true'
+  installSampleNetworkPolicies:
+    description: 'Install sample NetworkPolicy resources in the default namespace for testing (default-deny-all, allow-dns, allow-same-namespace)'
+    required: false
+    default: 'false'
   kindConfigPath:
     description: 'Path to custom KinD configuration file. When provided, uses this instead of auto-generated config'
     required: false
@@ -503,6 +507,15 @@ runs:
           exit 1
         fi
 
+    - name: Validate installSampleNetworkPolicies input
+      shell: bash
+      run: |
+        if [[ "${{ inputs.installSampleNetworkPolicies }}" != "true" && "${{ inputs.installSampleNetworkPolicies }}" != "false" ]]; then
+          echo "Invalid installSampleNetworkPolicies value: ${{ inputs.installSampleNetworkPolicies }}"
+          echo "Must be 'true' or 'false'"
+          exit 1
+        fi
+
     - name: Validate installLocalRegistry input
       shell: bash
       env:
@@ -611,6 +624,7 @@ runs:
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
+        INSTALL_SAMPLE_NETWORK_POLICIES: ${{ inputs.installSampleNetworkPolicies }}
         WAIT_FOR_PODS_READY: ${{ inputs.waitForPodsReady }}
         REMOVE_DEFAULT_STORAGE_CLASS: ${{ inputs.removeDefaultStorageClass }}
         REMOVE_CONTROL_PLANE_TAINT: ${{ inputs.removeControlPlaneTaint }}
@@ -640,6 +654,7 @@ runs:
         echo "  Metrics Server: $INSTALL_METRICS_SERVER"
         echo "  Local Registry: $INSTALL_LOCAL_REGISTRY (port: $LOCAL_REGISTRY_PORT)"
         echo "  Cluster Monitoring: $ENABLE_CLUSTER_MONITORING"
+        echo "  Sample Network Policies: $INSTALL_SAMPLE_NETWORK_POLICIES"
         echo ""
         echo "Options:"
         echo "  Disable Default CNI: $DISABLE_DEFAULT_CNI"
@@ -926,6 +941,11 @@ runs:
         echo "Skipping Calico CNI installation - installCalico is set to false"
         echo "   You must install your own CNI (e.g., Multus, OVN, Cilium) for the cluster to be functional"
 
+    - name: Install sample network policies
+      if: ${{ inputs.installSampleNetworkPolicies == 'true' && inputs.dryRun != 'true' }}
+      shell: bash
+      run: ${{ github.action_path }}/scripts/install-sample-network-policies.sh
+
     - name: Setup local Docker registry
       if: ${{ inputs.installLocalRegistry == 'true' && inputs.dryRun != 'true' }}
       shell: bash
@@ -1057,6 +1077,7 @@ runs:
         INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
         OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
+        INSTALL_SAMPLE_NETWORK_POLICIES: ${{ inputs.installSampleNetworkPolicies }}
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
       run: |
@@ -1082,6 +1103,7 @@ runs:
         if [ "$INSTALL_METRICS_SERVER" = "true" ]; then echo "  - metrics-server $METRICS_SERVER_VERSION"; fi
         if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then echo "  - operator-sdk $OPERATOR_SDK_VERSION"; fi
         if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
+        if [ "$INSTALL_SAMPLE_NETWORK_POLICIES" = "true" ]; then echo "  - Sample network policies"; fi
         if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then echo "  - Local registry @ localhost:$LOCAL_REGISTRY_PORT"; fi
         echo ""
         echo "Connection Details:"
@@ -1110,6 +1132,7 @@ runs:
           if [ "$INSTALL_METRICS_SERVER" = "true" ]; then COMPONENTS="${COMPONENTS}metrics-server $METRICS_SERVER_VERSION, "; fi
           if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then COMPONENTS="${COMPONENTS}operator-sdk $OPERATOR_SDK_VERSION, "; fi
           if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then COMPONENTS="${COMPONENTS}Prometheus/Thanos monitoring, "; fi
+          if [ "$INSTALL_SAMPLE_NETWORK_POLICIES" = "true" ]; then COMPONENTS="${COMPONENTS}Sample network policies, "; fi
           if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then COMPONENTS="${COMPONENTS}Local registry (localhost:$LOCAL_REGISTRY_PORT), "; fi
           # Remove trailing comma and space
           COMPONENTS="${COMPONENTS%, }"
