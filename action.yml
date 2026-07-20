@@ -167,7 +167,7 @@ inputs:
   thanosVersion:
     description: 'The version of Thanos to install'
     required: false
-    default: 'v0.42.0'
+    default: 'v0.42.2'
   cniPlugin:
     description: 'CNI plugin to install when default CNI is disabled (calico, cilium, flannel, none). Use none to bring your own CNI'
     required: false
