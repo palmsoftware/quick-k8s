@@ -23,7 +23,7 @@ inputs:
   defaultNodeImage:
     description: 'The default node image to use for the Kubernetes cluster'
     required: false
-    default: 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
+    default: 'kindest/node:v1.27.0@sha256:c6b22e613523b1af67d4bc8a0c38a4c3ea3a2b8fbc5b367ae36345c9cb844518'
   numControlPlaneNodes:
     description: 'The number of control plane nodes to use for the Kubernetes cluster'
     required: false
