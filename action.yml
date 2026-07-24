@@ -67,7 +67,7 @@ inputs:
   olmVersion:
     description: 'The version of OLM to install'
     required: false
-    default: 'v0.45.0'
+    default: 'v0.46.0'
   removeDefaultStorageClass:
     description: 'Remove the default storage class'
     required: false
