@@ -23,42 +23,52 @@ jobs:
       - name: Get latest kindest/node image
         id: get_image
         run: |
-          # Function to get the latest kindest/node image with retries
+          # Fetch all tags from Docker Hub (paginated) and find the latest stable version
           get_latest_node_image() {
             local retries=3
             local delay=5
+            local all_tags=""
 
             for ((i=1; i<=retries; i++)); do
-              echo "Attempt $i to fetch latest kindest/node tag..."
+              echo "Attempt $i to fetch kindest/node tags..."
+              all_tags=""
+              local url="https://hub.docker.com/v2/repositories/kindest/node/tags/?page_size=100"
+              local page=0
 
-              # Fetch tags from Docker Hub API (most recently updated first)
-              response=$(curl -s --max-time 30 \
-                "https://hub.docker.com/v2/repositories/kindest/node/tags/?page_size=100&ordering=-last_updated")
+              while [ -n "$url" ] && [ "$url" != "null" ]; do
+                page=$((page + 1))
+                echo "  Fetching page $page..."
+                response=$(curl -s --max-time 30 "$url")
 
-              if [ $? -eq 0 ] && [ -n "$response" ]; then
-                # Extract the latest stable version tag (vX.Y.Z format only)
-                latest_tag=$(echo "$response" | jq -r '.results[].name' | \
-                  grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+                if [ $? -ne 0 ] || [ -z "$response" ]; then
+                  echo "  API call failed on page $page"
+                  break
+                fi
 
-                if [ -n "$latest_tag" ] && [ "$latest_tag" != "null" ]; then
-                  # Get the digest for this tag
-                  digest=$(echo "$response" | jq -r --arg tag "$latest_tag" \
-                    '.results[] | select(.name == $tag) | .digest')
+                page_tags=$(echo "$response" | jq -r '.results[].name')
+                all_tags="${all_tags}${page_tags}"$'\n'
+                url=$(echo "$response" | jq -r '.next // empty')
+              done
 
-                  if [ -n "$digest" ] && [ "$digest" != "null" ]; then
-                    image="kindest/node:${latest_tag}@${digest}"
-                    echo "Successfully determined latest node image: $image"
-                    echo "image=$image" >> $GITHUB_OUTPUT
-                    echo "tag=$latest_tag" >> $GITHUB_OUTPUT
-                    return 0
-                  else
-                    echo "Could not get digest for tag '$latest_tag'"
-                  fi
+              latest_tag=$(echo "$all_tags" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+              if [ -n "$latest_tag" ] && [ "$latest_tag" != "null" ]; then
+                # Fetch the specific tag to get its digest
+                tag_response=$(curl -s --max-time 30 \
+                  "https://hub.docker.com/v2/repositories/kindest/node/tags/${latest_tag}")
+                digest=$(echo "$tag_response" | jq -r '.digest // empty')
+
+                if [ -n "$digest" ]; then
+                  image="kindest/node:${latest_tag}@${digest}"
+                  echo "Successfully determined latest node image: $image"
+                  echo "image=$image" >> $GITHUB_OUTPUT
+                  echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+                  return 0
                 else
-                  echo "No valid stable tag found"
+                  echo "Could not get digest for tag '$latest_tag'"
                 fi
               else
-                echo "API call failed or returned empty response"
+                echo "No valid stable tag found"
               fi
 
               if [ $i -lt $retries ]; then
