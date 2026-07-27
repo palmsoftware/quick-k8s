@@ -71,6 +71,28 @@ diagnose_failure() {
   fi
 }
 
+# Waits for pods to be ready with retry, handling pod recreation during startup.
+# Usage: wait_for_pods_ready <namespace> <component_label> <timeout> [kubectl_wait_args...]
+wait_for_pods_ready() {
+  local namespace="$1" component="$2" timeout="$3"
+  shift 3
+  local end_time=$((SECONDS + timeout)) last_err=""
+  while [ $SECONDS -lt $end_time ]; do
+    local remaining=$((end_time - SECONDS))
+    local wait_timeout=$((remaining < 30 ? remaining : 30))
+    last_err=$(kubectl wait --for=condition=ready pod --namespace="$namespace" \
+      --timeout="${wait_timeout}s" "$@" 2>&1) && {
+      echo "All pods in namespace $namespace are ready"
+      return 0
+    }
+    sleep 5
+  done
+  echo "$last_err"
+  dump_pod_status "$namespace" "$component"
+  diagnose_failure "$component" "$last_err"
+  return 1
+}
+
 # Collects pod status from a namespace to add context to failure diagnostics.
 # Call after a kubectl wait failure to show what went wrong.
 dump_pod_status() {
