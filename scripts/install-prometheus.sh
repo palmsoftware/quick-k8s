@@ -61,6 +61,16 @@ if [ -f "$GRAFANA_DEPLOY" ]; then
   sed -i 's/replicas: 1/replicas: 0/' "$GRAFANA_DEPLOY"
 fi
 
+echo "Scaling down HA replicas (CI doesn't need high-availability)..."
+for manifest_file in \
+  "${KUBE_PROMETHEUS_DIR}/manifests/alertmanager-alertmanager.yaml" \
+  "${KUBE_PROMETHEUS_DIR}/manifests/prometheus-prometheus.yaml" \
+  "${KUBE_PROMETHEUS_DIR}/manifests/prometheusAdapter-deployment.yaml"; do
+  if [ -f "$manifest_file" ]; then
+    sed -i 's/replicas: [23]/replicas: 1/' "$manifest_file"
+  fi
+done
+
 echo "Applying kube-prometheus setup manifests (CRDs, namespace)..."
 setup_output=$(kubectl apply --server-side --timeout=5m -f "${KUBE_PROMETHEUS_DIR}/manifests/setup/" 2>&1) || {
   echo "$setup_output"
