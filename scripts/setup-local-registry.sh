@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Setup a local Docker registry accessible from the KinD/Minikube cluster
 # Usage: setup-local-registry.sh <port> <cluster-provider> [cluster-name]
