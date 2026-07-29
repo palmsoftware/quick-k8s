@@ -104,12 +104,12 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run the action without Calico (bring your own CNI)
+      - name: Run the action without CNI (bring your own CNI)
         uses: ./
         with:
           clusterProvider: kind
           disableDefaultCni: true
-          installCalico: false
+          cniPlugin: none
           waitForPodsReady: false
           installOLM: false
           installIstio: false
@@ -120,10 +120,10 @@ jobs:
           kubectl get nodes
           echo "Verifying no Calico pods exist..."
           if kubectl get pods -n kube-system -l k8s-app=calico-node 2>/dev/null | grep -q calico; then
-            echo "ERROR: Calico pods found when installCalico=false"
+            echo "ERROR: Calico pods found when cniPlugin=none"
             exit 1
           fi
-          echo "Skip CNI test passed - no Calico installed!"
+          echo "Skip CNI test passed - no CNI installed!"
 
       - name: Install Calico manually (simulating bring-your-own-CNI)
         run: |
@@ -197,18 +197,18 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Test invalid installCalico value (should fail)
-        id: test-invalid-calico
+      - name: Test invalid cniPlugin value (should fail)
+        id: test-invalid-cni
         continue-on-error: true
         uses: ./
         with:
           clusterProvider: kind
-          installCalico: invalid-value
+          cniPlugin: invalid-value
 
-      - name: Verify invalid installCalico was rejected
+      - name: Verify invalid cniPlugin was rejected
         run: |
-          if [ "${{ steps.test-invalid-calico.outcome }}" = "success" ]; then
-            echo "ERROR: Invalid installCalico value should have failed"
+          if [ "${{ steps.test-invalid-cni.outcome }}" = "success" ]; then
+            echo "ERROR: Invalid cniPlugin value should have failed"
             exit 1
           fi
           echo "Input validation test passed!"
