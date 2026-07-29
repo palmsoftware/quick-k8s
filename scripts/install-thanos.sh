@@ -135,7 +135,9 @@ EOF
 }
 echo "$apply_output"
 
-echo "Waiting for Prometheus to restart with Thanos sidecar..."
+echo "Restarting Prometheus pods to pick up Thanos sidecar..."
+kubectl delete pods -n monitoring -l app.kubernetes.io/name=prometheus --grace-period=30 --wait=false
+sleep 5
 rollout_output=$(kubectl rollout status statefulset/prometheus-k8s -n monitoring --timeout="${TIMEOUT}s" 2>&1) || {
   echo "$rollout_output"
   dump_pod_status "monitoring" "Thanos/Prometheus"
