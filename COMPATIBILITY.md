@@ -4,13 +4,13 @@ This document lists tested and known-compatible version combinations for quick-k
 
 ## Component Compatibility
 
-| Kubernetes | Calico | Cilium | Istio | cert-manager | OLM | MetalLB | Notes |
-|------------|--------|--------|-------|--------------|-----|---------|-------|
-| 1.36.x | v3.32+ | v1.17+ | 1.30+ | v1.20+ | v0.31+ | v0.15+ | Current default |
-| 1.35.x | v3.31+ | v1.16+ | 1.29+ | v1.19+ | v0.30+ | v0.14+ | Fully tested |
-| 1.34.x | v3.30+ | v1.15+ | 1.28+ | v1.18+ | v0.29+ | v0.14+ | Fully tested |
-| 1.33.x | v3.29+ | v1.14+ | 1.27+ | v1.17+ | v0.28+ | v0.13+ | Compatible |
-| <1.31 | v3.28.x | v1.14+ | 1.26+ | v1.16+ | v0.27+ | v0.13+ | See notes below |
+| Kubernetes | Calico | Cilium | Flannel | Istio | cert-manager | OLM | MetalLB | Notes |
+|------------|--------|--------|---------|-------|--------------|-----|---------|-------|
+| 1.36.x | v3.32+ | v1.17+ | v0.28+ | 1.30+ | v1.20+ | v0.31+ | v0.15+ | Current default |
+| 1.35.x | v3.31+ | v1.16+ | v0.27+ | 1.29+ | v1.19+ | v0.30+ | v0.14+ | Fully tested |
+| 1.34.x | v3.30+ | v1.15+ | v0.26+ | 1.28+ | v1.18+ | v0.29+ | v0.14+ | Fully tested |
+| 1.33.x | v3.29+ | v1.14+ | v0.25+ | 1.27+ | v1.17+ | v0.28+ | v0.13+ | Compatible |
+| <1.31 | v3.28.x | v1.14+ | v0.24+ | 1.26+ | v1.16+ | v0.27+ | v0.13+ | See notes below |
 
 ## Known Issues and Workarounds
 
@@ -28,6 +28,10 @@ Minikube may not support the very latest Kubernetes version. When the `defaultNo
 
 OLM v0.31+ is recommended for Kubernetes 1.36+. Older OLM versions may encounter API compatibility issues with newer Kubernetes releases.
 
+### Flannel
+
+Flannel is a simple overlay network that provides basic pod-to-pod connectivity. It does **not** support Kubernetes NetworkPolicy — if you need network policy enforcement, use Calico or Cilium instead. Flannel is currently supported with KinD only (`clusterProvider: kind`).
+
 ### Istio Profile Resource Usage
 
 | Profile | Memory | CPU | Best For |
@@ -40,7 +44,7 @@ OLM v0.31+ is recommended for Kubernetes 1.36+. Older OLM versions may encounter
 
 ## CI Test Matrix
 
-The following combinations are tested nightly:
+Cilium and Flannel are tested in `pre-main.yml` (PR and push CI). The following combinations are tested nightly:
 
 | Runner | Provider | Configuration |
 |--------|----------|--------------|
@@ -62,4 +66,5 @@ The following combinations are tested nightly:
 - [Istio supported releases](https://istio.io/latest/docs/releases/supported-releases/)
 - [cert-manager supported releases](https://cert-manager.io/docs/releases/)
 - [OLM releases](https://github.com/operator-framework/operator-lifecycle-manager/releases)
+- [Flannel releases](https://github.com/flannel-io/flannel/releases)
 - [MetalLB releases](https://github.com/metallb/metallb/releases)

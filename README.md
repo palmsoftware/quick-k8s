@@ -70,7 +70,7 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.30.2
+      istioVersion: 1.30.3
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.0
@@ -86,7 +86,7 @@ steps:
       # Monitoring
       enableClusterMonitoring: false
       kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.0
+      thanosVersion: v0.42.2
 
       # MetalLB
       installMetalLB: false
@@ -97,13 +97,19 @@ steps:
       kindConfigPath: ''            # Path to custom KinD config file
       installLocalRegistry: false   # Enable local Docker registry
       localRegistryPort: 5001       # Port for local registry
-      olmVersion: v0.45.0           # OLM version (when installOLM: true)
+      olmVersion: v0.46.0           # OLM version (when installOLM: true)
       createPersistentVolumes: false # Create sample PVs for testing
       persistentVolumeCount: 5
       persistentVolumeSize: 10Gi
       installSampleNetworkPolicies: false
       waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
       dryRun: false                 # Preview configuration without executing
+      controlPlaneTaints: ''        # Comma-separated taints for control-plane nodes
+      workerNodeTaints: ''          # Comma-separated taints for worker nodes
+      extraPortMappings: ''         # Comma-separated host:container port mappings (KinD only)
+      componentTimeout: 300         # Timeout in seconds for component installs
+      enableCleanup: false          # Generate cleanup script at /tmp/quick-k8s-cleanup.sh
+      flannelVersion: v0.28.7      # Flannel version (when cniPlugin is flannel)
 ```
 
 With Minikube:
@@ -126,7 +132,7 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.30.2
+      istioVersion: 1.30.3
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.0
@@ -152,7 +158,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installIstio: true
-      istioVersion: 1.30.2
+      istioVersion: 1.30.3
       istioProfile: minimal
 ```
 
@@ -383,7 +389,7 @@ steps:
     with:
       enableClusterMonitoring: true
       kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.0
+      thanosVersion: v0.42.2
 ```
 
 **Features**:
@@ -450,21 +456,21 @@ steps:
 |------------|----------|-----------------|----------------|
 | **Calico** (default) | General purpose, policy enforcement | ✅ Full support | ~200MB |
 | **Cilium** | eBPF-based networking, advanced observability | ✅ Full support | ~300-500MB |
-| **Flannel** | Simple overlay networking, minimal overhead | ❌ Not supported | ~100MB |
+| **Flannel** | Simple overlay networking, minimal overhead | ⚠️ KinD only | ~100MB |
 | **none** | Bring your own CNI | Depends on CNI | N/A |
 
-### Bring Your Own CNI (Skip Calico)
+### Bring Your Own CNI
 
-For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes, Cilium), you can skip the default Calico installation:
+For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes), you can skip the default CNI installation:
 
 ```yaml
 steps:
-  - name: Set up Quick-K8s without Calico
+  - name: Set up Quick-K8s without CNI
     uses: palmsoftware/quick-k8s@v0
     with:
       disableDefaultCni: true
-      installCalico: false  # Skip Calico installation
-      waitForPodsReady: false  # Don't wait - no CNI means pods won't be ready
+      cniPlugin: none             # Skip CNI installation
+      waitForPodsReady: false     # Don't wait - no CNI means pods won't be ready
 
   - name: Install your own CNI
     run: |
@@ -473,7 +479,7 @@ steps:
 ```
 
 **⚠️ Important Notes**:
-- When `installCalico: false`, the cluster will not have a functional CNI
+- When `cniPlugin: none`, the cluster will not have a functional CNI
 - Pods will remain in `Pending` state until you install a CNI
 - Set `waitForPodsReady: false` to avoid timeouts waiting for pods
 - This is ideal for projects testing their own CNI implementations
