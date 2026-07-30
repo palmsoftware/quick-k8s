@@ -94,7 +94,12 @@ fi
 
 echo "Configuring MetalLB address pool: ${POOL_START}-${POOL_END}"
 
-kubectl apply -f - <<EOF
+# Webhook may not be ready immediately after pods report Ready
+max_attempts=5
+attempt=1
+delay=2
+while [ $attempt -le $max_attempts ]; do
+  POOL_YAML=$(cat <<EOF
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
@@ -113,6 +118,23 @@ spec:
   ipAddressPools:
     - quick-k8s-pool
 EOF
+  )
+
+  if echo "$POOL_YAML" | kubectl apply -f - 2>/dev/null; then
+    break
+  fi
+
+  if [ $attempt -eq $max_attempts ]; then
+    echo "$POOL_YAML" | kubectl apply -f - 2>&1
+    echo "Failed to configure MetalLB address pool after $max_attempts attempts"
+    exit 1
+  fi
+
+  echo "MetalLB webhook not ready yet, retrying in ${delay}s... (attempt $attempt/$max_attempts)"
+  sleep $delay
+  attempt=$((attempt + 1))
+  delay=$((delay * 2))
+done
 
 echo "MetalLB $METALLB_VERSION installed successfully!"
 echo "LoadBalancer IP range: ${POOL_START}-${POOL_END}"

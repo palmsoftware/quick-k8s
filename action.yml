@@ -340,7 +340,7 @@ runs:
         fi
 
     - name: Validate Calico version input
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'calico' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'calico' && inputs.installCalico != 'false' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -581,16 +581,24 @@ runs:
         THANOS_VERSION: ${{ inputs.thanosVersion }}
       run: ${{ github.action_path }}/scripts/validate-github-version.sh "Thanos" "thanos-io/thanos" "$THANOS_VERSION"
 
-    - name: Validate installCalico input
+    - name: Resolve effective CNI plugin
+      id: resolve-cni
       shell: bash
       env:
         INSTALL_CALICO: ${{ inputs.installCalico }}
+        CNI_PLUGIN: ${{ inputs.cniPlugin }}
       run: |
         if [[ "$INSTALL_CALICO" != "true" && "$INSTALL_CALICO" != "false" ]]; then
           echo "Invalid installCalico value: $INSTALL_CALICO"
           echo "Must be 'true' or 'false'"
           exit 1
         fi
+        EFFECTIVE_CNI="$CNI_PLUGIN"
+        if [[ "$INSTALL_CALICO" == "false" && "$CNI_PLUGIN" == "calico" ]]; then
+          echo "::warning::installCalico is deprecated. Use 'cniPlugin: none' instead of 'installCalico: false'"
+          EFFECTIVE_CNI="none"
+        fi
+        echo "effective-cni=$EFFECTIVE_CNI" >> "$GITHUB_OUTPUT"
 
     - name: Validate installSampleNetworkPolicies input
       shell: bash
@@ -604,7 +612,7 @@ runs:
     - name: Validate cniPlugin input
       shell: bash
       run: |
-        CNI="${{ inputs.cniPlugin }}"
+        CNI="${{ steps.resolve-cni.outputs.effective-cni }}"
         if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "flannel" && "$CNI" != "none" ]]; then
           echo "Invalid cniPlugin value: $CNI"
           echo "Must be 'calico', 'cilium', 'flannel', or 'none'"
@@ -796,7 +804,7 @@ runs:
         NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
         DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
-        INSTALL_CALICO: ${{ inputs.installCalico }}
+        CNI_PLUGIN: ${{ steps.resolve-cni.outputs.effective-cni }}
         INSTALL_OLM: ${{ inputs.installOLM }}
         INSTALL_ISTIO: ${{ inputs.installIstio }}
         ISTIO_PROFILE: ${{ inputs.istioProfile }}
@@ -828,7 +836,7 @@ runs:
         echo "Worker Nodes: $NUM_WORKER_NODES"
         echo ""
         echo "Components to install:"
-        echo "  Calico CNI: $([ "$DISABLE_DEFAULT_CNI" = "true" ] && [ "$INSTALL_CALICO" = "true" ] && echo "true" || echo "false")"
+        echo "  CNI Plugin: $([ "$DISABLE_DEFAULT_CNI" = "true" ] && echo "$CNI_PLUGIN" || echo "default")"
         echo "  OLM: $INSTALL_OLM"
         echo "  Istio: $INSTALL_ISTIO (profile: $ISTIO_PROFILE)"
         echo "  Cert-Manager: $INSTALL_CERT_MANAGER"
@@ -1134,8 +1142,8 @@ runs:
         DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
       run: ${{ github.action_path }}/scripts/cluster-health-check.sh
 
-    - name: Install calico CNI if default CNI is disabled and installCalico is true
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.installCalico == 'true' && inputs.dryRun != 'true' }}
+    - name: Install Calico CNI
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'calico' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
@@ -1143,25 +1151,25 @@ runs:
       run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
 
     - name: Install Cilium CNI
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'cilium' && inputs.dryRun != 'true' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'cilium' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-cilium.sh
 
     - name: Install Flannel CNI
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'flannel' && inputs.dryRun != 'true' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'flannel' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-flannel.sh "${{ inputs.flannelVersion }}"
 
     - name: Skip CNI installation (bring your own CNI)
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'none' && inputs.dryRun != 'true' }}
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
-        echo "Skipping Calico CNI installation - installCalico is set to false"
-        echo "   You must install your own CNI (e.g., Multus, OVN, Cilium) for the cluster to be functional"
+        echo "Skipping CNI installation - cniPlugin is set to none"
+        echo "   You must install your own CNI (e.g., Calico, Multus, OVN, Cilium) for the cluster to be functional"
 
     - name: Install sample network policies
       if: ${{ inputs.installSampleNetworkPolicies == 'true' && inputs.dryRun != 'true' }}
@@ -1305,7 +1313,7 @@ runs:
         NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
         IP_FAMILY: ${{ inputs.ipFamily }}
-        INSTALL_CALICO: ${{ inputs.installCalico }}
+        CNI_PLUGIN: ${{ steps.resolve-cni.outputs.effective-cni }}
         CALICO_VERSION: ${{ inputs.calicoVersion }}
         INSTALL_ISTIO: ${{ inputs.installIstio }}
         ISTIO_VERSION: ${{ inputs.istioVersion }}
@@ -1339,7 +1347,7 @@ runs:
         echo "IP Family:    $IP_FAMILY"
         echo ""
         echo "Components:"
-        if [ "$INSTALL_CALICO" = "true" ]; then echo "  - Calico CNI $CALICO_VERSION"; fi
+        if [ "$CNI_PLUGIN" = "calico" ]; then echo "  - Calico CNI $CALICO_VERSION"; fi
         if [ "$INSTALL_ISTIO" = "true" ]; then echo "  - Istio $ISTIO_VERSION ($ISTIO_PROFILE)"; fi
         if [ "$INSTALL_OLM" = "true" ]; then echo "  - OLM"; fi
         if [ "$INSTALL_CERT_MANAGER" = "true" ]; then echo "  - cert-manager $CERT_MANAGER_VERSION"; fi
@@ -1371,7 +1379,7 @@ runs:
         # Write deployment summary to GitHub Step Summary
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
           COMPONENTS=""
-          if [ "$INSTALL_CALICO" = "true" ]; then COMPONENTS="${COMPONENTS}Calico CNI $CALICO_VERSION, "; fi
+          if [ "$CNI_PLUGIN" = "calico" ]; then COMPONENTS="${COMPONENTS}Calico CNI $CALICO_VERSION, "; fi
           if [ "$INSTALL_ISTIO" = "true" ]; then COMPONENTS="${COMPONENTS}Istio $ISTIO_VERSION ($ISTIO_PROFILE), "; fi
           if [ "$INSTALL_OLM" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
           if [ "$INSTALL_CERT_MANAGER" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager $CERT_MANAGER_VERSION, "; fi
