@@ -80,7 +80,37 @@ if [ "$NUM_WORKERS" -gt 0 ]; then
   MINIKUBE_CMD+=("--nodes=$TOTAL_NODES")
 fi
 
-echo "Starting Minikube with command: ${MINIKUBE_CMD[*]}"
-"${MINIKUBE_CMD[@]}"
+max_attempts=3
+delay=10
+attempt=1
 
-echo "✅ Minikube cluster started successfully"
+while [ $attempt -le $max_attempts ]; do
+  echo ""
+  echo "Attempt $attempt/$max_attempts: Starting Minikube cluster '$CLUSTER_NAME'..."
+  echo "Command: ${MINIKUBE_CMD[*]}"
+
+  set +e
+  "${MINIKUBE_CMD[@]}"
+  exit_code=$?
+  set -e
+
+  if [ $exit_code -eq 0 ]; then
+    echo ""
+    echo "✅ Minikube cluster started successfully"
+    break
+  fi
+
+  if [ $attempt -eq $max_attempts ]; then
+    echo ""
+    echo "Failed to start Minikube cluster after $max_attempts attempts (exit code: $exit_code)"
+    exit 1
+  fi
+
+  echo ""
+  echo "Minikube start failed (exit code: $exit_code), cleaning up before retry..."
+  minikube delete --profile="$CLUSTER_NAME" 2>/dev/null || true
+  echo "Retrying in ${delay}s..."
+  sleep $delay
+  attempt=$((attempt + 1))
+  delay=$((delay * 2))
+done
