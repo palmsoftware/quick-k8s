@@ -13,51 +13,29 @@ if [ -z "$IMAGE" ]; then
   exit 1
 fi
 
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
+
 echo "::group::Pre-pulling KinD node image"
 trap 'echo "::endgroup::"' EXIT
 
-max_attempts=3
-delay=30
-
 echo "Pre-pulling Kind node image: $IMAGE"
 
-attempt=1
-while [ $attempt -le $max_attempts ]; do
+retry_with_backoff 3 30 docker pull "$IMAGE" || {
   echo ""
-  echo "📥 Attempt $attempt/$max_attempts: Pulling Kind node image..."
-
-  set +e
-  docker pull "$IMAGE"
-  exit_code=$?
-  set -e
-
-  if [ $exit_code -eq 0 ]; then
-    echo ""
-    echo "✅ Successfully pulled Kind node image"
-    exit 0
-  fi
-
-  if [ $attempt -eq $max_attempts ]; then
-    echo ""
-    echo "❌ Failed to pull image after $max_attempts attempts (exit code: $exit_code)"
-    echo ""
-    echo "This is likely due to:"
-    echo "  1. Docker Hub rate limiting (unauthenticated pulls are limited to 100 per 6 hours)"
-    echo "  2. Network connectivity issues"
-    echo "  3. Docker daemon issues"
-    echo ""
-    echo "💡 Tip: If this is a rate limiting issue, you can:"
-    echo "        - Wait and re-run the workflow later"
-    echo "        - Configure Docker Hub authentication in your workflow"
-    echo "        - Use a Docker registry mirror"
-    exit 1
-  fi
-
+  echo "Failed to pull image after 3 attempts"
   echo ""
-  echo "⚠️  Pull failed (exit code: $exit_code), retrying in ${delay}s..."
-  sleep $delay
-  attempt=$((attempt + 1))
-  delay=$((delay * 2))
-done
+  echo "This is likely due to:"
+  echo "  1. Docker Hub rate limiting (unauthenticated pulls are limited to 100 per 6 hours)"
+  echo "  2. Network connectivity issues"
+  echo "  3. Docker daemon issues"
+  echo ""
+  echo "Tip: If this is a rate limiting issue, you can:"
+  echo "     - Wait and re-run the workflow later"
+  echo "     - Configure Docker Hub authentication in your workflow"
+  echo "     - Use a Docker registry mirror"
+  exit 1
+}
 
-exit 1
+echo ""
+echo "Successfully pulled Kind node image"
