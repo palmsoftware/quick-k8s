@@ -358,7 +358,7 @@ backup() {
   CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
   if [[ -f "${BIN_PATH}/oc" ]] && [[ -f "${BIN_PATH}/openshift-install" ]] && [[ -f "${BIN_PATH}/kubectl" ]]
   then
-      for i in openshift-install oc kubectl; do mv "$(which $i)" ${BIN_PATH}/"$i"."$CUR_VERSION".bak; done
+      for i in openshift-install oc kubectl; do mv "$(which "$i")" "${BIN_PATH}/${i}.${CUR_VERSION}.bak"; done
   fi
 
   if [[ "$1" == "extract" ]]; then
@@ -370,9 +370,9 @@ backup() {
 extract() {
 
   echo -e "\nExtracting oc and kubectl from $(echo "$CLIENT" | awk -F/ '{ print $NF }') to ${BIN_PATH}"
-  tar -zxf "/tmp/$(echo "$CLIENT" | awk -F/ '{ print $NF }')" -C ${BIN_PATH}
+  tar -zxf "/tmp/$(echo "$CLIENT" | awk -F/ '{ print $NF }')" -C "${BIN_PATH}"
   echo -e "\nExtracting openshift-install from $(echo "$INSTALL" | awk -F/ '{ print $NF }') to ${BIN_PATH}"
-  tar -zxf "/tmp/$(echo "$INSTALL" | awk -F/ '{ print $NF}' )" -C ${BIN_PATH}
+  tar -zxf "/tmp/$(echo "$INSTALL" | awk -F/ '{ print $NF}' )" -C "${BIN_PATH}"
 
   if [[ "$1" == "cleanup" ]]; then
     cleanup
@@ -382,7 +382,7 @@ extract() {
 
 cleanup() {
 
-  rm -rf ${BIN_PATH}/README.md
+  rm -rf "${BIN_PATH}/README.md"
   rm -rf "/tmp/openshift-client-${OS}.tar.gz"
   rm -rf "/tmp/openshift-install-${OS}.tar.gz"
 
@@ -392,21 +392,21 @@ cleanup() {
 
 remove_old_ver() {
 
-  if ls ${BIN_PATH}/oc*bak 1> /dev/null 2>&1 && ls ${BIN_PATH}/openshift-install*bak 1> /dev/null 2>&1 && ls ${BIN_PATH}/kubectl*bak 1> /dev/null 2>&1
+  if ls "${BIN_PATH}"/oc*bak 1> /dev/null 2>&1 && ls "${BIN_PATH}"/openshift-install*bak 1> /dev/null 2>&1 && ls "${BIN_PATH}"/kubectl*bak 1> /dev/null 2>&1
   then
   if [ ! -t 0 ]; then
     echo "Removing old version backups (non-interactive)"
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i*bak 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}"/$i*bak 2>/dev/null; done
     exit 0
   fi
   read -rp "Delete the following files?
 $(echo -e "\n")
-$(for i in oc kubectl openshift-install; do ls -1 ${BIN_PATH}/$i*bak 2>/dev/null; done)
+$(for i in oc kubectl openshift-install; do ls -1 "${BIN_PATH}"/$i*bak 2>/dev/null; done)
 $(echo -e "\nY/N? ")"
 
   if [[ $REPLY =~ ^[Yy]$ ]]
   then
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i*bak 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}"/$i*bak 2>/dev/null; done
     exit 0
   elif [[ $REPLY =~ ^[Nn]$ ]]
   then
@@ -426,24 +426,24 @@ uninstall(){
 
   check_root
 
-	if ls ${BIN_PATH}/oc 1> /dev/null 2>&1 && ls ${BIN_PATH}/openshift-install 1> /dev/null 2>&1 && ls ${BIN_PATH}/kubectl 1> /dev/null 2>&1
+	if ls "${BIN_PATH}"/oc 1> /dev/null 2>&1 && ls "${BIN_PATH}"/openshift-install 1> /dev/null 2>&1 && ls "${BIN_PATH}"/kubectl 1> /dev/null 2>&1
   then
   if [ ! -t 0 ]; then
     echo "Uninstalling oc tools (non-interactive)"
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i*bak 2>/dev/null; done
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}"/$i*bak 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}/$i" 2>/dev/null; done
     exit 0
   fi
   read -rp "Delete the following files?
 $(echo -e "\n")
-$(for i in oc kubectl openshift-install; do ls -1 ${BIN_PATH}/$i 2>/dev/null; done)
-$(for i in oc kubectl openshift-install; do ls -1 ${BIN_PATH}/$i*bak 2>/dev/null; done)
+$(for i in oc kubectl openshift-install; do ls -1 "${BIN_PATH}/$i" 2>/dev/null; done)
+$(for i in oc kubectl openshift-install; do ls -1 "${BIN_PATH}"/$i*bak 2>/dev/null; done)
 $(echo -e "\nY/N? ")"
 
   if [[ $REPLY =~ ^[Yy]$ ]]
   then
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i*bak 2>/dev/null; done
-    for i in oc kubectl openshift-install; do rm -f ${BIN_PATH}/$i 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}"/$i*bak 2>/dev/null; done
+    for i in oc kubectl openshift-install; do rm -f "${BIN_PATH}/$i" 2>/dev/null; done
     exit 0
   elif [[ $REPLY =~ ^[Nn]$ ]]
   then
@@ -600,10 +600,10 @@ curl -L -f --progress-bar -o "/tmp/$filename" "$1"
 echo "Download Complete."
 
 if [[ "$2" == "serverless" ]]; then
-  tar -zxf "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" -C ${BIN_PATH}
+  tar -zxf "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" -C "${BIN_PATH}"
   rm "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')"
 else
-  cp "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" ${BIN_PATH}
+  cp "/tmp/$(echo "$1" | awk -F/ '{ print $NF }')" "${BIN_PATH}"
   chmod +x "${BIN_PATH}/$filename"
 fi
 
