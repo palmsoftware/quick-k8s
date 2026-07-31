@@ -221,6 +221,32 @@ jobs:
           kubectl get pods -n monitoring -l app.kubernetes.io/name=thanos-query
           kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus -o jsonpath='{.items[*].spec.containers[*].name}' | tr ' ' '\n' | grep thanos
 
+  # CNI plugin tests across OS matrix
+  cilium-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with Cilium
+        uses: ./
+        with:
+          clusterProvider: kind
+          cniPlugin: cilium
+          waitForPodsReady: true
+
+      - name: Verify Cilium
+        run: |
+          kubectl get pods -n kube-system -l k8s-app=cilium
+          kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=120s
+          cilium status
+
   # Component installation tests across OS matrix
   cert-manager-tests:
     strategy:

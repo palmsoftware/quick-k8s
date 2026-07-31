@@ -589,3 +589,33 @@ jobs:
           echo "FAIL: LoadBalancer service did not receive an external IP"
           kubectl get svc nginx-test -o yaml
           exit 1
+
+  # Test Cilium CNI installation
+  test-cilium:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run the action with Cilium
+        uses: ./
+        with:
+          clusterProvider: kind
+          cniPlugin: cilium
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify Cilium is running
+        run: |
+          echo "Checking Cilium pods..."
+          kubectl get pods -n kube-system -l k8s-app=cilium
+          echo "Verifying Cilium pods are ready..."
+          kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=120s
+          echo "Verifying Cilium CLI status..."
+          cilium status
+          echo "Cilium CNI test passed!"
