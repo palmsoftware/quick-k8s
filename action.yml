@@ -1329,6 +1329,7 @@ runs:
         echo ""
         echo "Components:"
         if [ "$CNI_PLUGIN" = "calico" ]; then echo "  - Calico CNI $CALICO_VERSION"; fi
+        if [ "$CNI_PLUGIN" = "cilium" ]; then echo "  - Cilium CNI"; fi
         if [ "$INSTALL_ISTIO" = "true" ]; then echo "  - Istio $ISTIO_VERSION ($ISTIO_PROFILE)"; fi
         if [ "$INSTALL_OLM" = "true" ]; then echo "  - OLM"; fi
         if [ "$INSTALL_CERT_MANAGER" = "true" ]; then echo "  - cert-manager $CERT_MANAGER_VERSION"; fi
@@ -1361,6 +1362,7 @@ runs:
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
           COMPONENTS=""
           if [ "$CNI_PLUGIN" = "calico" ]; then COMPONENTS="${COMPONENTS}Calico CNI $CALICO_VERSION, "; fi
+          if [ "$CNI_PLUGIN" = "cilium" ]; then COMPONENTS="${COMPONENTS}Cilium CNI, "; fi
           if [ "$INSTALL_ISTIO" = "true" ]; then COMPONENTS="${COMPONENTS}Istio $ISTIO_VERSION ($ISTIO_PROFILE), "; fi
           if [ "$INSTALL_OLM" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
           if [ "$INSTALL_CERT_MANAGER" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager $CERT_MANAGER_VERSION, "; fi
