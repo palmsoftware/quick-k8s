@@ -78,7 +78,7 @@ fi
 # Use the first IPv4 subnet (skip any IPv6 entries in dual-stack networks)
 SUBNET=$($CONTAINER_RUNTIME network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
   | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1) || {
-  echo "Warning: Could not detect container network subnet, using default 172.18.255.200-172.18.255.250"
+  echo "Warning: Could not detect container network subnet, using default 172.18.255.200-172.18.255.250" >&2
   SUBNET=""
 }
 

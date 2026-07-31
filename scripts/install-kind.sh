@@ -10,8 +10,8 @@ OS="${2:-}"
 ARCH="${3:-}"
 
 if [ -z "$VERSION" ] || [ -z "$OS" ] || [ -z "$ARCH" ]; then
-  echo "Usage: $0 <version> <os> <arch>"
-  echo "Example: $0 v0.31.0 linux amd64"
+  echo "Usage: $0 <version> <os> <arch>" >&2
+  echo "Example: $0 v0.31.0 linux amd64" >&2
   exit 1
 fi
 
