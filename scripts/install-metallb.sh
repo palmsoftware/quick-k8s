@@ -16,12 +16,19 @@ trap 'echo "::endgroup::"' EXIT
 echo "Installing MetalLB version $METALLB_VERSION"
 
 # Verify required tools are available
-for cmd in kubectl docker; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
-    exit 1
-  fi
-done
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "Error: kubectl is not installed." >&2
+  exit 1
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  CONTAINER_RUNTIME="docker"
+elif command -v podman >/dev/null 2>&1; then
+  CONTAINER_RUNTIME="podman"
+else
+  echo "Error: neither docker nor podman is installed." >&2
+  exit 1
+fi
 
 MANIFEST_URL="https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml"
 echo "Downloading MetalLB manifest from: $MANIFEST_URL"
@@ -59,8 +66,8 @@ echo "$wait_output"
 
 kubectl get pods -n metallb-system
 
-# Auto-detect the IP range from the Docker bridge network used by the cluster
-echo "Detecting Docker network subnet for address pool configuration..."
+# Auto-detect the IP range from the container network used by the cluster
+echo "Detecting container network subnet for address pool configuration..."
 
 if [ "$CLUSTER_PROVIDER" = "kind" ]; then
   NETWORK_NAME="kind"
@@ -69,9 +76,9 @@ else
 fi
 
 # Use the first IPv4 subnet (skip any IPv6 entries in dual-stack networks)
-SUBNET=$(docker network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
+SUBNET=$($CONTAINER_RUNTIME network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
   | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1) || {
-  echo "Warning: Could not detect Docker network subnet, using default 172.18.255.200-172.18.255.250"
+  echo "Warning: Could not detect container network subnet, using default 172.18.255.200-172.18.255.250"
   SUBNET=""
 }
 
