@@ -1403,6 +1403,8 @@ runs:
       run: |
         cp "${{ github.action_path }}/scripts/cleanup-cluster.sh" /tmp/quick-k8s-cleanup.sh
         chmod +x /tmp/quick-k8s-cleanup.sh
+        echo "QUICK_K8S_PROVIDER=${{ inputs.clusterProvider }}" >> "$GITHUB_ENV"
+        echo "QUICK_K8S_CLUSTER_NAME=${{ inputs.clusterName }}" >> "$GITHUB_ENV"
 
     - name: Remove temporary files
       if: ${{ inputs.dryRun != 'true' }}
