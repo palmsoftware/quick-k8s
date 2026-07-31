@@ -56,6 +56,10 @@ inputs:
     description: 'The version of Calico to use'
     required: false
     default: 'v3.32.1'
+  ciliumVersion:
+    description: 'The version of Cilium CLI to use'
+    required: false
+    default: 'v0.19.7'
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
@@ -341,6 +345,14 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         CALICO_VERSION: ${{ inputs.calicoVersion }}
       run: ${{ github.action_path }}/scripts/validate-github-version.sh "Calico" "projectcalico/calico" "$CALICO_VERSION"
+
+    - name: Validate Cilium version input
+      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'cilium' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        CILIUM_VERSION: ${{ inputs.ciliumVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Cilium CLI" "cilium/cilium-cli" "$CILIUM_VERSION"
 
     - name: Validate OpenShift release level input
       shell: bash
@@ -1143,7 +1155,8 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-cilium.sh
+        CILIUM_VERSION: ${{ inputs.ciliumVersion }}
+      run: ${{ github.action_path }}/scripts/install-cilium.sh "$CILIUM_VERSION"
 
     - name: Skip CNI installation (bring your own CNI)
       if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
@@ -1296,6 +1309,7 @@ runs:
         IP_FAMILY: ${{ inputs.ipFamily }}
         CNI_PLUGIN: ${{ steps.resolve-cni.outputs.effective-cni }}
         CALICO_VERSION: ${{ inputs.calicoVersion }}
+        CILIUM_VERSION: ${{ inputs.ciliumVersion }}
         INSTALL_ISTIO: ${{ inputs.installIstio }}
         ISTIO_VERSION: ${{ inputs.istioVersion }}
         ISTIO_PROFILE: ${{ inputs.istioProfile }}
@@ -1329,7 +1343,7 @@ runs:
         echo ""
         echo "Components:"
         if [ "$CNI_PLUGIN" = "calico" ]; then echo "  - Calico CNI $CALICO_VERSION"; fi
-        if [ "$CNI_PLUGIN" = "cilium" ]; then echo "  - Cilium CNI"; fi
+        if [ "$CNI_PLUGIN" = "cilium" ]; then echo "  - Cilium CNI $CILIUM_VERSION"; fi
         if [ "$INSTALL_ISTIO" = "true" ]; then echo "  - Istio $ISTIO_VERSION ($ISTIO_PROFILE)"; fi
         if [ "$INSTALL_OLM" = "true" ]; then echo "  - OLM"; fi
         if [ "$INSTALL_CERT_MANAGER" = "true" ]; then echo "  - cert-manager $CERT_MANAGER_VERSION"; fi
@@ -1362,7 +1376,7 @@ runs:
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
           COMPONENTS=""
           if [ "$CNI_PLUGIN" = "calico" ]; then COMPONENTS="${COMPONENTS}Calico CNI $CALICO_VERSION, "; fi
-          if [ "$CNI_PLUGIN" = "cilium" ]; then COMPONENTS="${COMPONENTS}Cilium CNI, "; fi
+          if [ "$CNI_PLUGIN" = "cilium" ]; then COMPONENTS="${COMPONENTS}Cilium CNI $CILIUM_VERSION, "; fi
           if [ "$INSTALL_ISTIO" = "true" ]; then COMPONENTS="${COMPONENTS}Istio $ISTIO_VERSION ($ISTIO_PROFILE), "; fi
           if [ "$INSTALL_OLM" = "true" ]; then COMPONENTS="${COMPONENTS}OLM, "; fi
           if [ "$INSTALL_CERT_MANAGER" = "true" ]; then COMPONENTS="${COMPONENTS}cert-manager $CERT_MANAGER_VERSION, "; fi
