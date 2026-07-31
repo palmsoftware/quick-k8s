@@ -20,7 +20,7 @@ fi
 
 # Verify Prometheus is running (Thanos requires it)
 if ! kubectl get namespace monitoring >/dev/null 2>&1; then
-  echo "::error::Thanos installation failed: monitoring namespace not found. Prometheus (kube-prometheus) must be installed first. Set installPrometheus: true in your action inputs."
+  echo "::error::Thanos installation failed: monitoring namespace not found. Prometheus (kube-prometheus) must be installed first. Set enableClusterMonitoring: true in your action inputs."
   exit 1
 fi
 
