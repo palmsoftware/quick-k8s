@@ -93,7 +93,7 @@ steps:
       metalLBVersion: v0.16.0
 
       # Advanced options
-      cniPlugin: calico             # calico, cilium, flannel, or none
+      cniPlugin: calico             # calico, cilium, or none
       kindConfigPath: ''            # Path to custom KinD config file
       installLocalRegistry: false   # Enable local Docker registry
       localRegistryPort: 5001       # Port for local registry
@@ -109,7 +109,6 @@ steps:
       extraPortMappings: ''         # Comma-separated host:container port mappings (KinD only)
       componentTimeout: 300         # Timeout in seconds for component installs
       enableCleanup: false          # Generate cleanup script at /tmp/quick-k8s-cleanup.sh
-      flannelVersion: v0.28.7      # Flannel version (when cniPlugin is flannel)
 ```
 
 With Minikube:
@@ -440,11 +439,6 @@ steps:
     with:
       cniPlugin: cilium
 
-  # Flannel
-  - uses: palmsoftware/quick-k8s@v0
-    with:
-      cniPlugin: flannel
-
   # No CNI (bring your own)
   - uses: palmsoftware/quick-k8s@v0
     with:
@@ -456,7 +450,6 @@ steps:
 |------------|----------|-----------------|----------------|
 | **Calico** (default) | General purpose, policy enforcement | ✅ Full support | ~200MB |
 | **Cilium** | eBPF-based networking, advanced observability | ✅ Full support | ~300-500MB |
-| **Flannel** | Simple overlay networking, minimal overhead | ⚠️ KinD only | ~100MB |
 | **none** | Bring your own CNI | Depends on CNI | N/A |
 
 ### Bring Your Own CNI
@@ -758,7 +751,7 @@ The [`examples/`](./examples/) directory contains copy-paste-ready workflow reci
 | [istio-service-mesh.yml](./examples/istio-service-mesh.yml) | Cluster with Istio and sidecar injection |
 | [monitoring-stack.yml](./examples/monitoring-stack.yml) | Full Prometheus/Thanos/Grafana stack |
 | [multi-node-cluster.yml](./examples/multi-node-cluster.yml) | Multi-node with labels and topology spread |
-| [custom-cni.yml](./examples/custom-cni.yml) | Cilium and Flannel CNI examples |
+| [custom-cni.yml](./examples/custom-cni.yml) | Cilium CNI example |
 | [local-registry.yml](./examples/local-registry.yml) | Local Docker registry for image builds |
 | [operator-development.yml](./examples/operator-development.yml) | OLM + operator-sdk + cert-manager |
 | [full-stack.yml](./examples/full-stack.yml) | All components combined |

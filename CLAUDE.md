@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**quick-k8s** is a GitHub Action for deploying Kubernetes clusters on GitHub Actions runners. It's a composite action using shell scripts that supports KinD (Kubernetes in Docker) and Minikube as cluster providers, with optional CNI (Calico, Cilium, or Flannel), Istio service mesh, OLM (Operator Lifecycle Manager), and local Docker registry.
+**quick-k8s** is a GitHub Action for deploying Kubernetes clusters on GitHub Actions runners. It's a composite action using shell scripts that supports KinD (Kubernetes in Docker) and Minikube as cluster providers, with optional CNI (Calico or Cilium), Istio service mesh, OLM (Operator Lifecycle Manager), and local Docker registry.
 
 **Target Environment**: Linux (Ubuntu 22.04/24.04/26.04, x86 and ARM64).
 
@@ -31,7 +31,7 @@ The action executes in sequence via `action.yml`:
 3. **Disk optimization** - Uses `palmsoftware/quick-cleanup` for adaptive disk management
 4. **Binary installation** - Installs KinD or Minikube (with caching)
 5. **Cluster creation** - Creates cluster using generated or custom config
-6. **CNI installation** - Installs Calico, Cilium, or Flannel (optional, can be skipped for bring-your-own-CNI)
+6. **CNI installation** - Installs Calico or Cilium (optional, can be skipped for bring-your-own-CNI)
 7. **Optional features** - OLM, Istio, local registry
 8. **Cleanup** - Removes temporary files
 
@@ -41,7 +41,7 @@ Each script handles a single responsibility:
 - `install-kind.sh`, `install-minikube.sh` - Binary installation with fallback URLs
 - `generate-kind-config.sh` - Creates KinD YAML config from action inputs
 - `start-minikube.sh` - Starts Minikube with appropriate flags
-- `install-calico.sh`, `install-cilium.sh`, `install-flannel.sh`, `install-istio.sh`, `install-olm.sh`, `install-metallb.sh` - Component installers
+- `install-calico.sh`, `install-cilium.sh`, `install-istio.sh`, `install-olm.sh`, `install-metallb.sh` - Component installers
 - `setup-local-registry.sh` - Docker registry setup with cluster connectivity
 - `pre-cluster-optimization.sh` - Disk space management
 - `check-github-status.sh` - GitHub API availability check

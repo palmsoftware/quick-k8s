@@ -169,7 +169,7 @@ inputs:
     required: false
     default: 'v0.42.4'
   cniPlugin:
-    description: 'CNI plugin to install when default CNI is disabled (calico, cilium, flannel, none). Use none to bring your own CNI'
+    description: 'CNI plugin to install when default CNI is disabled (calico, cilium, none). Use none to bring your own CNI'
     required: false
     default: 'calico'
   installCalico:
@@ -232,11 +232,6 @@ inputs:
     description: 'Generate a cleanup script at /tmp/quick-k8s-cleanup.sh for post-run cluster teardown'
     required: false
     default: 'false'
-  flannelVersion:
-    description: 'The version of Flannel CNI to install (when cniPlugin is flannel)'
-    required: false
-    default: 'v0.28.7'
-
 runs:
   using: 'composite'
   steps:
@@ -613,18 +608,11 @@ runs:
       shell: bash
       run: |
         CNI="${{ steps.resolve-cni.outputs.effective-cni }}"
-        if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "flannel" && "$CNI" != "none" ]]; then
+        if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "none" ]]; then
           echo "Invalid cniPlugin value: $CNI"
-          echo "Must be 'calico', 'cilium', 'flannel', or 'none'"
+          echo "Must be 'calico', 'cilium', or 'none'"
           exit 1
         fi
-
-    - name: Validate Flannel version input
-      if: ${{ inputs.disableDefaultCni == 'true' && inputs.cniPlugin == 'flannel' }}
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "Flannel" "flannel-io/flannel" "${{ inputs.flannelVersion }}"
 
     - name: Validate installLocalRegistry input
       shell: bash
@@ -1156,13 +1144,6 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
       run: ${{ github.action_path }}/scripts/install-cilium.sh
-
-    - name: Install Flannel CNI
-      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'flannel' && inputs.dryRun != 'true' }}
-      shell: bash
-      env:
-        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-flannel.sh "${{ inputs.flannelVersion }}"
 
     - name: Skip CNI installation (bring your own CNI)
       if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
