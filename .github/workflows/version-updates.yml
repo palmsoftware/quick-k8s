@@ -21,6 +21,8 @@ on:
           - operator-sdk
           - kube-prometheus
           - thanos
+          - flannel
+          - metallb
 
 concurrency:
   group: ${{ github.workflow }}
@@ -87,6 +89,16 @@ jobs:
           - component: Thanos
             repo: thanos-io/thanos
             field: thanosVersion
+            tag_prefix: ''
+            version_regex: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+          - component: Flannel
+            repo: flannel-io/flannel
+            field: flannelVersion
+            tag_prefix: ''
+            version_regex: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+          - component: MetalLB
+            repo: metallb/metallb
+            field: metalLBVersion
             tag_prefix: ''
             version_regex: '^v[0-9]+\.[0-9]+\.[0-9]+$'
     steps:
