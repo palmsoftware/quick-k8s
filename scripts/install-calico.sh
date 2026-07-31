@@ -2,6 +2,7 @@
 set -euo pipefail
 
 CALICO_VERSION="${1:?Usage: $0 <calico-version>}"
+TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
@@ -46,3 +47,28 @@ retry_with_backoff 3 5 apply_calico_manifest || {
   diagnose_failure "Calico" "$_last_apply_output"
   exit 1
 }
+
+echo "Waiting for calico-node pods to be ready..."
+wait_output=$(kubectl wait --namespace kube-system \
+  --for=condition=ready pod \
+  --selector=k8s-app=calico-node \
+  --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "kube-system" "Calico"
+  diagnose_failure "Calico" "$wait_output"
+  exit 1
+}
+echo "$wait_output"
+
+echo "Waiting for calico-kube-controllers to be ready..."
+wait_output=$(kubectl rollout status deployment/calico-kube-controllers \
+  -n kube-system --timeout="${TIMEOUT}s" 2>&1) || {
+  echo "$wait_output"
+  dump_pod_status "kube-system" "Calico"
+  diagnose_failure "Calico" "$wait_output"
+  exit 1
+}
+echo "$wait_output"
+
+kubectl get pods -n kube-system -l k8s-app=calico-node
+echo "Calico CNI $CALICO_VERSION is ready"
