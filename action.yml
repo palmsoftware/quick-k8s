@@ -875,8 +875,8 @@ runs:
       if: ${{ inputs.dryRun != 'true' }}
       shell: bash
       run: |
-        mkdir -p /home/runner/.docker
-        touch /home/runner/.docker/config
+        mkdir -p "$HOME/.docker"
+        touch "$HOME/.docker/config"
 
     - name: Pre-flight environment check
       if: ${{ inputs.dryRun != 'true' }}
