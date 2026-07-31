@@ -3,7 +3,7 @@
 # Script to clean up Kubernetes cluster resources created by quick-k8s
 #
 # Reads configuration from environment variables set during action execution:
-#   QUICK_K8S_PROVIDER     - Cluster provider (kind, minikube, k3s)
+#   QUICK_K8S_PROVIDER     - Cluster provider (kind, minikube)
 #   QUICK_K8S_CLUSTER_NAME - Name of the cluster
 #
 # This script is copied to /tmp/quick-k8s-cleanup.sh during action setup.
@@ -55,16 +55,6 @@ case "$PROVIDER" in
     else
       echo "Minikube binary not found, skipping cluster deletion"
     fi
-    ;;
-  k3s)
-    echo "Stopping k3s..."
-    if [ -x /usr/local/bin/k3s-killall.sh ]; then
-      /usr/local/bin/k3s-killall.sh 2>/dev/null || true
-    fi
-    if [ -x /usr/local/bin/k3s-uninstall.sh ]; then
-      /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
-    fi
-    echo "k3s stopped and uninstalled"
     ;;
   *)
     echo "Unknown provider '$PROVIDER', skipping cluster cleanup"
