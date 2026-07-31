@@ -131,9 +131,20 @@ else
   echo "Monitoring pods in all namespaces"
 fi
 
+empty_checks=0
+max_empty_checks=6  # Give up after ~60s of no pods found
+
 while true; do
   pod_output=$(get_pods)
-  if [ -z "$pod_output" ] || echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed") exit 1}'; then
+  if [ -z "$pod_output" ]; then
+    empty_checks=$((empty_checks + 1))
+    time_str=$(format_time "$elapsed")
+    if [ "$empty_checks" -ge "$max_empty_checks" ]; then
+      echo "[${time_str}] No pods found after ${empty_checks} checks — continuing (pods may not be created yet)"
+      break
+    fi
+    echo "[${time_str}] No pods found yet (check ${empty_checks}/${max_empty_checks}), waiting..."
+  elif echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed") exit 1}'; then
     time_str=$(format_time "$elapsed")
     echo "[${time_str}] All pods are running or completed"
     break
