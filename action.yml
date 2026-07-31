@@ -236,6 +236,22 @@ inputs:
     description: 'Generate a cleanup script at /tmp/quick-k8s-cleanup.sh for post-run cluster teardown'
     required: false
     default: 'false'
+outputs:
+  cluster-provider:
+    description: 'The cluster provider used (kind or minikube)'
+    value: ${{ steps.set-outputs.outputs.cluster-provider }}
+  kubernetes-version:
+    description: 'The Kubernetes version deployed'
+    value: ${{ steps.set-outputs.outputs.kubernetes-version }}
+  cluster-endpoint:
+    description: 'The API server endpoint URL'
+    value: ${{ steps.set-outputs.outputs.cluster-endpoint }}
+  kubeconfig-path:
+    description: 'Path to the kubeconfig file'
+    value: ${{ steps.set-outputs.outputs.kubeconfig-path }}
+  cluster-name:
+    description: 'The cluster name'
+    value: ${{ steps.set-outputs.outputs.cluster-name }}
 runs:
   using: 'composite'
   steps:
@@ -1462,6 +1478,27 @@ runs:
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
         fi
+
+    - name: Set action outputs
+      id: set-outputs
+      if: ${{ inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
+      run: |
+        echo "cluster-provider=$CLUSTER_PROVIDER" >> "$GITHUB_OUTPUT"
+        echo "cluster-name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
+
+        KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
+        echo "kubeconfig-path=$KUBECONFIG_PATH" >> "$GITHUB_OUTPUT"
+
+        K8S_VERSION=$(kubectl version --client -o json 2>/dev/null | jq -r '.clientVersion.gitVersion' 2>/dev/null) || K8S_VERSION=""
+        SERVER_VERSION=$(kubectl version -o json 2>/dev/null | jq -r '.serverVersion.gitVersion' 2>/dev/null) || SERVER_VERSION=""
+        echo "kubernetes-version=${SERVER_VERSION:-$K8S_VERSION}" >> "$GITHUB_OUTPUT"
+
+        API_SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null) || API_SERVER=""
+        echo "cluster-endpoint=$API_SERVER" >> "$GITHUB_OUTPUT"
 
     - name: Generate cleanup script
       if: ${{ inputs.enableCleanup == 'true' && inputs.dryRun != 'true' }}
