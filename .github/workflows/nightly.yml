@@ -428,3 +428,185 @@ jobs:
           kubectl get nodes -o wide
           kubectl get pods -A -o wide
 
+  # Dry run test - verify no cluster is created
+  dry-run-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action in dry run mode
+        uses: ./
+        with:
+          clusterProvider: kind
+          dryRun: true
+
+      - name: Verify no cluster was created
+        run: |
+          if command -v kubectl &>/dev/null && kubectl cluster-info &>/dev/null 2>&1; then
+            echo "ERROR: Cluster should not exist in dry run mode"
+            exit 1
+          fi
+          echo "Dry run test passed - no cluster created"
+
+  # Cleanup script test
+  cleanup-script-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with cleanup enabled
+        uses: ./
+        with:
+          clusterProvider: kind
+          enableCleanup: true
+          waitForPodsReady: true
+
+      - name: Verify cleanup script was created
+        run: |
+          if [ ! -f /tmp/quick-k8s-cleanup.sh ]; then
+            echo "ERROR: Cleanup script not found at /tmp/quick-k8s-cleanup.sh"
+            exit 1
+          fi
+          echo "Cleanup script found"
+
+      - name: Run cleanup script
+        run: |
+          chmod +x /tmp/quick-k8s-cleanup.sh
+          /tmp/quick-k8s-cleanup.sh
+          echo "Cleanup script executed successfully"
+
+      - name: Verify cluster was cleaned up
+        run: |
+          if kind get clusters 2>/dev/null | grep -q kind; then
+            echo "ERROR: Cluster still exists after cleanup"
+            exit 1
+          fi
+          echo "Cleanup test passed - cluster removed"
+
+  # Persistent volumes test
+  persistent-volumes-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with persistent volumes
+        uses: ./
+        with:
+          clusterProvider: kind
+          createPersistentVolumes: true
+          persistentVolumeCount: 3
+          persistentVolumeSize: 5Gi
+          waitForPodsReady: true
+
+      - name: Verify persistent volumes
+        run: |
+          PV_COUNT=$(kubectl get pv --no-headers | wc -l)
+          if [ "$PV_COUNT" -ne 3 ]; then
+            echo "ERROR: Expected 3 PVs, found $PV_COUNT"
+            exit 1
+          fi
+          kubectl get pv
+          echo "Persistent volumes test passed"
+
+  # Node taints test
+  node-taints-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with taints
+        uses: ./
+        with:
+          clusterProvider: kind
+          numWorkerNodes: 1
+          controlPlaneTaints: "custom-taint=true:NoSchedule"
+          workerNodeTaints: "worker-taint=true:NoSchedule"
+          waitForPodsReady: true
+
+      - name: Verify taints applied
+        run: |
+          echo "Checking control plane taints..."
+          kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[*].spec.taints}' | grep -q custom-taint
+          echo "Control plane taint verified"
+          echo "Checking worker taints..."
+          kubectl get nodes -l '!node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].spec.taints}' | grep -q worker-taint
+          echo "Worker taint verified"
+          echo "Node taints test passed"
+
+  # Skip disk cleanup test
+  skip-disk-cleanup-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with skipDiskCleanup
+        uses: ./
+        with:
+          clusterProvider: kind
+          skipDiskCleanup: true
+          waitForPodsReady: true
+
+      - name: Verify cluster is operational
+        run: |
+          kubectl get nodes
+          kubectl get pods -A
+          echo "Skip disk cleanup test passed"
+
+  # Extra port mappings test (auto-generated config, not custom config)
+  extra-port-mappings-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with extra port mappings
+        uses: ./
+        with:
+          clusterProvider: kind
+          extraPortMappings: "30000:30000,30001:30001"
+          waitForPodsReady: true
+
+      - name: Verify port mappings
+        run: |
+          docker inspect kind-control-plane --format '{{ json .HostConfig.PortBindings }}' | grep -q 30000
+          echo "Extra port mappings test passed"
+
+  # IPv6 test (known to be unstable on GitHub Actions runners)
+  ipv6-test:
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run action with IPv6
+        uses: ./
+        with:
+          clusterProvider: kind
+          ipFamily: ipv6
+          waitForPodsReady: true
+
+      - name: Verify IPv6 configuration
+        run: |
+          kubectl get nodes -o wide
+          kubectl get pods -A -o wide
+          echo "IPv6 test passed"
+
