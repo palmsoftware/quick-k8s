@@ -785,27 +785,50 @@ runs:
       shell: bash
       env:
         CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
         DEFAULT_NODE_IMAGE: ${{ inputs.defaultNodeImage }}
         API_SERVER_PORT: ${{ inputs.apiServerPort }}
         API_SERVER_ADDRESS: ${{ inputs.apiServerAddress }}
         IP_FAMILY: ${{ inputs.ipFamily }}
         NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
+        CLUSTER_CPUS: ${{ inputs.clusterCPUs }}
+        CLUSTER_MEMORY: ${{ inputs.clusterMemory }}
         DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
         CNI_PLUGIN: ${{ steps.resolve-cni.outputs.effective-cni }}
+        CALICO_VERSION: ${{ inputs.calicoVersion }}
         INSTALL_OLM: ${{ inputs.installOLM }}
+        OLM_VERSION: ${{ inputs.olmVersion }}
         INSTALL_ISTIO: ${{ inputs.installIstio }}
+        ISTIO_VERSION: ${{ inputs.istioVersion }}
         ISTIO_PROFILE: ${{ inputs.istioProfile }}
         INSTALL_CERT_MANAGER: ${{ inputs.installCertManager }}
+        CERT_MANAGER_VERSION: ${{ inputs.certManagerVersion }}
         INSTALL_INGRESS_NGINX: ${{ inputs.installIngressNginx }}
+        INGRESS_NGINX_VERSION: ${{ inputs.ingressNginxVersion }}
         INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
+        METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
+        INSTALL_METALLB: ${{ inputs.installMetalLB }}
+        METALLB_VERSION: ${{ inputs.metalLBVersion }}
+        INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
+        OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
         INSTALL_SAMPLE_NETWORK_POLICIES: ${{ inputs.installSampleNetworkPolicies }}
         WAIT_FOR_PODS_READY: ${{ inputs.waitForPodsReady }}
+        WAIT_FOR_PODS_TIMEOUT: ${{ inputs.waitForPodsTimeout }}
         REMOVE_DEFAULT_STORAGE_CLASS: ${{ inputs.removeDefaultStorageClass }}
         REMOVE_CONTROL_PLANE_TAINT: ${{ inputs.removeControlPlaneTaint }}
+        CONTROL_PLANE_TAINTS: ${{ inputs.controlPlaneTaints }}
+        WORKER_NODE_TAINTS: ${{ inputs.workerNodeTaints }}
+        EXTRA_PORT_MAPPINGS: ${{ inputs.extraPortMappings }}
+        CREATE_PERSISTENT_VOLUMES: ${{ inputs.createPersistentVolumes }}
+        PERSISTENT_VOLUME_COUNT: ${{ inputs.persistentVolumeCount }}
+        PERSISTENT_VOLUME_SIZE: ${{ inputs.persistentVolumeSize }}
+        SKIP_DISK_CLEANUP: ${{ inputs.skipDiskCleanup }}
+        ENABLE_CLEANUP: ${{ inputs.enableCleanup }}
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         KIND_VERSION: ${{ inputs.kindVersion }}
         KIND_CONFIG_PATH: ${{ inputs.kindConfigPath }}
         MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
@@ -815,30 +838,57 @@ runs:
         echo "  quick-k8s Dry Run Summary"
         echo "=============================================="
         echo ""
-        echo "Cluster Provider: $CLUSTER_PROVIDER"
-        echo "Node Image: $DEFAULT_NODE_IMAGE"
-        echo "API Server Port: $API_SERVER_PORT"
-        echo "API Server Address: $API_SERVER_ADDRESS"
-        echo "IP Family: $IP_FAMILY"
-        echo "Control-Plane Nodes: $NUM_CONTROL_PLANE_NODES"
-        echo "Worker Nodes: $NUM_WORKER_NODES"
+        echo "Cluster:"
+        echo "  Provider: $CLUSTER_PROVIDER"
+        echo "  Name: $CLUSTER_NAME"
+        echo "  Node Image: $DEFAULT_NODE_IMAGE"
+        echo "  API Server Port: $API_SERVER_PORT"
+        echo "  API Server Address: $API_SERVER_ADDRESS"
+        echo "  IP Family: $IP_FAMILY"
+        echo "  Control-Plane Nodes: $NUM_CONTROL_PLANE_NODES"
+        echo "  Worker Nodes: $NUM_WORKER_NODES"
+        echo "  CPUs: $CLUSTER_CPUS"
+        if [ -n "$CLUSTER_MEMORY" ]; then
+          echo "  Memory: ${CLUSTER_MEMORY}MB"
+        else
+          echo "  Memory: default"
+        fi
         echo ""
-        echo "Components to install:"
-        echo "  CNI Plugin: $([ "$DISABLE_DEFAULT_CNI" = "true" ] && echo "$CNI_PLUGIN" || echo "default")"
-        echo "  OLM: $INSTALL_OLM"
-        echo "  Istio: $INSTALL_ISTIO (profile: $ISTIO_PROFILE)"
-        echo "  Cert-Manager: $INSTALL_CERT_MANAGER"
-        echo "  Ingress-Nginx: $INSTALL_INGRESS_NGINX"
-        echo "  Metrics Server: $INSTALL_METRICS_SERVER"
-        echo "  Local Registry: $INSTALL_LOCAL_REGISTRY (port: $LOCAL_REGISTRY_PORT)"
+        echo "Components:"
+        echo "  CNI: $([ "$DISABLE_DEFAULT_CNI" = "true" ] && echo "$CNI_PLUGIN" || echo "default")"
+        if [ "$DISABLE_DEFAULT_CNI" = "true" ] && [ "$CNI_PLUGIN" = "calico" ]; then
+          echo "    Calico Version: $CALICO_VERSION"
+        fi
+        echo "  OLM: $INSTALL_OLM$([ "$INSTALL_OLM" = "true" ] && echo " ($OLM_VERSION)")"
+        echo "  Istio: $INSTALL_ISTIO$([ "$INSTALL_ISTIO" = "true" ] && echo " ($ISTIO_VERSION, profile: $ISTIO_PROFILE)")"
+        echo "  Cert-Manager: $INSTALL_CERT_MANAGER$([ "$INSTALL_CERT_MANAGER" = "true" ] && echo " ($CERT_MANAGER_VERSION)")"
+        echo "  Ingress-Nginx: $INSTALL_INGRESS_NGINX$([ "$INSTALL_INGRESS_NGINX" = "true" ] && echo " ($INGRESS_NGINX_VERSION)")"
+        echo "  Metrics Server: $INSTALL_METRICS_SERVER$([ "$INSTALL_METRICS_SERVER" = "true" ] && echo " ($METRICS_SERVER_VERSION)")"
+        echo "  MetalLB: $INSTALL_METALLB$([ "$INSTALL_METALLB" = "true" ] && echo " ($METALLB_VERSION)")"
+        echo "  Operator SDK: $INSTALL_OPERATOR_SDK$([ "$INSTALL_OPERATOR_SDK" = "true" ] && echo " ($OPERATOR_SDK_VERSION)")"
+        echo "  Local Registry: $INSTALL_LOCAL_REGISTRY$([ "$INSTALL_LOCAL_REGISTRY" = "true" ] && echo " (port: $LOCAL_REGISTRY_PORT)")"
         echo "  Cluster Monitoring: $ENABLE_CLUSTER_MONITORING"
         echo "  Sample Network Policies: $INSTALL_SAMPLE_NETWORK_POLICIES"
         echo ""
         echo "Options:"
-        echo "  Disable Default CNI: $DISABLE_DEFAULT_CNI"
+        echo "  Skip Disk Cleanup: $SKIP_DISK_CLEANUP"
+        echo "  Enable Post-Job Cleanup: $ENABLE_CLEANUP"
         echo "  Remove Default StorageClass: $REMOVE_DEFAULT_STORAGE_CLASS"
         echo "  Remove Control-Plane Taint: $REMOVE_CONTROL_PLANE_TAINT"
-        echo "  Wait for Pods Ready: $WAIT_FOR_PODS_READY"
+        echo "  Wait for Pods Ready: $WAIT_FOR_PODS_READY$([ "$WAIT_FOR_PODS_READY" = "true" ] && echo " (timeout: ${WAIT_FOR_PODS_TIMEOUT}s)")"
+        echo "  Component Timeout: ${COMPONENT_TIMEOUT}s"
+        if [ -n "$EXTRA_PORT_MAPPINGS" ]; then
+          echo "  Extra Port Mappings: $EXTRA_PORT_MAPPINGS"
+        fi
+        if [ -n "$CONTROL_PLANE_TAINTS" ]; then
+          echo "  Control-Plane Taints: $CONTROL_PLANE_TAINTS"
+        fi
+        if [ -n "$WORKER_NODE_TAINTS" ]; then
+          echo "  Worker Node Taints: $WORKER_NODE_TAINTS"
+        fi
+        if [ "$CREATE_PERSISTENT_VOLUMES" = "true" ]; then
+          echo "  Persistent Volumes: ${PERSISTENT_VOLUME_COUNT} x ${PERSISTENT_VOLUME_SIZE}"
+        fi
         echo ""
         if [ "$CLUSTER_PROVIDER" = "kind" ]; then
           echo "KinD Settings:"
