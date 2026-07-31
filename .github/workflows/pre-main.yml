@@ -93,6 +93,41 @@ jobs:
           curl -s http://localhost:5001/v2/_catalog | grep test-image
           echo "Local registry test passed!"
 
+  # Test local registry with Minikube
+  test-local-registry-minikube:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run the action with local registry (Minikube)
+        uses: ./
+        with:
+          clusterProvider: minikube
+          installLocalRegistry: true
+          localRegistryPort: 5001
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify local registry is running
+        run: |
+          echo "Checking registry container..."
+          docker ps | grep quick-k8s-registry
+          echo "Testing registry connectivity..."
+          curl -s http://localhost:5001/v2/ || exit 1
+          echo "Testing push to registry..."
+          docker pull busybox:latest
+          docker tag busybox:latest localhost:5001/test-image:latest
+          docker push localhost:5001/test-image:latest
+          echo "Verifying image in registry..."
+          curl -s http://localhost:5001/v2/_catalog | grep test-image
+          echo "Local registry Minikube test passed!"
+
   # Test skipping CNI installation (for projects that bring their own CNI)
   test-skip-cni:
     needs: lint
