@@ -73,7 +73,7 @@ steps:
       istioVersion: 1.30.3
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.0
+      certManagerVersion: v1.21.1
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
@@ -135,7 +135,7 @@ steps:
       istioVersion: 1.30.3
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.0
+      certManagerVersion: v1.21.1
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
@@ -186,7 +186,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installCertManager: true
-      certManagerVersion: v1.21.0
+      certManagerVersion: v1.21.1
 ```
 
 **Features**:
