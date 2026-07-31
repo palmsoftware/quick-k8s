@@ -17,8 +17,8 @@ CLUSTER_CPUS="${9:-2}"
 CLUSTER_MEMORY="${10:-}"
 
 if [ -z "$NODE_IMAGE" ]; then
-  echo "Usage: $0 <node_image> [disable_cni] [driver] [api_port] [num_control_plane] [num_workers]"
-  echo "Example: $0 'kindest/node:v1.34.0@sha256:...' true docker 6443 1 1"
+  echo "Usage: $0 <node_image> [disable_cni] [driver] [api_port] [num_control_plane] [num_workers]" >&2
+  echo "Example: $0 'kindest/node:v1.34.0@sha256:...' true docker 6443 1 1" >&2
   exit 1
 fi
 

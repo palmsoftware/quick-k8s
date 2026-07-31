@@ -32,7 +32,7 @@ apply_calico_manifest() {
     # CRD validation errors as non-fatal if the calico-node daemonset exists.
     if echo "$_last_apply_output" | grep -q "is invalid:.*compilation failed"; then
       if kubectl get daemonset calico-node -n kube-system &>/dev/null; then
-        echo "Warning: Some Calico CRDs failed validation (likely K8s version incompatibility) but core components installed successfully"
+        echo "Warning: Some Calico CRDs failed validation (likely K8s version incompatibility) but core components installed successfully" >&2
         return 0
       fi
     fi

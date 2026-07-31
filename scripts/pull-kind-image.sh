@@ -8,8 +8,8 @@ set -euo pipefail
 IMAGE="${1:-}"
 
 if [ -z "$IMAGE" ]; then
-  echo "Usage: $0 <image>"
-  echo "Example: $0 kindest/node:v1.35.0@sha256:452d707d..."
+  echo "Usage: $0 <image>" >&2
+  echo "Example: $0 kindest/node:v1.35.0@sha256:452d707d..." >&2
   exit 1
 fi
 

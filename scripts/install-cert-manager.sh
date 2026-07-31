@@ -54,7 +54,7 @@ EOF
 
 echo "Waiting for ClusterIssuer to be ready..."
 kubectl wait --for=condition=Ready clusterissuer/selfsigned-issuer --timeout=60s || {
-  echo "Warning: ClusterIssuer may not be ready yet. Current status:"
+  echo "Warning: ClusterIssuer may not be ready yet. Current status:" >&2
   kubectl get clusterissuer selfsigned-issuer -o wide 2>/dev/null || true
 }
 
