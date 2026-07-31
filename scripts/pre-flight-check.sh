@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Check Docker is running
 if ! docker info >/dev/null 2>&1; then
