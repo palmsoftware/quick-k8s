@@ -12,6 +12,7 @@ on:
         options:
           - all
           - calico
+          - cilium
           - kind
           - minikube
           - istio
@@ -43,6 +44,11 @@ jobs:
           - component: Calico
             repo: projectcalico/calico
             field: calicoVersion
+            tag_prefix: ''
+            version_regex: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+          - component: Cilium
+            repo: cilium/cilium-cli
+            field: ciliumVersion
             tag_prefix: ''
             version_regex: '^v[0-9]+\.[0-9]+\.[0-9]+$'
           - component: KinD
