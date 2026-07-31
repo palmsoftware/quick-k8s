@@ -6,6 +6,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 echo "::group::Installing Flannel CNI $FLANNEL_VERSION"
 trap 'echo "::endgroup::"' EXIT
@@ -19,30 +21,20 @@ fi
 
 FLANNEL_URL="https://github.com/flannel-io/flannel/releases/download/${FLANNEL_VERSION}/kube-flannel.yml"
 
-max_attempts=3
-attempt=1
-delay=5
+_last_apply_output=""
+apply_flannel_manifest() {
+  echo "Applying Flannel manifest..."
+  _last_apply_output=$(kubectl apply --timeout=5m -f "$FLANNEL_URL" 2>&1)
+  local rc=$?
+  echo "$_last_apply_output"
+  return $rc
+}
 
-while [ $attempt -le $max_attempts ]; do
-  echo "Attempt $attempt/$max_attempts: Applying Flannel manifest..."
-  apply_output=$(kubectl apply --timeout=5m -f "$FLANNEL_URL" 2>&1) && {
-    echo "$apply_output"
-    echo "Flannel manifest applied successfully"
-    break
-  }
-  exit_code=$?
-  echo "$apply_output"
-
-  if [ $attempt -eq $max_attempts ]; then
-    diagnose_failure "Flannel" "$apply_output"
-    exit $exit_code
-  fi
-
-  echo "Retrying in $delay seconds..."
-  sleep $delay
-  delay=$((delay * 2))
-  attempt=$((attempt + 1))
-done
+retry_with_backoff 3 5 apply_flannel_manifest || {
+  diagnose_failure "Flannel" "$_last_apply_output"
+  exit 1
+}
+echo "Flannel manifest applied successfully"
 
 echo "Waiting for Flannel pods to be ready (timeout: ${TIMEOUT}s)..."
 wait_output=$(kubectl wait --for=condition=ready pod -l app=flannel -n kube-flannel --timeout="${TIMEOUT}s" 2>&1) || {

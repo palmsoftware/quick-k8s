@@ -6,6 +6,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 echo "::group::Installing Cilium CNI"
 trap 'echo "::endgroup::"' EXIT
@@ -34,41 +36,32 @@ else
   echo "Latest Cilium CLI version: $CILIUM_CLI_VERSION"
 fi
 
-# Download Cilium CLI with retry
-max_attempts=3
-attempt=1
-delay=5
+download_cilium_cli() {
+  echo "Downloading Cilium CLI..."
+  local download_url="https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz"
+  local checksum_url="${download_url}.sha256sum"
 
-while [ $attempt -le $max_attempts ]; do
-  echo "Attempt $attempt/$max_attempts: Downloading Cilium CLI..."
-  DOWNLOAD_URL="https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz"
-  CHECKSUM_URL="${DOWNLOAD_URL}.sha256sum"
-
-  if curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "$DOWNLOAD_URL" && \
-     curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum" "$CHECKSUM_URL"; then
-
-    # Verify checksum
-    if (cd /tmp && sha256sum --check "cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"); then
-      echo "Checksum verified successfully"
-      sudo tar xzf "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" -C /usr/local/bin
-      rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
-      break
-    else
-      echo "Checksum verification failed"
-      rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
-    fi
+  if ! curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "$download_url" || \
+     ! curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum" "$checksum_url"; then
+    rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+    return 1
   fi
 
-  if [ $attempt -eq $max_attempts ]; then
-    echo "::error::Failed to download Cilium CLI after $max_attempts attempts"
-    exit 1
+  if ! (cd /tmp && sha256sum --check "cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"); then
+    echo "Checksum verification failed"
+    rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+    return 1
   fi
 
-  echo "Retrying in $delay seconds..."
-  sleep $delay
-  delay=$((delay * 2))
-  attempt=$((attempt + 1))
-done
+  echo "Checksum verified successfully"
+  sudo tar xzf "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" -C /usr/local/bin
+  rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+}
+
+retry_with_backoff 3 5 download_cilium_cli || {
+  echo "::error::Failed to download Cilium CLI after 3 attempts"
+  exit 1
+}
 
 # Verify Cilium CLI installation
 if ! command -v cilium >/dev/null 2>&1; then
