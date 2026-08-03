@@ -25,12 +25,21 @@ volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete
 EOF
 
+# Get node names for nodeAffinity (pin hostPath PVs to specific nodes)
+readarray -t NODES < <(kubectl get nodes --no-headers -o custom-columns=':metadata.name')
+NODE_COUNT=${#NODES[@]}
+
+if [ "$NODE_COUNT" -gt 1 ]; then
+  echo "::warning::Multi-node cluster detected ($NODE_COUNT nodes). hostPath PVs are pinned to individual nodes via nodeAffinity — data is not shared across nodes."
+fi
+
 # Create PersistentVolumes
 for i in $(seq 1 "$PV_COUNT"); do
   PV_NAME="test-pv-${i}"
   HOST_PATH="/tmp/test-pvs/${PV_NAME}"
+  TARGET_NODE="${NODES[$(( (i - 1) % NODE_COUNT ))]}"
 
-  echo "Creating PersistentVolume: $PV_NAME ($PV_SIZE)"
+  echo "Creating PersistentVolume: $PV_NAME ($PV_SIZE) on node $TARGET_NODE"
   kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolume
@@ -48,6 +57,14 @@ spec:
   hostPath:
     path: ${HOST_PATH}
     type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - ${TARGET_NODE}
 EOF
 done
 
