@@ -1352,7 +1352,7 @@ runs:
       run: ${{ github.action_path }}/scripts/wait-for-pods.sh
 
     - name: Clean up package manager cache
-      if: ${{ inputs.dryRun != 'true' }}
+      if: ${{ runner.os == 'Linux' && inputs.dryRun != 'true' }}
       shell: bash
       run: |
         sudo apt-get clean
