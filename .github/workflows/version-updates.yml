@@ -133,23 +133,36 @@ jobs:
               echo "Attempt $i to fetch ${{ matrix.component }} version..."
 
               response=$(curl -s --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" \
-                "https://api.github.com/repos/${{ matrix.repo }}/releases/latest")
+                "https://api.github.com/repos/${{ matrix.repo }}/releases?per_page=10")
 
               if [ $? -eq 0 ] && [ -n "$response" ]; then
-                tag=$(echo "$response" | jq -r '.tag_name // empty')
+                release_count=$(echo "$response" | jq '. | length' 2>/dev/null)
 
-                if [ -n "$tag" ] && [ "$tag" != "null" ]; then
-                  version="${tag#${{ matrix.tag_prefix }}}"
+                if [ -n "$release_count" ] && [ "$release_count" -gt 0 ] 2>/dev/null; then
+                  for ((j=0; j<release_count; j++)); do
+                    tag=$(echo "$response" | jq -r ".[$j].tag_name // empty")
+                    prerelease=$(echo "$response" | jq -r ".[$j].prerelease")
 
-                  if [[ "$version" =~ ${{ matrix.version_regex }} ]]; then
-                    echo "Successfully fetched ${{ matrix.component }} version: $version"
-                    echo "version=$version" >> $GITHUB_OUTPUT
-                    return 0
-                  else
-                    echo "Invalid version format: '$version' (tag: '$tag')"
-                  fi
+                    if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+                      continue
+                    fi
+
+                    if [ "$prerelease" = "true" ]; then
+                      continue
+                    fi
+
+                    version="${tag#${{ matrix.tag_prefix }}}"
+
+                    if [[ "$version" =~ ${{ matrix.version_regex }} ]]; then
+                      echo "Successfully fetched ${{ matrix.component }} version: $version (tag: $tag)"
+                      echo "version=$version" >> $GITHUB_OUTPUT
+                      return 0
+                    fi
+                  done
+
+                  echo "No release matching regex '${{ matrix.version_regex }}' found in latest $release_count releases"
                 else
-                  echo "No tag_name in response"
+                  echo "API call returned invalid or empty response"
                 fi
               else
                 echo "API call failed or returned empty response"
