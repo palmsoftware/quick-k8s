@@ -8,6 +8,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 source "$(dirname "$0")/diagnose-failure.sh"
 # shellcheck source=lib/retry.sh
 source "$(dirname "$0")/lib/retry.sh"
+# shellcheck source=map-platform.sh
+source "$(dirname "$0")/map-platform.sh"
 
 echo "::group::Installing Cilium CNI"
 trap 'echo "::endgroup::"' EXIT
@@ -20,11 +22,9 @@ for cmd in curl kubectl; do
   fi
 done
 
-# Determine architecture
-CLI_ARCH="amd64"
-if [ "$(uname -m)" = "aarch64" ]; then
-  CLI_ARCH="arm64"
-fi
+# Determine platform
+CLI_OS=$(map_os "$(uname -s)")
+CLI_ARCH=$(map_arch "$(uname -m)")
 
 # Determine Cilium CLI version
 if [ -n "$CILIUM_VERSION" ]; then
@@ -38,24 +38,24 @@ fi
 
 download_cilium_cli() {
   echo "Downloading Cilium CLI..."
-  local download_url="https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz"
+  local download_url="https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz"
   local checksum_url="${download_url}.sha256sum"
 
-  if ! curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "$download_url" || \
-     ! curl -L --fail --retry 3 -o "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum" "$checksum_url"; then
-    rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+  if ! curl -L --fail --retry 3 -o "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz" "$download_url" || \
+     ! curl -L --fail --retry 3 -o "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz.sha256sum" "$checksum_url"; then
+    rm -f "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz" "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz.sha256sum"
     return 1
   fi
 
-  if ! (cd /tmp && sha256sum --check "cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"); then
+  if ! (cd /tmp && sha256sum --check "cilium-${CLI_OS}-${CLI_ARCH}.tar.gz.sha256sum"); then
     echo "Checksum verification failed"
-    rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+    rm -f "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz" "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz.sha256sum"
     return 1
   fi
 
   echo "Checksum verified successfully"
-  sudo tar xzf "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" -C /usr/local/bin
-  rm -f "/tmp/cilium-linux-${CLI_ARCH}.tar.gz" "/tmp/cilium-linux-${CLI_ARCH}.tar.gz.sha256sum"
+  sudo tar xzf "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz" -C /usr/local/bin
+  rm -f "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz" "/tmp/cilium-${CLI_OS}-${CLI_ARCH}.tar.gz.sha256sum"
 }
 
 retry_with_backoff 3 5 download_cilium_cli || {
