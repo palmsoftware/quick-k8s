@@ -75,8 +75,8 @@ if [ -n "$CLUSTER_MEMORY" ]; then
 fi
 
 # Configure nodes
-if [ "$NUM_WORKERS" -gt 0 ]; then
-  TOTAL_NODES=$((NUM_CONTROL_PLANE + NUM_WORKERS))
+TOTAL_NODES=$((NUM_CONTROL_PLANE + NUM_WORKERS))
+if [ "$TOTAL_NODES" -gt 1 ]; then
   MINIKUBE_CMD+=("--nodes=$TOTAL_NODES")
 fi
 
