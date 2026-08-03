@@ -3,6 +3,7 @@ set -euo pipefail
 
 CALICO_VERSION="${1:?Usage: $0 <calico-version>}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+IP_FAMILY="${IP_FAMILY:-ipv4}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
@@ -48,6 +49,25 @@ retry_with_backoff 3 5 apply_calico_manifest || {
   exit 1
 }
 
+if [ "$IP_FAMILY" != "ipv4" ]; then
+  CALICO_ENVS=(IP6=autodetect FELIX_IPV6SUPPORT=true)
+  if [ "$IP_FAMILY" = "ipv6" ]; then
+    echo "Configuring Calico for IPv6-only networking..."
+    CALICO_ENVS+=(CALICO_IPV4POOL_CIDR- CALICO_IPV4POOL_IPIP- IP=none)
+  else
+    echo "Configuring Calico for dual-stack networking..."
+  fi
+  kubectl set env daemonset/calico-node -n kube-system "${CALICO_ENVS[@]}"
+  echo "Waiting for calico-node rollout..."
+  wait_output=$(kubectl rollout status daemonset/calico-node -n kube-system --timeout="${TIMEOUT}s" 2>&1) || {
+    echo "$wait_output"
+    dump_pod_status "kube-system" "Calico"
+    diagnose_failure "Calico" "$wait_output"
+    exit 1
+  }
+  echo "$wait_output"
+fi
+
 echo "Waiting for calico-node pods to be ready..."
 wait_output=$(kubectl wait --namespace kube-system \
   --for=condition=ready pod \
@@ -59,6 +79,11 @@ wait_output=$(kubectl wait --namespace kube-system \
   exit 1
 }
 echo "$wait_output"
+
+if [ "$IP_FAMILY" != "ipv4" ]; then
+  echo "Restarting calico-kube-controllers to acquire IPv6 pod IP..."
+  kubectl rollout restart deployment/calico-kube-controllers -n kube-system
+fi
 
 echo "Waiting for calico-kube-controllers to be ready..."
 wait_output=$(kubectl rollout status deployment/calico-kube-controllers \
