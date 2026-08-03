@@ -144,7 +144,7 @@ while true; do
       break
     fi
     echo "[${time_str}] No pods found yet (check ${empty_checks}/${max_empty_checks}), waiting..."
-  elif echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed") exit 1}'; then
+  elif echo "$pod_output" | awk '{if ($4 != "Running" && $4 != "Completed" && $4 != "Succeeded") exit 1}'; then
     time_str=$(format_time "$elapsed")
     echo "[${time_str}] All pods are running or completed"
     break
