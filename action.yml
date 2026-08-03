@@ -1173,6 +1173,37 @@ runs:
         WORKER_NODE_LABELS: ${{ inputs.workerNodeLabels }}
       run: ${{ github.action_path }}/scripts/label-worker-nodes.sh "$NUM_WORKER_NODES" "$WORKER_NODE_LABELS"
 
+    - name: Cluster health check
+      if: ${{ inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
+      run: ${{ github.action_path }}/scripts/cluster-health-check.sh
+
+    - name: Install Calico CNI
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'calico' && inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+        CALICO_VERSION: ${{ inputs.calicoVersion }}
+        IP_FAMILY: ${{ inputs.clusterProvider == 'kind' && inputs.ipFamily || 'ipv4' }}
+      run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
+
+    - name: Install Cilium CNI
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'cilium' && inputs.dryRun != 'true' }}
+      shell: bash
+      env:
+        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+        CILIUM_VERSION: ${{ inputs.ciliumVersion }}
+      run: ${{ github.action_path }}/scripts/install-cilium.sh "$CILIUM_VERSION"
+
+    - name: Skip CNI installation (bring your own CNI)
+      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
+      shell: bash
+      run: |
+        echo "Skipping CNI installation - cniPlugin is set to none"
+        echo "   You must install your own CNI (e.g., Calico, Multus, OVN, Cilium) for the cluster to be functional"
+
     - name: Apply custom taints to control-plane nodes
       if: ${{ inputs.controlPlaneTaints != '' && inputs.dryRun != 'true' }}
       shell: bash
@@ -1200,36 +1231,6 @@ runs:
             kubectl taint nodes "$node" "$taint" --overwrite
           done
         done
-
-    - name: Cluster health check
-      if: ${{ inputs.dryRun != 'true' }}
-      shell: bash
-      env:
-        DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
-      run: ${{ github.action_path }}/scripts/cluster-health-check.sh
-
-    - name: Install Calico CNI
-      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'calico' && inputs.dryRun != 'true' }}
-      shell: bash
-      env:
-        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-        CALICO_VERSION: ${{ inputs.calicoVersion }}
-      run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
-
-    - name: Install Cilium CNI
-      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'cilium' && inputs.dryRun != 'true' }}
-      shell: bash
-      env:
-        COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-        CILIUM_VERSION: ${{ inputs.ciliumVersion }}
-      run: ${{ github.action_path }}/scripts/install-cilium.sh "$CILIUM_VERSION"
-
-    - name: Skip CNI installation (bring your own CNI)
-      if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
-      shell: bash
-      run: |
-        echo "Skipping CNI installation - cniPlugin is set to none"
-        echo "   You must install your own CNI (e.g., Calico, Multus, OVN, Cilium) for the cluster to be functional"
 
     - name: Install sample network policies
       if: ${{ inputs.installSampleNetworkPolicies == 'true' && inputs.dryRun != 'true' }}
