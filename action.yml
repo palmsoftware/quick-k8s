@@ -1187,7 +1187,12 @@ runs:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         CALICO_VERSION: ${{ inputs.calicoVersion }}
         IP_FAMILY: ${{ inputs.clusterProvider == 'kind' && inputs.ipFamily || 'ipv4' }}
-      run: ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install Calico"
+        ${{ github.action_path }}/scripts/install-calico.sh "$CALICO_VERSION"
+        end_timer "Install Calico"
 
     - name: Install Cilium CNI
       if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'cilium' && inputs.dryRun != 'true' }}
@@ -1195,7 +1200,12 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         CILIUM_VERSION: ${{ inputs.ciliumVersion }}
-      run: ${{ github.action_path }}/scripts/install-cilium.sh "$CILIUM_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install Cilium"
+        ${{ github.action_path }}/scripts/install-cilium.sh "$CILIUM_VERSION"
+        end_timer "Install Cilium"
 
     - name: Skip CNI installation (bring your own CNI)
       if: ${{ inputs.disableDefaultCni == 'true' && steps.resolve-cni.outputs.effective-cni == 'none' && inputs.dryRun != 'true' }}
@@ -1244,14 +1254,24 @@ runs:
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
         CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
         CLUSTER_NAME: ${{ inputs.clusterName }}
-      run: ${{ github.action_path }}/scripts/setup-local-registry.sh "$LOCAL_REGISTRY_PORT" "$CLUSTER_PROVIDER" "$CLUSTER_NAME"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Setup local registry"
+        ${{ github.action_path }}/scripts/setup-local-registry.sh "$LOCAL_REGISTRY_PORT" "$CLUSTER_PROVIDER" "$CLUSTER_NAME"
+        end_timer "Setup local registry"
 
     - name: Install OLM
       if: ${{ inputs.installOLM == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-olm.sh ${{ inputs.olmVersion }}
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install OLM"
+        ${{ github.action_path }}/scripts/install-olm.sh ${{ inputs.olmVersion }}
+        end_timer "Install OLM"
 
     - name: Install Istio
       if: ${{ inputs.installIstio == 'true' && inputs.dryRun != 'true' }}
@@ -1260,7 +1280,12 @@ runs:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         ISTIO_VERSION: ${{ inputs.istioVersion }}
         ISTIO_PROFILE: ${{ inputs.istioProfile }}
-      run: ${{ github.action_path }}/scripts/install-istio.sh "$ISTIO_VERSION" "$ISTIO_PROFILE"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install Istio"
+        ${{ github.action_path }}/scripts/install-istio.sh "$ISTIO_VERSION" "$ISTIO_PROFILE"
+        end_timer "Install Istio"
 
     - name: Install cert-manager
       if: ${{ inputs.installCertManager == 'true' && inputs.dryRun != 'true' }}
@@ -1268,7 +1293,12 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         CERT_MANAGER_VERSION: ${{ inputs.certManagerVersion }}
-      run: ${{ github.action_path }}/scripts/install-cert-manager.sh "$CERT_MANAGER_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install cert-manager"
+        ${{ github.action_path }}/scripts/install-cert-manager.sh "$CERT_MANAGER_VERSION"
+        end_timer "Install cert-manager"
 
     - name: Install ingress-nginx
       if: ${{ inputs.installIngressNginx == 'true' && inputs.dryRun != 'true' }}
@@ -1277,7 +1307,12 @@ runs:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         INGRESS_NGINX_VERSION: ${{ inputs.ingressNginxVersion }}
         CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
-      run: ${{ github.action_path }}/scripts/install-ingress-nginx.sh "$INGRESS_NGINX_VERSION" "$CLUSTER_PROVIDER"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install ingress-nginx"
+        ${{ github.action_path }}/scripts/install-ingress-nginx.sh "$INGRESS_NGINX_VERSION" "$CLUSTER_PROVIDER"
+        end_timer "Install ingress-nginx"
 
     - name: Install metrics-server
       if: ${{ inputs.installMetricsServer == 'true' && inputs.dryRun != 'true' }}
@@ -1285,21 +1320,36 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
-      run: ${{ github.action_path }}/scripts/install-metrics-server.sh "$METRICS_SERVER_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install metrics-server"
+        ${{ github.action_path }}/scripts/install-metrics-server.sh "$METRICS_SERVER_VERSION"
+        end_timer "Install metrics-server"
 
     - name: Install MetalLB
       if: ${{ inputs.installMetalLB == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
-      run: ${{ github.action_path }}/scripts/install-metallb.sh ${{ inputs.metalLBVersion }} ${{ inputs.clusterProvider }}
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install MetalLB"
+        ${{ github.action_path }}/scripts/install-metallb.sh ${{ inputs.metalLBVersion }} ${{ inputs.clusterProvider }}
+        end_timer "Install MetalLB"
 
     - name: Install operator-sdk
       if: ${{ inputs.installOperatorSdk == 'true' && inputs.dryRun != 'true' }}
       shell: bash
       env:
         OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
-      run: ${{ github.action_path }}/scripts/install-operator-sdk.sh "$OPERATOR_SDK_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install operator-sdk"
+        ${{ github.action_path }}/scripts/install-operator-sdk.sh "$OPERATOR_SDK_VERSION"
+        end_timer "Install operator-sdk"
 
     - name: Install Prometheus monitoring stack
       if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
@@ -1307,7 +1357,12 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         KUBE_PROMETHEUS_VERSION: ${{ inputs.kubePrometheusVersion }}
-      run: ${{ github.action_path }}/scripts/install-prometheus.sh "$KUBE_PROMETHEUS_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install Prometheus"
+        ${{ github.action_path }}/scripts/install-prometheus.sh "$KUBE_PROMETHEUS_VERSION"
+        end_timer "Install Prometheus"
 
     - name: Install Thanos
       if: ${{ inputs.enableClusterMonitoring == 'true' && inputs.dryRun != 'true' }}
@@ -1315,7 +1370,12 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         THANOS_VERSION: ${{ inputs.thanosVersion }}
-      run: ${{ github.action_path }}/scripts/install-thanos.sh "$THANOS_VERSION"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Install Thanos"
+        ${{ github.action_path }}/scripts/install-thanos.sh "$THANOS_VERSION"
+        end_timer "Install Thanos"
 
     - name: Print monitoring access instructions
       if: ${{ (inputs.installMetricsServer == 'true' || inputs.enableClusterMonitoring == 'true') && inputs.dryRun != 'true' }}
@@ -1334,7 +1394,12 @@ runs:
     - name: Create persistent volumes
       if: ${{ inputs.createPersistentVolumes == 'true' && inputs.dryRun != 'true' }}
       shell: bash
-      run: ${{ github.action_path }}/scripts/create-persistent-volumes.sh "${{ inputs.persistentVolumeCount }}" "${{ inputs.persistentVolumeSize }}"
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Create persistent volumes"
+        ${{ github.action_path }}/scripts/create-persistent-volumes.sh "${{ inputs.persistentVolumeCount }}" "${{ inputs.persistentVolumeSize }}"
+        end_timer "Create persistent volumes"
 
     - name: Remove the control plane taint
       if: ${{ inputs.removeControlPlaneTaint == 'true' && inputs.dryRun != 'true' }}
@@ -1349,7 +1414,12 @@ runs:
         WAIT_NAMESPACES: ${{ inputs.waitForPodsNamespaces }}
         EXCLUDE_NAMESPACES: ${{ inputs.waitForPodsExcludeNamespaces }}
         WAIT_TIMEOUT: ${{ inputs.waitForPodsTimeout }}
-      run: ${{ github.action_path }}/scripts/wait-for-pods.sh
+      run: |
+        # shellcheck source=scripts/log-timing.sh
+        source "${{ github.action_path }}/scripts/log-timing.sh"
+        start_timer "Wait for pods"
+        ${{ github.action_path }}/scripts/wait-for-pods.sh
+        end_timer "Wait for pods"
 
     - name: Clean up package manager cache
       if: ${{ runner.os == 'Linux' && inputs.dryRun != 'true' }}
