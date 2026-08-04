@@ -286,6 +286,14 @@ runs:
       run: |
         echo "::warning::ipFamily '$IP_FAMILY' is only fully supported with KinD. $CLUSTER_PROVIDER will use default networking (ipv4)."
 
+    - name: Warn about extraPortMappings with non-KinD providers
+      if: ${{ inputs.clusterProvider != 'kind' && inputs.extraPortMappings != '' }}
+      shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+      run: |
+        echo "::warning::extraPortMappings is only supported with KinD and will be ignored when using $CLUSTER_PROVIDER."
+
     - name: Validate apiServerPort input
       shell: bash
       env:
