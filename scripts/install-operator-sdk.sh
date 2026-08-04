@@ -9,7 +9,7 @@ trap 'echo "::endgroup::"' EXIT
 echo "Installing operator-sdk version $OPERATOR_SDK_VERSION"
 
 if ! command -v curl >/dev/null 2>&1; then
-  echo "Error: curl is not installed." >&2
+  echo "::error::curl is not installed." >&2
   exit 1
 fi
 
@@ -24,7 +24,7 @@ DL_URL="https://github.com/operator-framework/operator-sdk/releases/download/${O
 
 echo "Downloading operator-sdk from: $DL_URL"
 if ! curl -fL --retry 3 --retry-delay 5 -o /tmp/operator-sdk "$DL_URL"; then
-  echo "Error: Failed to download operator-sdk" >&2
+  echo "::error::Failed to download operator-sdk" >&2
   exit 1
 fi
 

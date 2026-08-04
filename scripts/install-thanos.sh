@@ -14,7 +14,7 @@ echo "Installing Thanos version $THANOS_VERSION"
 
 # Verify required tools are available
 if ! command -v kubectl >/dev/null 2>&1; then
-  echo "Error: kubectl is not installed." >&2
+  echo "::error::kubectl is not installed." >&2
   exit 1
 fi
 

@@ -15,7 +15,7 @@ echo "Installing metrics-server version $METRICS_SERVER_VERSION"
 # Verify required tools are available
 for cmd in curl kubectl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
+    echo "::error::$cmd is not installed." >&2
     exit 1
   fi
 done

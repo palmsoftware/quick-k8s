@@ -102,7 +102,7 @@ while [ $attempt -le $max_attempts ]; do
 
   if [ $attempt -eq $max_attempts ]; then
     echo ""
-    echo "Failed to start Minikube cluster after $max_attempts attempts (exit code: $exit_code)"
+    echo "::error::Failed to start Minikube cluster after $max_attempts attempts (exit code: $exit_code)"
     exit 1
   fi
 

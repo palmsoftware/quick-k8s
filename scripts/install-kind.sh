@@ -56,7 +56,7 @@ else
   if curl -fsSL -o kind "${FALLBACK_URL}"; then
     echo "✅ Downloaded from GitHub releases (fallback)"
   else
-    echo "❌ Failed to download KinD binary from both sources"
+    echo "::error::Failed to download KinD binary from both sources"
     echo ""
     echo "Attempted URLs:"
     echo "  Primary:  ${PRIMARY_URL}"
@@ -76,7 +76,7 @@ fi
 
 # Verify it's a binary, not HTML
 if file kind | grep -q "HTML"; then
-  echo "ERROR: Downloaded file is HTML, not a binary"
+  echo "::error::Downloaded file is HTML, not a binary"
   exit 1
 fi
 

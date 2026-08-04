@@ -14,7 +14,7 @@ echo "Installing OLM version $OLM_VERSION"
 
 for cmd in curl kubectl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
+    echo "::error::$cmd is not installed." >&2
     exit 1
   fi
 done

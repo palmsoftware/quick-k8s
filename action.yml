@@ -261,8 +261,7 @@ runs:
         CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
       run: |
         if [[ "$CLUSTER_PROVIDER" != "kind" && "$CLUSTER_PROVIDER" != "minikube" ]]; then
-          echo "Invalid cluster provider: $CLUSTER_PROVIDER"
-          echo "Must be 'kind' or 'minikube'"
+          echo "::error::Invalid cluster provider: $CLUSTER_PROVIDER. Must be 'kind' or 'minikube'."
           exit 1
         fi
 
@@ -272,8 +271,7 @@ runs:
         IP_FAMILY: ${{ inputs.ipFamily }}
       run: |
         if [[ "$IP_FAMILY" != "dual" && "$IP_FAMILY" != "ipv4" && "$IP_FAMILY" != "ipv6" ]]; then
-          echo "Invalid IP family: $IP_FAMILY"
-          echo "Must be 'dual', 'ipv4', or 'ipv6'"
+          echo "::error::Invalid IP family: $IP_FAMILY. Must be 'dual', 'ipv4', or 'ipv6'."
           exit 1
         fi
 
@@ -293,8 +291,7 @@ runs:
       run: |
         PORT="$API_SERVER_PORT"
         if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
-          echo "Invalid apiServerPort: $PORT"
-          echo "Must be a number between 1024 and 65535"
+          echo "::error::Invalid apiServerPort: $PORT. Must be a number between 1024 and 65535."
           exit 1
         fi
 
@@ -321,8 +318,7 @@ runs:
         elif [[ "$ADDR" =~ ^[0-9a-fA-F:]+$ ]] && [[ "$ADDR" == *:* ]]; then
           exit 0
         fi
-        echo "::error::Invalid API server address: $ADDR"
-        echo "Must be a valid IPv4 or IPv6 address"
+        echo "::error::Invalid API server address: $ADDR. Must be a valid IPv4 or IPv6 address."
         exit 1
 
     - name: Validate KinD version input
@@ -349,8 +345,7 @@ runs:
       run: |
         DRIVER="$MINIKUBE_DRIVER"
         if [[ "$DRIVER" != "docker" && "$DRIVER" != "podman" && "$DRIVER" != "none" ]]; then
-          echo "Invalid minikubeDriver: $DRIVER"
-          echo "Must be 'docker', 'podman', or 'none'"
+          echo "::error::Invalid minikubeDriver: $DRIVER. Must be 'docker', 'podman', or 'none'."
           exit 1
         fi
 
@@ -376,7 +371,7 @@ runs:
         OCP_RELEASE_LEVEL: ${{ inputs.ocpReleaseLevel }}
       run: |
         if ! [[ "$OCP_RELEASE_LEVEL" =~ ^[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid OpenShift release level format: $OCP_RELEASE_LEVEL"
+          echo "::error::Invalid OpenShift release level format: $OCP_RELEASE_LEVEL. Must match X.Y pattern."
           exit 1
         fi
 
@@ -397,8 +392,7 @@ runs:
         VALID_PROFILES=("minimal" "demo" "default" "preview" "ambient" "empty")
         PROFILE="$ISTIO_PROFILE"
         if [[ ! " ${VALID_PROFILES[@]} " =~ " ${PROFILE} " ]]; then
-          echo "Invalid Istio profile: $PROFILE"
-          echo "Valid profiles are: ${VALID_PROFILES[*]}"
+          echo "::error::Invalid Istio profile: $PROFILE. Valid profiles are: ${VALID_PROFILES[*]}."
           exit 1
         fi
 
@@ -408,8 +402,7 @@ runs:
         DISABLE_DEFAULT_CNI: ${{ inputs.disableDefaultCni }}
       run: |
         if [[ "$DISABLE_DEFAULT_CNI" != "true" && "$DISABLE_DEFAULT_CNI" != "false" ]]; then
-          echo "Invalid disableDefaultCni value: $DISABLE_DEFAULT_CNI"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid disableDefaultCni value: $DISABLE_DEFAULT_CNI. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -419,8 +412,7 @@ runs:
         INSTALL_OLM: ${{ inputs.installOLM }}
       run: |
         if [[ "$INSTALL_OLM" != "true" && "$INSTALL_OLM" != "false" ]]; then
-          echo "Invalid installOLM value: $INSTALL_OLM"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installOLM value: $INSTALL_OLM. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -437,8 +429,7 @@ runs:
         INSTALL_ISTIO: ${{ inputs.installIstio }}
       run: |
         if [[ "$INSTALL_ISTIO" != "true" && "$INSTALL_ISTIO" != "false" ]]; then
-          echo "Invalid installIstio value: $INSTALL_ISTIO"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installIstio value: $INSTALL_ISTIO. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -448,8 +439,7 @@ runs:
         REMOVE_DEFAULT_STORAGE_CLASS: ${{ inputs.removeDefaultStorageClass }}
       run: |
         if [[ "$REMOVE_DEFAULT_STORAGE_CLASS" != "true" && "$REMOVE_DEFAULT_STORAGE_CLASS" != "false" ]]; then
-          echo "Invalid removeDefaultStorageClass value: $REMOVE_DEFAULT_STORAGE_CLASS"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid removeDefaultStorageClass value: $REMOVE_DEFAULT_STORAGE_CLASS. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -459,8 +449,7 @@ runs:
         REMOVE_CONTROL_PLANE_TAINT: ${{ inputs.removeControlPlaneTaint }}
       run: |
         if [[ "$REMOVE_CONTROL_PLANE_TAINT" != "true" && "$REMOVE_CONTROL_PLANE_TAINT" != "false" ]]; then
-          echo "Invalid removeControlPlaneTaint value: $REMOVE_CONTROL_PLANE_TAINT"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid removeControlPlaneTaint value: $REMOVE_CONTROL_PLANE_TAINT. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -470,8 +459,7 @@ runs:
         WAIT_FOR_PODS_READY: ${{ inputs.waitForPodsReady }}
       run: |
         if [[ "$WAIT_FOR_PODS_READY" != "true" && "$WAIT_FOR_PODS_READY" != "false" ]]; then
-          echo "Invalid waitForPodsReady value: $WAIT_FOR_PODS_READY"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid waitForPodsReady value: $WAIT_FOR_PODS_READY. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -480,8 +468,7 @@ runs:
       run: |
         TIMEOUT="${{ inputs.waitForPodsTimeout }}"
         if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 60 ] || [ "$TIMEOUT" -gt 7200 ]; then
-          echo "Invalid waitForPodsTimeout: $TIMEOUT"
-          echo "Must be a number between 60 and 7200 (1 minute to 2 hours)"
+          echo "::error::Invalid waitForPodsTimeout: $TIMEOUT. Must be a number between 60 and 7200 (1 minute to 2 hours)."
           exit 1
         fi
 
@@ -491,8 +478,7 @@ runs:
         INSTALL_CERT_MANAGER: ${{ inputs.installCertManager }}
       run: |
         if [[ "$INSTALL_CERT_MANAGER" != "true" && "$INSTALL_CERT_MANAGER" != "false" ]]; then
-          echo "Invalid installCertManager value: $INSTALL_CERT_MANAGER"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installCertManager value: $INSTALL_CERT_MANAGER. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -510,8 +496,7 @@ runs:
         INSTALL_INGRESS_NGINX: ${{ inputs.installIngressNginx }}
       run: |
         if [[ "$INSTALL_INGRESS_NGINX" != "true" && "$INSTALL_INGRESS_NGINX" != "false" ]]; then
-          echo "Invalid installIngressNginx value: $INSTALL_INGRESS_NGINX"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installIngressNginx value: $INSTALL_INGRESS_NGINX. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -529,8 +514,7 @@ runs:
         INSTALL_METRICS_SERVER: ${{ inputs.installMetricsServer }}
       run: |
         if [[ "$INSTALL_METRICS_SERVER" != "true" && "$INSTALL_METRICS_SERVER" != "false" ]]; then
-          echo "Invalid installMetricsServer value: $INSTALL_METRICS_SERVER"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installMetricsServer value: $INSTALL_METRICS_SERVER. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -546,8 +530,7 @@ runs:
       shell: bash
       run: |
         if [[ "${{ inputs.installMetalLB }}" != "true" && "${{ inputs.installMetalLB }}" != "false" ]]; then
-          echo "Invalid installMetalLB value: ${{ inputs.installMetalLB }}"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installMetalLB value: ${{ inputs.installMetalLB }}. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -564,8 +547,7 @@ runs:
         INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
       run: |
         if [[ "$INSTALL_OPERATOR_SDK" != "true" && "$INSTALL_OPERATOR_SDK" != "false" ]]; then
-          echo "Invalid installOperatorSdk value: $INSTALL_OPERATOR_SDK"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installOperatorSdk value: $INSTALL_OPERATOR_SDK. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -583,8 +565,7 @@ runs:
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
       run: |
         if [[ "$ENABLE_CLUSTER_MONITORING" != "true" && "$ENABLE_CLUSTER_MONITORING" != "false" ]]; then
-          echo "Invalid enableClusterMonitoring value: $ENABLE_CLUSTER_MONITORING"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid enableClusterMonitoring value: $ENABLE_CLUSTER_MONITORING. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -612,8 +593,7 @@ runs:
         CNI_PLUGIN: ${{ inputs.cniPlugin }}
       run: |
         if [[ "$INSTALL_CALICO" != "true" && "$INSTALL_CALICO" != "false" ]]; then
-          echo "Invalid installCalico value: $INSTALL_CALICO"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installCalico value: $INSTALL_CALICO. Must be 'true' or 'false'."
           exit 1
         fi
         EFFECTIVE_CNI="$CNI_PLUGIN"
@@ -627,8 +607,7 @@ runs:
       shell: bash
       run: |
         if [[ "${{ inputs.installSampleNetworkPolicies }}" != "true" && "${{ inputs.installSampleNetworkPolicies }}" != "false" ]]; then
-          echo "Invalid installSampleNetworkPolicies value: ${{ inputs.installSampleNetworkPolicies }}"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installSampleNetworkPolicies value: ${{ inputs.installSampleNetworkPolicies }}. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -637,8 +616,7 @@ runs:
       run: |
         CNI="${{ steps.resolve-cni.outputs.effective-cni }}"
         if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "none" ]]; then
-          echo "Invalid cniPlugin value: $CNI"
-          echo "Must be 'calico', 'cilium', or 'none'"
+          echo "::error::Invalid cniPlugin value: $CNI. Must be 'calico', 'cilium', or 'none'."
           exit 1
         fi
 
@@ -648,8 +626,7 @@ runs:
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
       run: |
         if [[ "$INSTALL_LOCAL_REGISTRY" != "true" && "$INSTALL_LOCAL_REGISTRY" != "false" ]]; then
-          echo "Invalid installLocalRegistry value: $INSTALL_LOCAL_REGISTRY"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid installLocalRegistry value: $INSTALL_LOCAL_REGISTRY. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -659,8 +636,7 @@ runs:
         ENABLE_CLEANUP: ${{ inputs.enableCleanup }}
       run: |
         if [[ "$ENABLE_CLEANUP" != "true" && "$ENABLE_CLEANUP" != "false" ]]; then
-          echo "Invalid enableCleanup value: $ENABLE_CLEANUP"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid enableCleanup value: $ENABLE_CLEANUP. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -670,8 +646,7 @@ runs:
         SKIP_DISK_CLEANUP: ${{ inputs.skipDiskCleanup }}
       run: |
         if [[ "$SKIP_DISK_CLEANUP" != "true" && "$SKIP_DISK_CLEANUP" != "false" ]]; then
-          echo "Invalid skipDiskCleanup value: $SKIP_DISK_CLEANUP"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid skipDiskCleanup value: $SKIP_DISK_CLEANUP. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -681,8 +656,7 @@ runs:
         DRY_RUN: ${{ inputs.dryRun }}
       run: |
         if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
-          echo "Invalid dryRun value: $DRY_RUN"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid dryRun value: $DRY_RUN. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -690,8 +664,7 @@ runs:
       shell: bash
       run: |
         if [[ "${{ inputs.createPersistentVolumes }}" != "true" && "${{ inputs.createPersistentVolumes }}" != "false" ]]; then
-          echo "Invalid createPersistentVolumes value: ${{ inputs.createPersistentVolumes }}"
-          echo "Must be 'true' or 'false'"
+          echo "::error::Invalid createPersistentVolumes value: ${{ inputs.createPersistentVolumes }}. Must be 'true' or 'false'."
           exit 1
         fi
 
@@ -701,8 +674,7 @@ runs:
       run: |
         COUNT="${{ inputs.persistentVolumeCount }}"
         if ! [[ "$COUNT" =~ ^[0-9]+$ ]] || [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 100 ]; then
-          echo "Invalid persistentVolumeCount: $COUNT"
-          echo "Must be a number between 1 and 100"
+          echo "::error::Invalid persistentVolumeCount: $COUNT. Must be a number between 1 and 100."
           exit 1
         fi
 
@@ -712,8 +684,7 @@ runs:
       run: |
         SIZE="${{ inputs.persistentVolumeSize }}"
         if ! [[ "$SIZE" =~ ^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei)?$ ]]; then
-          echo "Invalid persistentVolumeSize: $SIZE"
-          echo "Must be a valid Kubernetes quantity (e.g., 10Gi, 1Gi, 500Mi)"
+          echo "::error::Invalid persistentVolumeSize: $SIZE. Must be a valid Kubernetes quantity (e.g., 10Gi, 1Gi, 500Mi)."
           exit 1
         fi
 
@@ -725,8 +696,7 @@ runs:
       run: |
         PORT="$LOCAL_REGISTRY_PORT"
         if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
-          echo "Invalid localRegistryPort: $PORT"
-          echo "Must be a number between 1024 and 65535"
+          echo "::error::Invalid localRegistryPort: $PORT. Must be a number between 1024 and 65535."
           exit 1
         fi
 
@@ -737,8 +707,7 @@ runs:
       run: |
         TIMEOUT="$COMPONENT_TIMEOUT"
         if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 1 ]; then
-          echo "Invalid componentTimeout: $TIMEOUT"
-          echo "Must be a positive integer (seconds)"
+          echo "::error::Invalid componentTimeout: $TIMEOUT. Must be a positive integer (seconds)."
           exit 1
         fi
 
@@ -747,8 +716,7 @@ runs:
       run: |
         CPUS="${{ inputs.clusterCPUs }}"
         if ! [[ "$CPUS" =~ ^[0-9]+$ ]] || [ "$CPUS" -lt 1 ]; then
-          echo "Invalid clusterCPUs: $CPUS"
-          echo "Must be a positive integer"
+          echo "::error::Invalid clusterCPUs: $CPUS. Must be a positive integer."
           exit 1
         fi
 
@@ -758,8 +726,7 @@ runs:
       run: |
         MEMORY="${{ inputs.clusterMemory }}"
         if ! [[ "$MEMORY" =~ ^[0-9]+$ ]] || [ "$MEMORY" -lt 1 ]; then
-          echo "Invalid clusterMemory: $MEMORY"
-          echo "Must be a positive integer (MB)"
+          echo "::error::Invalid clusterMemory: $MEMORY. Must be a positive integer (MB)."
           exit 1
         fi
 
@@ -777,7 +744,7 @@ runs:
       run: |
         CONFIG_PATH="$KIND_CONFIG_PATH"
         if [ ! -f "$CONFIG_PATH" ]; then
-          echo "Custom KinD config file not found: $CONFIG_PATH"
+          echo "::error::Custom KinD config file not found: $CONFIG_PATH"
           exit 1
         fi
         echo "Using custom KinD configuration from: $CONFIG_PATH"
@@ -788,7 +755,7 @@ runs:
         NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
       run: |
         if [[ "$NUM_CONTROL_PLANE_NODES" -lt 1 ]]; then
-          echo "The number of control-plane nodes cannot be less than 1."
+          echo "::error::The number of control-plane nodes cannot be less than 1."
           exit 1
         fi
 
@@ -804,7 +771,7 @@ runs:
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
       run: |
         if [[ "$NUM_WORKER_NODES" -lt 0 ]]; then
-          echo "The number of worker nodes cannot be negative."
+          echo "::error::The number of worker nodes cannot be negative."
           exit 1
         fi
 
@@ -994,7 +961,7 @@ runs:
       shell: bash
       run: |
         if ! command -v kind &> /dev/null; then
-          echo "KinD installation failed. Exiting."
+          echo "::error::KinD installation failed."
           exit 1
         fi
 
@@ -1022,7 +989,7 @@ runs:
       shell: bash
       run: |
         if ! command -v minikube &> /dev/null; then
-          echo "Minikube installation failed. Exiting."
+          echo "::error::Minikube installation failed."
           exit 1
         fi
 
@@ -1108,7 +1075,7 @@ runs:
 
           if [ $attempt -eq $max_attempts ]; then
             echo ""
-            echo "Failed to create KinD cluster after $max_attempts attempts (exit code: $exit_code)"
+            echo "::error::Failed to create KinD cluster after $max_attempts attempts (exit code: $exit_code)"
             exit 1
           fi
 

@@ -39,7 +39,7 @@ while [ $attempt -le $max_attempts ]; do
     break
   fi
   if [ $attempt -eq $max_attempts ]; then
-    echo "ERROR: Registry failed to start after ${max_attempts} attempts"
+    echo "::error::Registry failed to start after ${max_attempts} attempts"
     exit 1
   fi
   sleep 1
