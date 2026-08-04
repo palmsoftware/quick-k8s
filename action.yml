@@ -1463,6 +1463,7 @@ runs:
             echo "| Property | Value |"
             echo "|----------|-------|"
             echo "| Provider | $CLUSTER_PROVIDER |"
+            echo "| K8s Version | ${K8S_VERSION} |"
             echo "| Cluster Name | $CLUSTER_NAME |"
             echo "| Control Plane Nodes | $NUM_CONTROL_PLANE_NODES |"
             echo "| Worker Nodes | $NUM_WORKER_NODES |"
