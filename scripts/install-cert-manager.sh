@@ -15,7 +15,7 @@ echo "Installing cert-manager version $CERT_MANAGER_VERSION"
 # Verify required tools are available
 for cmd in curl kubectl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
+    echo "::error::$cmd is not installed." >&2
     exit 1
   fi
 done
@@ -54,7 +54,7 @@ EOF
 
 echo "Waiting for ClusterIssuer to be ready..."
 kubectl wait --for=condition=Ready clusterissuer/selfsigned-issuer --timeout=60s || {
-  echo "Warning: ClusterIssuer may not be ready yet. Current status:" >&2
+  echo "::warning::ClusterIssuer may not be ready yet. Current status:" >&2
   kubectl get clusterissuer selfsigned-issuer -o wide 2>/dev/null || true
 }
 

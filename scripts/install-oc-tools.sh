@@ -7,7 +7,7 @@ trap 'echo "::endgroup::"' EXIT
 
 for cmd in curl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
+    echo "::error::$cmd is not installed." >&2
     exit 1
   fi
 done
@@ -465,27 +465,27 @@ show_ver() {
       echo -e "\noc version: $(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')"
       oc_version=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' | cut -d. -f2)
   else
-      echo "Error getting oc version. Please rerun script." >&2
+      echo "::error::Error getting oc version. Please rerun script." >&2
   fi
 
   if [ "${oc_version}" -lt 15 ]; then
     if which kubectl &>/dev/null; then
         echo -e "\nkubectl version: $(kubectl version --client | grep -o "GitVersion:.*" | cut -d, -f1)"
     else
-        echo "Error getting kubectl version. Please rerun script." >&2
+        echo "::error::Error getting kubectl version. Please rerun script." >&2
     fi
   else
       if which kubectl &>/dev/null; then
         echo -e "\nkubectl version: $(kubectl version --client | grep -o "Client Version:.*" | cut -d: -f2 | sed -e 's/ //')"
     else
-        echo "Error getting kubectl version. Please rerun script." >&2
+        echo "::error::Error getting kubectl version. Please rerun script." >&2
     fi
   fi
 
   if which openshift-install &>/dev/null; then
       echo -e "\nopenshift-install version: $(openshift-install version | grep openshift-install | sed -e 's/openshift-install //')"
   else
-      echo "Error getting openshift-install version. Please rerun script." >&2
+      echo "::error::Error getting openshift-install version. Please rerun script." >&2
   fi
 
 }

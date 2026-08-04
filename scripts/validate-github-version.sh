@@ -13,7 +13,7 @@ TAG_PREFIX="${4:-}"
 source "$(dirname "$0")/lib/retry.sh"
 
 if ! [[ "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Invalid ${COMPONENT} version format: ${VERSION}"
+  echo "::error::Invalid ${COMPONENT} version format: ${VERSION}"
   exit 1
 fi
 
@@ -33,9 +33,9 @@ check_github_release() {
 
 retry_with_backoff 5 2 check_github_release || {
   if [ "$_last_http_code" = "404" ]; then
-    echo "${COMPONENT} version ${VERSION} does not exist on GitHub"
+    echo "::error::${COMPONENT} version ${VERSION} does not exist on GitHub"
   else
-    echo "GitHub API failed to validate ${COMPONENT} version ${VERSION} (HTTP $_last_http_code after 5 attempts)"
+    echo "::error::GitHub API failed to validate ${COMPONENT} version ${VERSION} (HTTP $_last_http_code after 5 attempts)"
     echo "This may be a temporary GitHub API issue - consider re-running the workflow"
   fi
   exit 1

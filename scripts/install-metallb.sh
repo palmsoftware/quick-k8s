@@ -17,7 +17,7 @@ echo "Installing MetalLB version $METALLB_VERSION"
 
 # Verify required tools are available
 if ! command -v kubectl >/dev/null 2>&1; then
-  echo "Error: kubectl is not installed." >&2
+  echo "::error::kubectl is not installed." >&2
   exit 1
 fi
 
@@ -26,7 +26,7 @@ if command -v docker >/dev/null 2>&1; then
 elif command -v podman >/dev/null 2>&1; then
   CONTAINER_RUNTIME="podman"
 else
-  echo "Error: neither docker nor podman is installed." >&2
+  echo "::error::neither docker nor podman is installed." >&2
   exit 1
 fi
 
@@ -78,7 +78,7 @@ fi
 # Use the first IPv4 subnet (skip any IPv6 entries in dual-stack networks)
 SUBNET=$($CONTAINER_RUNTIME network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
   | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1) || {
-  echo "Warning: Could not detect container network subnet, using default 172.18.255.200-172.18.255.250" >&2
+  echo "::warning::Could not detect container network subnet, using default 172.18.255.200-172.18.255.250" >&2
   SUBNET=""
 }
 
@@ -128,7 +128,7 @@ EOF
 }
 
 retry_with_backoff 5 2 apply_metallb_pool || {
-  echo "Failed to configure MetalLB address pool after 5 attempts"
+  echo "::error::Failed to configure MetalLB address pool after 5 attempts"
   exit 1
 }
 

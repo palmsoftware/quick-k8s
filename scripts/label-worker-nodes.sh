@@ -12,7 +12,7 @@ echo "::group::Labeling worker nodes"
 trap 'echo "::endgroup::"' EXIT
 
 if ! command -v kubectl >/dev/null 2>&1; then
-  echo "Error: kubectl is not installed." >&2
+  echo "::error::kubectl is not installed." >&2
   exit 1
 fi
 
@@ -42,7 +42,7 @@ for i in $(seq 1 60); do
 done
 
 if [ -z "$WORKER_NODES" ]; then
-  echo "ERROR: No worker nodes found after waiting 120s"
+  echo "::error::No worker nodes found after waiting 120s"
   kubectl get nodes || true
   exit 1
 fi

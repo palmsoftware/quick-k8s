@@ -56,7 +56,7 @@ else
   if curl -fsSL -o minikube "${FALLBACK_URL}"; then
     echo "✅ Downloaded from Google Cloud Storage (fallback)"
   else
-    echo "❌ Failed to download Minikube binary from both sources"
+    echo "::error::Failed to download Minikube binary from both sources"
     echo ""
     echo "Attempted URLs:"
     echo "  Primary:  ${PRIMARY_URL}"

@@ -16,7 +16,7 @@ echo "Installing Istio version $ISTIO_VERSION with profile $ISTIO_PROFILE"
 # Check for required commands
 for cmd in curl kubectl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed." >&2
+    echo "::error::$cmd is not installed." >&2
     exit 1
   fi
 done
@@ -60,13 +60,13 @@ if [ -f "$ISTIO_DIR/bin/istioctl" ]; then
   sudo chmod +x /usr/local/bin/istioctl
   echo "istioctl installed successfully"
 else
-  echo "Error: istioctl binary not found in extracted archive" >&2
+  echo "::error::istioctl binary not found in extracted archive" >&2
   exit 1
 fi
 
 # Verify installation
 if ! command -v istioctl >/dev/null 2>&1; then
-  echo "Error: istioctl installation failed" >&2
+  echo "::error::istioctl installation failed" >&2
   exit 1
 fi
 

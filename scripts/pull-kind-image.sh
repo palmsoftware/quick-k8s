@@ -23,7 +23,7 @@ echo "Pre-pulling Kind node image: $IMAGE"
 
 retry_with_backoff 3 30 docker pull "$IMAGE" || {
   echo ""
-  echo "Failed to pull image after 3 attempts"
+  echo "::error::Failed to pull image after 3 attempts"
   echo ""
   echo "This is likely due to:"
   echo "  1. Docker Hub rate limiting (unauthenticated pulls are limited to 100 per 6 hours)"
