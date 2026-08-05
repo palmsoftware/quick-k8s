@@ -252,6 +252,18 @@ outputs:
   cluster-name:
     description: 'The cluster name'
     value: ${{ steps.set-outputs.outputs.cluster-name }}
+  node-count:
+    description: 'Total number of nodes in the cluster'
+    value: ${{ steps.set-outputs.outputs.node-count }}
+  local-registry-url:
+    description: 'Local registry URL (empty if registry not enabled)'
+    value: ${{ steps.set-outputs.outputs.local-registry-url }}
+  cni-plugin:
+    description: 'The effective CNI plugin installed (calico, cilium, or none)'
+    value: ${{ steps.set-outputs.outputs.cni-plugin }}
+  cluster-context:
+    description: 'The kubectl context name for the cluster'
+    value: ${{ steps.set-outputs.outputs.cluster-context }}
 runs:
   using: 'composite'
   steps:
@@ -1533,6 +1545,9 @@ runs:
       env:
         CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
         CLUSTER_NAME: ${{ inputs.clusterName }}
+        INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
+        LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
+        EFFECTIVE_CNI: ${{ steps.resolve-cni.outputs.effective-cni }}
       run: |
         echo "cluster-provider=$CLUSTER_PROVIDER" >> "$GITHUB_OUTPUT"
         echo "cluster-name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
@@ -1546,6 +1561,20 @@ runs:
 
         API_SERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null) || API_SERVER=""
         echo "cluster-endpoint=$API_SERVER" >> "$GITHUB_OUTPUT"
+
+        NODE_COUNT=$(kubectl get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ') || NODE_COUNT="0"
+        echo "node-count=$NODE_COUNT" >> "$GITHUB_OUTPUT"
+
+        if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then
+          echo "local-registry-url=localhost:${LOCAL_REGISTRY_PORT}" >> "$GITHUB_OUTPUT"
+        else
+          echo "local-registry-url=" >> "$GITHUB_OUTPUT"
+        fi
+
+        echo "cni-plugin=${EFFECTIVE_CNI:-}" >> "$GITHUB_OUTPUT"
+
+        CLUSTER_CONTEXT=$(kubectl config current-context 2>/dev/null) || CLUSTER_CONTEXT=""
+        echo "cluster-context=$CLUSTER_CONTEXT" >> "$GITHUB_OUTPUT"
 
     - name: Generate cleanup script
       if: ${{ inputs.enableCleanup == 'true' && inputs.dryRun != 'true' }}
