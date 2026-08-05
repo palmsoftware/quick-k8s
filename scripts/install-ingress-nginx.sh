@@ -7,6 +7,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 echo "::group::Installing ingress-nginx $INGRESS_NGINX_VERSION"
 trap 'echo "::endgroup::"' EXIT
@@ -32,7 +34,11 @@ fi
 
 echo "Downloading ingress-nginx manifest from: $MANIFEST_URL"
 
-apply_output=$(kubectl apply --timeout=5m -f "$MANIFEST_URL" 2>&1) || {
+apply_ingress_nginx_manifest() {
+  kubectl apply --timeout=5m -f "$MANIFEST_URL"
+}
+
+apply_output=$(retry_with_backoff 3 5 apply_ingress_nginx_manifest 2>&1) || {
   echo "$apply_output"
   diagnose_failure "ingress-nginx" "$apply_output"
   exit 1

@@ -6,6 +6,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 echo "::group::Installing metrics-server $METRICS_SERVER_VERSION"
 trap 'echo "::endgroup::"' EXIT
@@ -25,9 +27,13 @@ echo "Downloading metrics-server manifest from: $MANIFEST_URL"
 
 # Download and patch for local clusters (add --kubelet-insecure-tls)
 # This is required for KinD/Minikube where kubelet uses self-signed certs
-apply_output=$(curl -sL "$MANIFEST_URL" | \
-  sed '/args:/a\        - --kubelet-insecure-tls' | \
-  kubectl apply --timeout=5m -f - 2>&1) || {
+apply_metrics_server_manifest() {
+  curl -sL "$MANIFEST_URL" | \
+    sed '/args:/a\        - --kubelet-insecure-tls' | \
+    kubectl apply --timeout=5m -f -
+}
+
+apply_output=$(retry_with_backoff 3 5 apply_metrics_server_manifest 2>&1) || {
   echo "$apply_output"
   diagnose_failure "metrics-server" "$apply_output"
   exit 1
