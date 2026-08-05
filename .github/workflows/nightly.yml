@@ -227,6 +227,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -234,10 +235,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with Cilium
+      - name: Run action with Cilium (${{ matrix.provider }})
         uses: ./
         with:
-          clusterProvider: kind
+          clusterProvider: ${{ matrix.provider }}
           cniPlugin: cilium
           waitForPodsReady: true
 
@@ -253,6 +254,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04, ubuntu-26.04-arm]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -260,10 +262,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with cert-manager
+      - name: Run action with cert-manager (${{ matrix.provider }})
         uses: ./
         with:
-          clusterProvider: kind
+          clusterProvider: ${{ matrix.provider }}
           installCertManager: true
           waitForPodsReady: true
 
@@ -278,6 +280,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04, ubuntu-26.04-arm]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -285,10 +288,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with ingress-nginx
+      - name: Run action with ingress-nginx (${{ matrix.provider }})
         uses: ./
         with:
-          clusterProvider: kind
+          clusterProvider: ${{ matrix.provider }}
           installIngressNginx: true
           waitForPodsReady: true
 
@@ -303,6 +306,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04, ubuntu-26.04-arm]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -310,10 +314,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with metrics-server
+      - name: Run action with metrics-server (${{ matrix.provider }})
         uses: ./
         with:
-          clusterProvider: kind
+          clusterProvider: ${{ matrix.provider }}
           installMetricsServer: true
           waitForPodsReady: true
 
@@ -328,6 +332,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm, ubuntu-24.04, ubuntu-24.04-arm, ubuntu-26.04, ubuntu-26.04-arm]
+        provider: [kind, minikube]
     runs-on: ${{ matrix.os }}
     env:
       SHELL: /bin/bash
@@ -335,10 +340,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with operator-sdk
+      - name: Run action with operator-sdk (${{ matrix.provider }})
         uses: ./
         with:
-          clusterProvider: kind
+          clusterProvider: ${{ matrix.provider }}
           installOperatorSdk: true
           waitForPodsReady: true
 
