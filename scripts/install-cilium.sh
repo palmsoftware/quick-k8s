@@ -3,6 +3,7 @@ set -euo pipefail
 
 CILIUM_VERSION="${1:-}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+IP_FAMILY="${IP_FAMILY:-ipv4}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
@@ -70,9 +71,23 @@ if ! command -v cilium >/dev/null 2>&1; then
 fi
 echo "Cilium CLI installed: $(cilium version --client 2>/dev/null || cilium version 2>&1 | head -1)"
 
+# Build IP family flags
+CILIUM_IP_FLAGS=""
+case "$IP_FAMILY" in
+  ipv6)
+    CILIUM_IP_FLAGS="--set ipv4.enabled=false --set ipv6.enabled=true"
+    echo "Configuring Cilium for IPv6-only networking"
+    ;;
+  dual)
+    CILIUM_IP_FLAGS="--set ipv4.enabled=true --set ipv6.enabled=true"
+    echo "Configuring Cilium for dual-stack networking"
+    ;;
+esac
+
 # Install Cilium into the cluster
 echo "Installing Cilium into the cluster..."
-install_output=$(cilium install --wait=false 2>&1) || {
+# shellcheck disable=SC2086
+install_output=$(cilium install --wait=false $CILIUM_IP_FLAGS 2>&1) || {
   echo "$install_output"
   diagnose_failure "Cilium" "$install_output"
   exit 1
