@@ -6,6 +6,8 @@ TIMEOUT="${COMPONENT_TIMEOUT:-300}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 echo "::group::Installing Thanos $THANOS_VERSION"
 trap 'echo "::endgroup::"' EXIT
@@ -56,7 +58,8 @@ echo "$patch_output"
 
 # Deploy Thanos Query and headless sidecar service
 echo "Deploying Thanos Query and services..."
-apply_output=$(cat <<EOF | kubectl apply --timeout=5m -f - 2>&1
+apply_thanos_manifest() {
+  cat <<EOF | kubectl apply --timeout=5m -f -
 apiVersion: v1
 kind: Service
 metadata:
@@ -128,7 +131,9 @@ spec:
       port: 10901
       targetPort: grpc
 EOF
-) || {
+}
+
+apply_output=$(retry_with_backoff 3 5 apply_thanos_manifest 2>&1) || {
   echo "$apply_output"
   diagnose_failure "Thanos" "$apply_output"
   exit 1
