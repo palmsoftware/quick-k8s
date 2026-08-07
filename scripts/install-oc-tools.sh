@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 echo "::group::Installing OpenShift CLI tools"
 trap 'echo "::endgroup::"' EXIT
+
+# shellcheck source=verify-checksum.sh
+source "$(dirname "$0")/verify-checksum.sh"
 
 for cmd in curl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -16,7 +19,7 @@ OS=$(uname -s)
 
 if [ "${OS}" == 'Linux' ]; then
   OS=linux
-  OCTOOLSRC="$(getent passwd "$SUDO_USER" | cut -d: -f6)"/.octoolsrc
+  OCTOOLSRC="$(getent passwd "${SUDO_USER:-}" | cut -d: -f6)"/.octoolsrc
 else
   echo "OS Unsupported: ${OS}"
   exit 99
@@ -25,7 +28,7 @@ fi
 MIRROR_DOMAIN='https://mirror.openshift.com'
 USEROVERRIDE=false
 
-if [ -z "${ARCH}" ]; then
+if [ -z "${ARCH:-}" ]; then
   ARCH=$(uname -m)
   if [ "${ARCH}" == 'x86_64' ]; then
     MIRROR_PATH='/pub/openshift-v4/x86_64/clients'
@@ -257,7 +260,7 @@ version() {
     exit 1
   else
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} already installed."
       exit 0
@@ -284,7 +287,7 @@ release() {
 
   if [[ "$1" == "" ]]; then
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} is installed."
       exit 0
@@ -296,7 +299,7 @@ release() {
   else
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" "$1"
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} already installed."
       exit 0
@@ -315,25 +318,25 @@ nightly() {
 
   if [[ "$1" == "" ]]; then
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
       if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
         echo "${VERSION} is installed."
         exit 0
       fi
 
     CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-client-${OS}.tar.gz"
-    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   else
     verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" "$1"
     VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "$VERSION already installed."
       exit 0
     fi
     CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/openshift-client-${OS}.tar.gz"
-    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
+    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   fi
 
@@ -344,10 +347,12 @@ download(){
 echo "Downloading ${1##*/}..."
 curl -L -f --progress-bar -o "/tmp/${1##*/}" "$1"
 echo "Download Complete."
+download_and_verify_checksum "/tmp/${1##*/}" "${1}.sha256" || exit 1
 
 echo "Downloading ${2##*/}..."
 curl -L -f --progress-bar -o "/tmp/${2##*/}" "$2"
 echo "Download Complete."
+download_and_verify_checksum "/tmp/${2##*/}" "${2}.sha256" || exit 1
 
 backup extract
 
@@ -355,7 +360,7 @@ backup extract
 
 backup() {
 
-  CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')
+  CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
   if [[ -f "${BIN_PATH}/oc" ]] && [[ -f "${BIN_PATH}/openshift-install" ]] && [[ -f "${BIN_PATH}/kubectl" ]]
   then
       for i in openshift-install oc kubectl; do mv "$(which "$i")" "${BIN_PATH}/${i}.${CUR_VERSION}.bak"; done
@@ -461,14 +466,15 @@ fi
 
 show_ver() {
 
+  local oc_version=""
   if which oc &>/dev/null; then
-      echo -e "\noc version: $(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //')"
-      oc_version=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' | cut -d. -f2)
+      echo -e "\noc version: $(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)"
+      oc_version=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' | cut -d. -f2 || true)
   else
       echo "::error::Error getting oc version. Please rerun script." >&2
   fi
 
-  if [ "${oc_version}" -lt 15 ]; then
+  if [ "${oc_version:-0}" -lt 15 ]; then
     if which kubectl &>/dev/null; then
         echo -e "\nkubectl version: $(kubectl version --client | grep -o "GitVersion:.*" | cut -d, -f1)"
     else
@@ -664,7 +670,7 @@ main() {
 
   setup
 
-  run "$1" "$2"
+  run "${1:-}" "${2:-}"
 
 }
 
