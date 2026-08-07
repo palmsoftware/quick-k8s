@@ -177,9 +177,10 @@ inputs:
     required: false
     default: 'calico'
   installCalico:
-    description: 'Deprecated: use cniPlugin instead. Install Calico CNI when default CNI is disabled'
+    description: 'Deprecated: use cniPlugin instead. Will be removed in v2.0.0. Install Calico CNI when default CNI is disabled'
     required: false
     default: 'true'
+    deprecationMessage: 'installCalico is deprecated and will be removed in v2.0.0. Use cniPlugin instead (cniPlugin: calico|cilium|none).'
   installSampleNetworkPolicies:
     description: 'Install sample NetworkPolicy resources in the default namespace for testing (default-deny-all, allow-dns, allow-same-namespace)'
     required: false
@@ -618,7 +619,7 @@ runs:
         fi
         EFFECTIVE_CNI="$CNI_PLUGIN"
         if [[ "$INSTALL_CALICO" == "false" && "$CNI_PLUGIN" == "calico" ]]; then
-          echo "::warning::installCalico is deprecated. Use 'cniPlugin: none' instead of 'installCalico: false'"
+          echo "::warning::installCalico is deprecated and will be removed in v2.0.0. Use 'cniPlugin: none' instead of 'installCalico: false'."
           EFFECTIVE_CNI="none"
         fi
         echo "effective-cni=$EFFECTIVE_CNI" >> "$GITHUB_OUTPUT"
