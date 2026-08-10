@@ -58,6 +58,12 @@ if [ "$IP_FAMILY" != "ipv4" ]; then
     echo "Configuring Calico for dual-stack networking..."
   fi
   kubectl set env daemonset/calico-node -n kube-system "${CALICO_ENVS[@]}"
+
+  if [ "$IP_FAMILY" = "ipv6" ]; then
+    echo "Removing default IPv4 pool (incompatible with IPv6-only)..."
+    kubectl delete ippools default-ipv4-ippool --ignore-not-found --timeout=30s
+  fi
+
   echo "Waiting for calico-node rollout..."
   wait_output=$(kubectl rollout status daemonset/calico-node -n kube-system --timeout="${TIMEOUT}s" 2>&1) || {
     echo "$wait_output"
@@ -69,20 +75,13 @@ if [ "$IP_FAMILY" != "ipv4" ]; then
 fi
 
 echo "Waiting for calico-node pods to be ready..."
-wait_output=$(kubectl wait --namespace kube-system \
-  --for=condition=ready pod \
-  --selector=k8s-app=calico-node \
-  --timeout="${TIMEOUT}s" 2>&1) || {
-  echo "$wait_output"
-  dump_pod_status "kube-system" "Calico"
-  diagnose_failure "Calico" "$wait_output"
-  exit 1
-}
-echo "$wait_output"
+wait_for_pods_ready "kube-system" "Calico" "$TIMEOUT" --selector=k8s-app=calico-node || exit 1
 
 if [ "$IP_FAMILY" != "ipv4" ]; then
   echo "Restarting calico-kube-controllers to acquire IPv6 pod IP..."
-  kubectl rollout restart deployment/calico-kube-controllers -n kube-system
+  kubectl delete pods -n kube-system -l k8s-app=calico-kube-controllers --wait=false
+  echo "Restarting CoreDNS pods to acquire IPv6 pod IPs..."
+  kubectl delete pods -n kube-system -l k8s-app=kube-dns --wait=false
 fi
 
 echo "Waiting for calico-kube-controllers to be ready..."
