@@ -50,12 +50,21 @@ retry_with_backoff 3 5 apply_calico_manifest || {
 }
 
 if [ "$IP_FAMILY" != "ipv4" ]; then
-  # Detect the cluster's IPv6 pod CIDR so Calico can create an IPv6 pool
-  IPV6_POD_CIDR=$(kubectl get cm -n kube-system kubeadm-config -o yaml 2>/dev/null \
-    | grep podSubnet | awk '{print $2}' || true)
+  # Detect the cluster's IPv6 pod CIDR so Calico can create an IPv6 pool.
+  # kubeadm-config may have a single CIDR or comma-separated dual-stack CIDRs;
+  # extract only the IPv6 entry (contains a colon).
+  ALL_CIDRS=$(kubectl get cm -n kube-system kubeadm-config -o yaml 2>/dev/null \
+    | grep podSubnet | awk '{print $2}' | tr ',' '\n' || true)
+  IPV6_POD_CIDR=""
+  for cidr in $ALL_CIDRS; do
+    if [[ "$cidr" == *:* ]]; then
+      IPV6_POD_CIDR="$cidr"
+      break
+    fi
+  done
   if [ -z "$IPV6_POD_CIDR" ]; then
     IPV6_POD_CIDR="fd00:10:244::/56"
-    echo "Could not detect pod CIDR, using default: $IPV6_POD_CIDR"
+    echo "Could not detect IPv6 pod CIDR, using default: $IPV6_POD_CIDR"
   else
     echo "Detected IPv6 pod CIDR: $IPV6_POD_CIDR"
   fi
