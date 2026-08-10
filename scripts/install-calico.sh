@@ -50,10 +50,20 @@ retry_with_backoff 3 5 apply_calico_manifest || {
 }
 
 if [ "$IP_FAMILY" != "ipv4" ]; then
-  CALICO_ENVS=(IP6=autodetect FELIX_IPV6SUPPORT=true)
+  # Detect the cluster's IPv6 pod CIDR so Calico can create an IPv6 pool
+  IPV6_POD_CIDR=$(kubectl get cm -n kube-system kubeadm-config -o yaml 2>/dev/null \
+    | grep podSubnet | awk '{print $2}' || true)
+  if [ -z "$IPV6_POD_CIDR" ]; then
+    IPV6_POD_CIDR="fd00:10:244::/56"
+    echo "Could not detect pod CIDR, using default: $IPV6_POD_CIDR"
+  else
+    echo "Detected IPv6 pod CIDR: $IPV6_POD_CIDR"
+  fi
+
+  CALICO_ENVS=(IP6=autodetect FELIX_IPV6SUPPORT=true "CALICO_IPV6POOL_CIDR=$IPV6_POD_CIDR")
   if [ "$IP_FAMILY" = "ipv6" ]; then
     echo "Configuring Calico for IPv6-only networking..."
-    CALICO_ENVS+=(CALICO_IPV4POOL_CIDR- CALICO_IPV4POOL_IPIP- IP=none)
+    CALICO_ENVS+=(CALICO_IPV4POOL_IPIP- IP=none CALICO_NETWORKING_BACKEND=bird)
   else
     echo "Configuring Calico for dual-stack networking..."
   fi
