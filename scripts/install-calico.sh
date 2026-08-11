@@ -59,14 +59,24 @@ if [ "$IP_FAMILY" != "ipv4" ]; then
     echo "Configuring Calico manifest for dual-stack networking..."
   fi
 
-  # Add IPv6 env vars after the IP autodetect line
+  # Add IPv6 env vars after the IP line.
+  # CALICO_ROUTER_ID=hash is required for IPv6-only because BIRD defaults to
+  # using the node's IPv4 address as router ID, which doesn't exist when IP=none.
   sed -i "/- name: IP$/,/value:/{
     /value:/a\\
             - name: IP6\\
               value: \"autodetect\"\\
             - name: CALICO_IPV6POOL_CIDR\\
-              value: \"${IPV6_POD_CIDR}\"
+              value: \"${IPV6_POD_CIDR}\"\\
+            - name: CALICO_ROUTER_ID\\
+              value: \"hash\"
   }" "$MANIFEST_FILE"
+
+  if [ "$IP_FAMILY" = "ipv6" ]; then
+    # Uncomment and set CALICO_IPV4POOL_CIDR to "none" to prevent default IPv4 pool
+    sed -i 's/# - name: CALICO_IPV4POOL_CIDR/- name: CALICO_IPV4POOL_CIDR/' "$MANIFEST_FILE"
+    sed -i 's/#   value: "192.168.0.0\/16"/  value: "none"/' "$MANIFEST_FILE"
+  fi
 fi
 
 _last_apply_output=""
