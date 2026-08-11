@@ -72,11 +72,9 @@ if [ "$IP_FAMILY" != "ipv4" ]; then
               value: \"hash\"
   }" "$MANIFEST_FILE"
 
-  if [ "$IP_FAMILY" = "ipv6" ]; then
-    # Uncomment and set CALICO_IPV4POOL_CIDR to "none" to prevent default IPv4 pool
-    sed -i 's/# - name: CALICO_IPV4POOL_CIDR/- name: CALICO_IPV4POOL_CIDR/' "$MANIFEST_FILE"
-    sed -i 's/#   value: "192.168.0.0\/16"/  value: "none"/' "$MANIFEST_FILE"
-  fi
+  # Note: CALICO_IPV4POOL_CIDR is intentionally left commented out (unset) in the
+  # manifest. calico-node will auto-create a default IPv4 pool; for IPv6-only mode,
+  # we delete it after calico-node is ready (see below).
 fi
 
 _last_apply_output=""
@@ -106,16 +104,17 @@ retry_with_backoff 3 5 apply_calico_manifest || {
   exit 1
 }
 
-if [ "$IP_FAMILY" = "ipv6" ]; then
-  echo "Removing default IPv4 pool (incompatible with IPv6-only)..."
-  kubectl delete ippools default-ipv4-ippool --ignore-not-found --timeout=30s
-fi
-
 echo "Waiting for calico-node pods to be ready..."
 wait_for_pods_ready "kube-system" "Calico" "$TIMEOUT" --selector=k8s-app=calico-node || exit 1
 
-if [ "$IP_FAMILY" != "ipv4" ]; then
-  echo "Restarting CoreDNS pods to acquire IPv6 pod IPs..."
+if [ "$IP_FAMILY" = "ipv6" ]; then
+  echo "Removing default IPv4 pool (incompatible with IPv6-only)..."
+  kubectl delete ippools default-ipv4-ippool --ignore-not-found --timeout=30s
+  echo "Restarting pods to acquire IPv6 IPs..."
+  kubectl delete pods -n kube-system -l k8s-app=calico-kube-controllers --wait=false
+  kubectl delete pods -n kube-system -l k8s-app=kube-dns --wait=false
+elif [ "$IP_FAMILY" = "dual" ]; then
+  echo "Restarting CoreDNS pods to acquire dual-stack IPs..."
   kubectl delete pods -n kube-system -l k8s-app=kube-dns --wait=false
 fi
 
