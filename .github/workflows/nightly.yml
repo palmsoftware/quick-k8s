@@ -620,7 +620,9 @@ jobs:
           docker inspect kind-control-plane --format '{{ json .HostConfig.PortBindings }}' | grep -q 30000
           echo "Extra port mappings test passed"
 
-  # IPv6 test (known to be unstable on GitHub Actions runners)
+  # IPv6 test — uses Cilium because Calico's manifest-based install does not
+  # reliably create an IPv6 IPPool on KinD (calico-ipam reports "cannot find
+  # a qualified ippool"). Cilium handles IPv6-only natively via --set flags.
   ipv6-test:
     runs-on: ubuntu-24.04
     env:
@@ -629,11 +631,12 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v7
 
-      - name: Run action with IPv6
+      - name: Run action with IPv6 (Cilium)
         uses: ./
         with:
           clusterProvider: kind
           ipFamily: ipv6
+          cniPlugin: cilium
           waitForPodsReady: true
 
       - name: Verify IPv6 configuration
