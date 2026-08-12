@@ -42,7 +42,7 @@ steps:
       # Monitoring
       enableClusterMonitoring: false
       kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.2
+      thanosVersion: v0.42.4
 
       # MetalLB
       installMetalLB: false
@@ -81,6 +81,8 @@ steps:
       apiServerPort: 6443
       disableDefaultCni: true
       calicoVersion: v3.32.1
+      clusterCPUs: 2                # CPUs to allocate (Minikube only)
+      clusterMemory: ''             # Memory in MB (empty = provider default, Minikube only)
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
@@ -99,4 +101,27 @@ steps:
       operatorSdkVersion: v1.42.3
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
+
+      # Monitoring
+      enableClusterMonitoring: false
+      kubePrometheusVersion: v0.18.0
+      thanosVersion: v0.42.4
+
+      # MetalLB
+      installMetalLB: false
+      metalLBVersion: v0.16.0
+
+      # Advanced options
+      cniPlugin: calico             # calico, cilium, or none
+      installSampleNetworkPolicies: false
+      createPersistentVolumes: false # Create sample PVs for testing
+      persistentVolumeCount: 5
+      persistentVolumeSize: 10Gi
+      skipDiskCleanup: false        # Skip disk cleanup (useful for self-hosted runners)
+      enableCleanup: false          # Generate cleanup script at /tmp/quick-k8s-cleanup.sh
+      dryRun: false                 # Preview configuration without executing
+      componentTimeout: 300         # Timeout in seconds for component installs
+      controlPlaneTaints: ''        # Comma-separated taints for control-plane nodes
+      workerNodeTaints: ''          # Comma-separated taints for worker nodes
+      waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
 ```

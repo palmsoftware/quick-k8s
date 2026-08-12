@@ -63,19 +63,27 @@ steps:
 - Integrates with Ingress controllers for automatic certificate management
 - CRDs installed automatically with cert-manager
 
-**Example: Create a self-signed issuer for testing**:
+**Pre-configured ClusterIssuer**: A `selfsigned-issuer` ClusterIssuer is automatically created during installation — no manual setup needed.
+
+**Example: Create a Certificate using the pre-configured issuer**:
 ```yaml
-- name: Create self-signed issuer
+- name: Create a test certificate
   run: |
     cat <<EOF | kubectl apply -f -
     apiVersion: cert-manager.io/v1
-    kind: ClusterIssuer
+    kind: Certificate
     metadata:
-      name: selfsigned-issuer
+      name: my-app-tls
+      namespace: default
     spec:
-      selfSigned: {}
+      secretName: my-app-tls-secret
+      dnsNames:
+        - my-app.example.com
+      issuerRef:
+        name: selfsigned-issuer
+        kind: ClusterIssuer
     EOF
-    kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=60s
+    kubectl wait --for=condition=ready certificate/my-app-tls --timeout=60s
 ```
 
 **Resource Considerations**:
@@ -248,7 +256,7 @@ steps:
 
 ## Cluster Monitoring (kube-prometheus + Thanos)
 
-Enable the full monitoring stack with Prometheus, Thanos, Alertmanager, and Grafana:
+Enable the full monitoring stack with Prometheus, Thanos, Alertmanager, and more:
 
 ```yaml
 steps:
@@ -257,13 +265,12 @@ steps:
     with:
       enableClusterMonitoring: true
       kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.2
+      thanosVersion: v0.42.4
 ```
 
 **Features**:
-- Full kube-prometheus stack: Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics
+- Full kube-prometheus stack: Prometheus, Alertmanager, node-exporter, kube-state-metrics
 - Thanos sidecar for long-term storage and multi-cluster querying
-- Pre-configured dashboards and alerting rules
 - Resource requests automatically patched down to fit CI runners
 
 **What gets deployed**:
@@ -271,10 +278,15 @@ steps:
 |-----------|-----------|---------|
 | Prometheus | `monitoring` | Metrics collection and storage |
 | Alertmanager | `monitoring` | Alert routing and deduplication |
-| Grafana | `monitoring` | Dashboards and visualization |
+| Grafana | `monitoring` | Dashboards and visualization (scaled to 0 by default — see note) |
 | node-exporter | `monitoring` | Host-level metrics |
 | kube-state-metrics | `monitoring` | Kubernetes object metrics |
 | Thanos Sidecar | `monitoring` | Long-term storage interface |
+
+> **Note:** Grafana is included in the kube-prometheus manifests but is **scaled to 0 replicas** by default because it is too resource-heavy for free-tier CI runners. To re-enable it, scale the deployment after cluster creation:
+> ```bash
+> kubectl scale deployment -n monitoring grafana --replicas=1
+> ```
 
 **Example: Access monitoring data**:
 ```yaml
