@@ -273,7 +273,7 @@ steps:
 - Thanos sidecar for long-term storage and multi-cluster querying
 - Resource requests automatically patched down to fit CI runners
 
-**What gets deployed**:
+**Components Deployed**:
 | Component | Namespace | Purpose |
 |-----------|-----------|---------|
 | Prometheus | `monitoring` | Metrics collection and storage |
@@ -307,6 +307,8 @@ steps:
 ## Choosing a CNI Plugin
 
 The action supports multiple CNI plugins. Use the `cniPlugin` input to select one:
+
+> **Note:** The deprecated `installCalico` input (boolean) will be removed in v2.0.0. Use `cniPlugin: calico` instead for future compatibility.
 
 ```yaml
 steps:

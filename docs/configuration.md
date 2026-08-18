@@ -20,6 +20,7 @@ steps:
       defaultNodeImage: 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
       kindVersion: v0.32.0
       calicoVersion: v3.32.1
+      ciliumVersion: v0.19.7        # Cilium CLI version (when cniPlugin: cilium)
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
@@ -58,7 +59,10 @@ steps:
       persistentVolumeCount: 5
       persistentVolumeSize: 10Gi
       installSampleNetworkPolicies: false
+      waitForPodsReady: true        # Wait for all pods to be ready
       waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
+      waitForPodsNamespaces: ''     # Comma-separated list of namespaces to monitor
+      waitForPodsExcludeNamespaces: '' # Comma-separated list of namespaces to exclude
       dryRun: false                 # Preview configuration without executing
       controlPlaneTaints: ''        # Comma-separated taints for control-plane nodes
       workerNodeTaints: ''          # Comma-separated taints for worker nodes
@@ -81,6 +85,7 @@ steps:
       apiServerPort: 6443
       disableDefaultCni: true
       calicoVersion: v3.32.1
+      ciliumVersion: v0.19.7        # Cilium CLI version (when cniPlugin: cilium)
       clusterCPUs: 2                # CPUs to allocate (Minikube only)
       clusterMemory: ''             # Memory in MB (empty = provider default, Minikube only)
 
@@ -114,6 +119,10 @@ steps:
       # Advanced options
       cniPlugin: calico             # calico, cilium, or none
       installSampleNetworkPolicies: false
+      waitForPodsReady: true        # Wait for all pods to be ready
+      waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
+      waitForPodsNamespaces: ''     # Comma-separated list of namespaces to monitor
+      waitForPodsExcludeNamespaces: '' # Comma-separated list of namespaces to exclude
       createPersistentVolumes: false # Create sample PVs for testing
       persistentVolumeCount: 5
       persistentVolumeSize: 10Gi
@@ -123,5 +132,4 @@ steps:
       componentTimeout: 300         # Timeout in seconds for component installs
       controlPlaneTaints: ''        # Comma-separated taints for control-plane nodes
       workerNodeTaints: ''          # Comma-separated taints for worker nodes
-      waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
 ```

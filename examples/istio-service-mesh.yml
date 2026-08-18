@@ -15,7 +15,7 @@ jobs:
         uses: palmsoftware/quick-k8s@v0
         with:
           installIstio: true
-          istioVersion: 1.30.2
+          istioVersion: 1.30.3
           istioProfile: minimal
           waitForPodsReady: true
 
