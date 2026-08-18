@@ -5,7 +5,7 @@
 [![Update OLM Version Nightly](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/olm-update.yml)
 [![Update Major Version Tag](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/palmsoftware/quick-k8s/actions/workflows/update-major-tag.yml)
 
-GitHub Action that deploys Kubernetes clusters on GitHub Actions runners for testing and development. Supports **KinD** (default) and **Minikube** as cluster providers.
+A GitHub Action that deploys Kubernetes clusters on GitHub Actions runners for testing and development. Supports **KinD** (default) and **Minikube** as cluster providers.
 
 ## Requirements
 

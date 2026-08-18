@@ -6,11 +6,11 @@ This document lists tested and known-compatible version combinations for quick-k
 
 | Kubernetes | Calico | Cilium | Istio | cert-manager | OLM | MetalLB | Notes |
 |------------|--------|--------|-------|--------------|-----|---------|-------|
-| 1.36.x | v3.32+ | v1.17+ | 1.30+ | v1.20+ | v0.31+ | v0.15+ | Current default |
-| 1.35.x | v3.31+ | v1.16+ | 1.29+ | v1.19+ | v0.30+ | v0.14+ | Fully tested |
-| 1.34.x | v3.30+ | v1.15+ | 1.28+ | v1.18+ | v0.29+ | v0.14+ | Fully tested |
-| 1.33.x | v3.29+ | v1.14+ | 1.27+ | v1.17+ | v0.28+ | v0.13+ | Compatible |
-| <1.31 | v3.28.x | v1.14+ | 1.26+ | v1.16+ | v0.27+ | v0.13+ | See notes below |
+| 1.36.x | v3.32.0+ | v1.17.0+ | 1.30.0+ | v1.20.0+ | v0.46.0+ | v0.15.0+ | Current default (v1.36.1) |
+| 1.35.x | v3.31.0+ | v1.16.0+ | 1.29.0+ | v1.19.0+ | v0.30.0+ | v0.14.0+ | Fully tested |
+| 1.34.x | v3.30.0+ | v1.15.0+ | 1.28.0+ | v1.18.0+ | v0.29.0+ | v0.14.0+ | Fully tested |
+| 1.33.x | v3.29.0+ | v1.14.0+ | 1.27.0+ | v1.17.0+ | v0.28.0+ | v0.13.0+ | Compatible |
+| <1.31 | v3.28.x | v1.14.0+ | 1.26.0+ | v1.16.0+ | v0.27.0+ | v0.13.0+ | See notes below |
 
 ## Known Issues and Workarounds
 
@@ -26,7 +26,7 @@ Minikube may not support the very latest Kubernetes version. When the `defaultNo
 
 ### OLM on Kubernetes 1.36+
 
-OLM v0.31+ is recommended for Kubernetes 1.36+. Older OLM versions may encounter API compatibility issues with newer Kubernetes releases.
+OLM v0.46.0 or later is recommended for Kubernetes 1.36+. Older OLM versions may encounter API compatibility issues with newer Kubernetes releases.
 
 ### Istio Profile Resource Usage
 
