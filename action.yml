@@ -55,7 +55,7 @@ inputs:
   calicoVersion:
     description: 'The version of Calico to use'
     required: false
-    default: 'v3.32.1'
+    default: 'v3.31.7'
   ciliumVersion:
     description: 'The version of Cilium CLI to use'
     required: false
