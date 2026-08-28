@@ -59,7 +59,7 @@ inputs:
   ciliumVersion:
     description: 'The version of Cilium CLI to use'
     required: false
-    default: 'v0.19.7'
+    default: 'v0.20.0'
   ocpReleaseLevel:
     description: 'The release level of OpenShift to use'
     required: false
