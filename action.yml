@@ -43,7 +43,7 @@ inputs:
   kindVersion:
     description: 'The version of KinD to use'
     required: false
-    default: 'v0.32.0'
+    default: 'v0.33.0'
   minikubeVersion:
     description: 'The version of Minikube to use'
     required: false
