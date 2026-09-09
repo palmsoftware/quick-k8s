@@ -7,6 +7,8 @@ trap 'echo "::endgroup::"' EXIT
 
 # shellcheck source=verify-checksum.sh
 source "$(dirname "$0")/verify-checksum.sh"
+# shellcheck source=lib/retry.sh
+source "$(dirname "$0")/lib/retry.sh"
 
 for cmd in curl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -135,12 +137,10 @@ check_root(){
 
 check_prereq(){
 
-status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/stable/release.txt")
-
-if [[ "$status_code" -ne 200 ]]; then
-  echo "Internet Access is required for this tool to run."
-  exit 1
-fi
+  if ! retry_with_backoff 3 10 curl -f --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/stable/release.txt"; then
+    echo "::error::Mirror ${MIRROR_DOMAIN} is unreachable. Internet access is required." >&2
+    exit 1
+  fi
 
 }
 
@@ -197,12 +197,10 @@ restore_version(){
 
 verify_version(){
 
-status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "$1")
-
-if [[ "$status_code" -ne 200 ]]; then
-  echo "Version $2 does not exist"
-  exit 1
-fi
+  if ! retry_with_backoff 3 10 curl -f --silent --output /dev/null "$1"; then
+    echo "::error::Version $2 does not exist or mirror is unreachable" >&2
+    exit 1
+  fi
 
 }
 
@@ -345,12 +343,12 @@ nightly() {
 download(){
 
 echo "Downloading ${1##*/}..."
-curl -L -f --progress-bar -o "/tmp/${1##*/}" "$1"
+retry_with_backoff 3 10 curl -L -f --progress-bar -o "/tmp/${1##*/}" "$1"
 echo "Download Complete."
 download_and_verify_checksum "/tmp/${1##*/}" "${1}.sha256" || exit 1
 
 echo "Downloading ${2##*/}..."
-curl -L -f --progress-bar -o "/tmp/${2##*/}" "$2"
+retry_with_backoff 3 10 curl -L -f --progress-bar -o "/tmp/${2##*/}" "$2"
 echo "Download Complete."
 download_and_verify_checksum "/tmp/${2##*/}" "${2}.sha256" || exit 1
 
@@ -385,6 +383,25 @@ extract() {
 
 }
 
+verify_install() {
+
+  local failed=0
+  for cmd in oc kubectl openshift-install; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "::error::Post-install verification failed: $cmd not found in PATH" >&2
+      failed=1
+    fi
+  done
+
+  if [[ "$failed" -ne 0 ]]; then
+    echo "::error::One or more tools failed to install. Check the download and extraction steps above." >&2
+    exit 1
+  fi
+
+  echo "Post-install verification passed: oc, kubectl, and openshift-install are available."
+
+}
+
 cleanup() {
 
   rm -rf "${BIN_PATH}/README.md"
@@ -392,6 +409,7 @@ cleanup() {
   rm -rf "/tmp/openshift-install-${OS}.tar.gz"
 
   show_ver
+  verify_install
 
 }
 
@@ -602,7 +620,7 @@ check_root
 
 filename="${1##*/}"
 echo "Downloading $filename..."
-curl -L -f --progress-bar -o "/tmp/$filename" "$1"
+retry_with_backoff 3 10 curl -L -f --progress-bar -o "/tmp/$filename" "$1"
 echo "Download Complete."
 
 if [[ "$2" == "serverless" ]]; then
