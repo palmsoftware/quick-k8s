@@ -86,7 +86,7 @@ K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 ### `pre-main.yml` - Primary CI
 - Triggers: Push to main, PRs, manual dispatch
 - **Lint job blocks all other jobs** - Must pass before tests run
-- Matrix: 4 OS (ubuntu-{22,24}.04 × {x86,arm}) × 2 providers (KinD, Minikube)
+- Matrix: 6 OS (ubuntu-{22,24,26}.04 × {x86,arm}) × 2 providers (KinD, Minikube)
 - Tests: Basic cluster, OLM, Istio, local registry, custom config, CNI skip
 
 ### `nightly.yml` - Extended Testing

@@ -22,5 +22,5 @@ This action features intelligent, adaptive disk space management that optimizes 
 
 - **Skip Unnecessary Work**: Avoids aggressive cleanup when sufficient space is already available (>20GB)
 - **Detailed Progress Reporting**: Shows exactly what's being cleaned and how much space is recovered
-- **Cross-Architecture Support**: Optimized for both x86_64 and ARM64 GitHub Actions runners (Ubuntu 22.04/24.04)
+- **Cross-Architecture Support**: Optimized for both x86_64 and ARM64 GitHub Actions runners (Ubuntu 22.04/24.04/26.04)
 - **Zero External Dependencies**: Uses only built-in bash arithmetic (no `bc` or other external tools)

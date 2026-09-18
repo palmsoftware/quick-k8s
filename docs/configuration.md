@@ -17,20 +17,20 @@ steps:
       apiServerAddress: 0.0.0.0
       disableDefaultCni: true
       ipFamily: dual
-      defaultNodeImage: 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
-      kindVersion: v0.32.0
-      calicoVersion: v3.32.1
-      ciliumVersion: v0.19.7        # Cilium CLI version (when cniPlugin: cilium)
+      defaultNodeImage: 'kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5'
+      kindVersion: v0.33.0
+      calicoVersion: v3.32.2
+      ciliumVersion: v0.20.0        # Cilium CLI version (when cniPlugin: cilium)
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.30.3
+      istioVersion: 1.31.0
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.1
+      certManagerVersion: v1.21.2
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
@@ -59,7 +59,7 @@ steps:
       persistentVolumeCount: 5
       persistentVolumeSize: 10Gi
       installSampleNetworkPolicies: false
-      waitForPodsReady: true        # Wait for all pods to be ready
+      waitForPodsReady: false       # Wait for all pods to be ready
       waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
       waitForPodsNamespaces: ''     # Comma-separated list of namespaces to monitor
       waitForPodsExcludeNamespaces: '' # Comma-separated list of namespaces to exclude
@@ -80,12 +80,12 @@ steps:
     with:
       clusterProvider: minikube
       clusterName: minikube
-      minikubeVersion: v1.38.1
+      minikubeVersion: v1.39.0
       minikubeDriver: docker
       apiServerPort: 6443
       disableDefaultCni: true
-      calicoVersion: v3.32.1
-      ciliumVersion: v0.19.7        # Cilium CLI version (when cniPlugin: cilium)
+      calicoVersion: v3.32.2
+      ciliumVersion: v0.20.0        # Cilium CLI version (when cniPlugin: cilium)
       clusterCPUs: 2                # CPUs to allocate (Minikube only)
       clusterMemory: ''             # Memory in MB (empty = provider default, Minikube only)
 
@@ -94,10 +94,10 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.30.3
+      istioVersion: 1.31.0
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.1
+      certManagerVersion: v1.21.2
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
@@ -119,7 +119,7 @@ steps:
       # Advanced options
       cniPlugin: calico             # calico, cilium, or none
       installSampleNetworkPolicies: false
-      waitForPodsReady: true        # Wait for all pods to be ready
+      waitForPodsReady: false       # Wait for all pods to be ready
       waitForPodsTimeout: 1200      # Pod readiness timeout in seconds
       waitForPodsNamespaces: ''     # Comma-separated list of namespaces to monitor
       waitForPodsExcludeNamespaces: '' # Comma-separated list of namespaces to exclude
