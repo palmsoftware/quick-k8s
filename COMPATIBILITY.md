@@ -6,7 +6,8 @@ This document lists tested and known-compatible version combinations for quick-k
 
 | Kubernetes | Calico | Cilium | Istio | cert-manager | OLM | MetalLB | Notes |
 |------------|--------|--------|-------|--------------|-----|---------|-------|
-| 1.36.x | v3.32.0+ | v1.17.0+ | 1.30.0+ | v1.20.0+ | v0.46.0+ | v0.15.0+ | Current default (v1.36.1) |
+| 1.37.x | v3.32.0+ | v1.17.0+ | 1.31.0+ | v1.21.0+ | v0.46.0+ | v0.15.0+ | Current default (v1.37.0) |
+| 1.36.x | v3.32.0+ | v1.17.0+ | 1.30.0+ | v1.20.0+ | v0.46.0+ | v0.15.0+ | Fully tested |
 | 1.35.x | v3.31.0+ | v1.16.0+ | 1.29.0+ | v1.19.0+ | v0.30.0+ | v0.14.0+ | Fully tested |
 | 1.34.x | v3.30.0+ | v1.15.0+ | 1.28.0+ | v1.18.0+ | v0.29.0+ | v0.14.0+ | Fully tested |
 | 1.33.x | v3.29.0+ | v1.14.0+ | 1.27.0+ | v1.17.0+ | v0.28.0+ | v0.13.0+ | Compatible |
@@ -49,11 +50,13 @@ Cilium is tested in `pre-main.yml` (PR and push CI). The following combinations 
 | ubuntu-24.04 | KinD | Basic + Calico + OLM + Istio + cert-manager |
 | ubuntu-24.04-arm | KinD | Basic + Calico |
 | ubuntu-26.04 | KinD | Basic + Calico + OLM + Istio + cert-manager |
+| ubuntu-26.04-arm | KinD | Basic + Calico |
 | ubuntu-22.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
 | ubuntu-22.04-arm | Minikube | Basic + Calico |
 | ubuntu-24.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
 | ubuntu-24.04-arm | Minikube | Basic + Calico |
 | ubuntu-26.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
+| ubuntu-26.04-arm | Minikube | Basic + Calico |
 
 ## Upstream Compatibility References
 

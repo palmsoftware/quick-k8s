@@ -16,6 +16,7 @@ A GitHub Action that deploys Kubernetes clusters on GitHub Actions runners for t
 | `ubuntu-24.04` | x86_64 | Fully supported |
 | `ubuntu-24.04-arm` | ARM64 | Fully supported |
 | `ubuntu-26.04` | x86_64 | Fully supported |
+| `ubuntu-26.04-arm` | ARM64 | Fully supported |
 
 ## Quick Start
 
@@ -33,7 +34,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       clusterProvider: minikube
-      minikubeVersion: v1.38.1
+      minikubeVersion: v1.39.0
       minikubeDriver: docker
 ```
 

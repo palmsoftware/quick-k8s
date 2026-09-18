@@ -26,7 +26,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installIstio: true
-      istioVersion: 1.30.3
+      istioVersion: 1.31.0
       istioProfile: minimal
 ```
 
@@ -54,7 +54,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installCertManager: true
-      certManagerVersion: v1.21.1
+      certManagerVersion: v1.21.2
 ```
 
 **Features**:
