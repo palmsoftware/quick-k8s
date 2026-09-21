@@ -105,6 +105,15 @@ jobs:
 
           echo "Current image: $current_image"
 
+          current_tag=$(printf '%s\n' "$current_image" | sed -n 's#^kindest/node:\(v[0-9][0-9.]*\)@.*#\1#p')
+          if [ -n "$current_tag" ] && ! ./scripts/is-version-newer.sh "$current_tag" "${{ steps.get_image.outputs.tag }}"; then
+            if [ "$current_tag" != "${{ steps.get_image.outputs.tag }}" ]; then
+              echo "KinD node image candidate ${{ steps.get_image.outputs.tag }} is lower than current tag $current_tag"
+              echo "updated=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
           if [ "$current_image" = "$new_image" ]; then
             echo "Node image is already up to date"
             echo "updated=false" >> $GITHUB_OUTPUT

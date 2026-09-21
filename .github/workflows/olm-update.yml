@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Get latest OLM release version
+      - name: Get highest stable OLM release version
         id: get_olm_version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -29,38 +29,52 @@ jobs:
           get_olm_version() {
             local retries=3
             local delay=5
-            
+
             for ((i=1; i<=retries; i++)); do
               echo "Attempt $i to fetch OLM version..."
-              
-              # Make API call with timeout
-              response=$(curl -s --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/operator-framework/operator-lifecycle-manager/releases/latest)
-              
-              if [ $? -eq 0 ] && [ -n "$response" ]; then
-                # Extract tag_name and validate it's not null/empty
-                version=$(echo "$response" | jq -r '.tag_name // empty')
-                
-                if [ -n "$version" ] && [ "$version" != "null" ] && [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                  echo "Successfully fetched OLM version: $version"
-                  echo "olm_version=$version" >> $GITHUB_OUTPUT
-                  return 0
-                else
-                  echo "Invalid version format: '$version'"
+
+              all_tags=""
+              page=1
+              while :; do
+                response=$(curl -sS --max-time 30 -H "Authorization: Bearer $GITHUB_TOKEN" \
+                  "https://api.github.com/repos/operator-framework/operator-lifecycle-manager/releases?per_page=100&page=$page") || response=""
+
+                if [ -z "$response" ] || ! echo "$response" | jq -e 'type == "array"' >/dev/null 2>&1; then
+                  echo "API call failed or returned an invalid response on page $page"
+                  all_tags=""
+                  break
                 fi
-              else
-                echo "API call failed or returned empty response"
+
+                page_tags=$(echo "$response" | jq -r '.[] | select(.draft == false and .prerelease == false) | .tag_name // empty')
+                all_tags+="$page_tags"$'\n'
+
+                release_count=$(echo "$response" | jq 'length')
+                if [ "$release_count" -lt 100 ]; then
+                  break
+                fi
+                page=$((page + 1))
+              done
+
+              version=$(printf '%s' "$all_tags" | ./scripts/select-highest-version.sh '^v[0-9]+\.[0-9]+\.[0-9]+$')
+
+              if [ -n "$version" ]; then
+                echo "Successfully selected highest stable OLM version: $version"
+                echo "olm_version=$version" >> $GITHUB_OUTPUT
+                return 0
               fi
-              
+
+              echo "No stable OLM release matching the expected version format was found"
+
               if [ $i -lt $retries ]; then
                 echo "Retrying in $delay seconds..."
                 sleep $delay
               fi
             done
-            
+
             echo "Failed to fetch valid OLM version after $retries attempts"
             exit 1
           }
-          
+
           get_olm_version
 
       - name: Update OLM version in action.yml
@@ -78,8 +92,8 @@ jobs:
 
           # Check if the version is already current
           current_version=$(grep -A2 "olmVersion:" action.yml | grep "default:" | sed "s/.*default: *'\(.*\)'/\1/")
-          if [ "$current_version" = "$version" ]; then
-            echo "OLM version is already up to date ($version)"
+          if ! ./scripts/is-version-newer.sh "$current_version" "$version"; then
+            echo "OLM candidate $version is not newer than current version $current_version"
             echo "updated=false" >> $GITHUB_OUTPUT
             exit 0
           fi
