@@ -108,8 +108,8 @@ jobs:
             exit 1
           fi
 
-          if [ "$current_version" = "$version" ]; then
-            echo "OCP release level is already up to date ($version)"
+          if ! ./scripts/is-version-newer.sh "$current_version" "$version"; then
+            echo "OCP candidate $version is not newer than current release level $current_version"
             echo "updated=false" >> $GITHUB_OUTPUT
             exit 0
           fi
