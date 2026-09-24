@@ -167,7 +167,7 @@ inputs:
   kubePrometheusVersion:
     description: 'The version of kube-prometheus to install'
     required: false
-    default: 'v0.18.0'
+    default: 'v0.19.0'
   thanosVersion:
     description: 'The version of Thanos to install'
     required: false
