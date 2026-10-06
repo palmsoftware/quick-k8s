@@ -556,6 +556,7 @@ jobs:
         uses: ./
         with:
           clusterProvider: kind
+          ipFamily: dual
           installMetalLB: true
           waitForPodsReady: true
           installOLM: false
@@ -573,6 +574,10 @@ jobs:
           kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=speaker --timeout=60s
           echo "Checking IPAddressPool..."
           kubectl get ipaddresspool -n metallb-system
+          POOL_ADDRESSES=$(kubectl get ipaddresspool quick-k8s-pool -n metallb-system -o jsonpath='{.spec.addresses}')
+          echo "MetalLB address pool: $POOL_ADDRESSES"
+          [[ "$POOL_ADDRESSES" == *.*-*.* ]] || { echo "MetalLB pool is missing an IPv4 range"; exit 1; }
+          [[ "$POOL_ADDRESSES" == *:*/* ]] || { echo "MetalLB pool is missing an IPv6 CIDR"; exit 1; }
           echo "Checking L2Advertisement..."
           kubectl get l2advertisement -n metallb-system
           echo "MetalLB installation verified!"

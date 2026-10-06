@@ -250,7 +250,8 @@ steps:
 
 **Features**:
 - Provides LoadBalancer service support in local/CI Kubernetes clusters
-- Automatically configures an IP address pool from the Docker bridge network
+- Automatically configures an IPv4 and/or IPv6 address pool from the container network, based on `ipFamily`
+- Uses a `/120` slice when the detected IPv6 subnet is larger, such as `/64`
 - L2 advertisement mode for simple, no-BGP-required operation
 - Works with both KinD and Minikube providers
 
