@@ -160,8 +160,12 @@ inputs:
     description: 'The version of operator-sdk to install'
     required: false
     default: 'v1.42.3'
-  installTelcoOperators:
-    description: 'Install the latest TLS Compliance and Image Cert Info Operator releases'
+  installTLSComplianceOperator:
+    description: 'Install the latest TLS Compliance Operator release'
+    required: false
+    default: 'false'
+  installImageCertInfoOperator:
+    description: 'Install the latest Image Cert Info Operator release'
     required: false
     default: 'false'
   enableClusterMonitoring:
@@ -435,7 +439,8 @@ runs:
         INPUT_installMetricsServer: ${{ inputs.installMetricsServer }}
         INPUT_installMetalLB: ${{ inputs.installMetalLB }}
         INPUT_installOperatorSdk: ${{ inputs.installOperatorSdk }}
-        INPUT_installTelcoOperators: ${{ inputs.installTelcoOperators }}
+        INPUT_installTLSComplianceOperator: ${{ inputs.installTLSComplianceOperator }}
+        INPUT_installImageCertInfoOperator: ${{ inputs.installImageCertInfoOperator }}
         INPUT_enableClusterMonitoring: ${{ inputs.enableClusterMonitoring }}
         INPUT_installSampleNetworkPolicies: ${{ inputs.installSampleNetworkPolicies }}
         INPUT_installLocalRegistry: ${{ inputs.installLocalRegistry }}
@@ -446,7 +451,7 @@ runs:
         INPUT_installCalico: ${{ inputs.installCalico }}
       run: |
         FAILED=false
-        for name in disableDefaultCni installOLM installIstio removeDefaultStorageClass removeControlPlaneTaint waitForPodsReady installCertManager installIngressNginx installMetricsServer installMetalLB installOperatorSdk installTelcoOperators enableClusterMonitoring installSampleNetworkPolicies installLocalRegistry enableCleanup skipDiskCleanup dryRun createPersistentVolumes installCalico; do
+        for name in disableDefaultCni installOLM installIstio removeDefaultStorageClass removeControlPlaneTaint waitForPodsReady installCertManager installIngressNginx installMetricsServer installMetalLB installOperatorSdk installTLSComplianceOperator installImageCertInfoOperator enableClusterMonitoring installSampleNetworkPolicies installLocalRegistry enableCleanup skipDiskCleanup dryRun createPersistentVolumes installCalico; do
           var="INPUT_${name}"
           value="${!var}"
           if [[ "$value" != "true" && "$value" != "false" ]]; then
@@ -691,7 +696,8 @@ runs:
         METALLB_VERSION: ${{ inputs.metalLBVersion }}
         INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
         OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
-        INSTALL_TELCO_OPERATORS: ${{ inputs.installTelcoOperators }}
+        INSTALL_TLS_COMPLIANCE_OPERATOR: ${{ inputs.installTLSComplianceOperator }}
+        INSTALL_IMAGE_CERT_INFO_OPERATOR: ${{ inputs.installImageCertInfoOperator }}
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
         LOCAL_REGISTRY_PORT: ${{ inputs.localRegistryPort }}
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
@@ -746,7 +752,8 @@ runs:
         echo "  Metrics Server: $INSTALL_METRICS_SERVER$([ "$INSTALL_METRICS_SERVER" = "true" ] && echo " ($METRICS_SERVER_VERSION)")"
         echo "  MetalLB: $INSTALL_METALLB$([ "$INSTALL_METALLB" = "true" ] && echo " ($METALLB_VERSION)")"
         echo "  Operator SDK: $INSTALL_OPERATOR_SDK$([ "$INSTALL_OPERATOR_SDK" = "true" ] && echo " ($OPERATOR_SDK_VERSION)")"
-        echo "  Telco Operators: $INSTALL_TELCO_OPERATORS"
+        echo "  TLS Compliance Operator: $INSTALL_TLS_COMPLIANCE_OPERATOR"
+        echo "  Image Cert Info Operator: $INSTALL_IMAGE_CERT_INFO_OPERATOR"
         echo "  Local Registry: $INSTALL_LOCAL_REGISTRY$([ "$INSTALL_LOCAL_REGISTRY" = "true" ] && echo " (port: $LOCAL_REGISTRY_PORT)")"
         echo "  Cluster Monitoring: $ENABLE_CLUSTER_MONITORING"
         echo "  Sample Network Policies: $INSTALL_SAMPLE_NETWORK_POLICIES"
@@ -1205,11 +1212,12 @@ runs:
         ${{ github.action_path }}/scripts/install-operator-sdk.sh "$OPERATOR_SDK_VERSION"
         end_timer "Install operator-sdk"
 
-    - name: Install TLS Compliance and Image Cert Info Operators
-      if: ${{ inputs.installTelcoOperators == 'true' && inputs.dryRun != 'true' }}
+    - name: Install selected Telco operators
+      if: ${{ (inputs.installTLSComplianceOperator == 'true' || inputs.installImageCertInfoOperator == 'true') && inputs.dryRun != 'true' }}
       shell: bash
       env:
-        INSTALL_TELCO_OPERATORS: ${{ inputs.installTelcoOperators }}
+        INSTALL_TLS_COMPLIANCE_OPERATOR: ${{ inputs.installTLSComplianceOperator }}
+        INSTALL_IMAGE_CERT_INFO_OPERATOR: ${{ inputs.installImageCertInfoOperator }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
@@ -1325,7 +1333,8 @@ runs:
         METRICS_SERVER_VERSION: ${{ inputs.metricsServerVersion }}
         INSTALL_OPERATOR_SDK: ${{ inputs.installOperatorSdk }}
         OPERATOR_SDK_VERSION: ${{ inputs.operatorSdkVersion }}
-        INSTALL_TELCO_OPERATORS: ${{ inputs.installTelcoOperators }}
+        INSTALL_TLS_COMPLIANCE_OPERATOR: ${{ inputs.installTLSComplianceOperator }}
+        INSTALL_IMAGE_CERT_INFO_OPERATOR: ${{ inputs.installImageCertInfoOperator }}
         ENABLE_CLUSTER_MONITORING: ${{ inputs.enableClusterMonitoring }}
         INSTALL_SAMPLE_NETWORK_POLICIES: ${{ inputs.installSampleNetworkPolicies }}
         INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
@@ -1354,7 +1363,8 @@ runs:
         if [ "$INSTALL_INGRESS_NGINX" = "true" ]; then echo "  - ingress-nginx $INGRESS_NGINX_VERSION"; fi
         if [ "$INSTALL_METRICS_SERVER" = "true" ]; then echo "  - metrics-server $METRICS_SERVER_VERSION"; fi
         if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then echo "  - operator-sdk $OPERATOR_SDK_VERSION"; fi
-        if [ "$INSTALL_TELCO_OPERATORS" = "true" ]; then echo "  - TLS Compliance and Image Cert Info Operators"; fi
+        if [ "$INSTALL_TLS_COMPLIANCE_OPERATOR" = "true" ]; then echo "  - TLS Compliance Operator"; fi
+        if [ "$INSTALL_IMAGE_CERT_INFO_OPERATOR" = "true" ]; then echo "  - Image Cert Info Operator"; fi
         if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then echo "  - Prometheus/Thanos monitoring"; fi
         if [ "$INSTALL_SAMPLE_NETWORK_POLICIES" = "true" ]; then echo "  - Sample network policies"; fi
         if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then echo "  - Local registry @ localhost:$LOCAL_REGISTRY_PORT"; fi
@@ -1388,7 +1398,8 @@ runs:
           if [ "$INSTALL_INGRESS_NGINX" = "true" ]; then COMPONENTS="${COMPONENTS}ingress-nginx $INGRESS_NGINX_VERSION, "; fi
           if [ "$INSTALL_METRICS_SERVER" = "true" ]; then COMPONENTS="${COMPONENTS}metrics-server $METRICS_SERVER_VERSION, "; fi
           if [ "$INSTALL_OPERATOR_SDK" = "true" ]; then COMPONENTS="${COMPONENTS}operator-sdk $OPERATOR_SDK_VERSION, "; fi
-          if [ "$INSTALL_TELCO_OPERATORS" = "true" ]; then COMPONENTS="${COMPONENTS}TLS Compliance and Image Cert Info Operators, "; fi
+          if [ "$INSTALL_TLS_COMPLIANCE_OPERATOR" = "true" ]; then COMPONENTS="${COMPONENTS}TLS Compliance Operator, "; fi
+          if [ "$INSTALL_IMAGE_CERT_INFO_OPERATOR" = "true" ]; then COMPONENTS="${COMPONENTS}Image Cert Info Operator, "; fi
           if [ "$ENABLE_CLUSTER_MONITORING" = "true" ]; then COMPONENTS="${COMPONENTS}Prometheus/Thanos monitoring, "; fi
           if [ "$INSTALL_SAMPLE_NETWORK_POLICIES" = "true" ]; then COMPONENTS="${COMPONENTS}Sample network policies, "; fi
           if [ "$INSTALL_LOCAL_REGISTRY" = "true" ]; then COMPONENTS="${COMPONENTS}Local registry (localhost:$LOCAL_REGISTRY_PORT), "; fi

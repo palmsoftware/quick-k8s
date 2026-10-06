@@ -222,17 +222,18 @@ steps:
 
 ## Telco Operators
 
-Enable installation of the latest TLS Compliance Operator and Image Cert Info Operator releases:
+Enable either operator independently. Each input is disabled by default, and both can be enabled together:
 
 ```yaml
 steps:
   - name: Set up Quick-K8s with telco operators
     uses: palmsoftware/quick-k8s@v0
     with:
-      installTelcoOperators: true
+      installTLSComplianceOperator: true
+      installImageCertInfoOperator: true
 ```
 
-The input is disabled by default. When enabled, Quick-K8s applies each operator's `install.yaml` from its latest GitHub release. No release version inputs are needed.
+When enabled, Quick-K8s applies the selected operator's `install.yaml` from its latest GitHub release. No release version inputs are needed.
 
 ## MetalLB
 
