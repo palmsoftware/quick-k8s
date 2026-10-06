@@ -47,9 +47,8 @@ teardown() {
 @test "fails when kubectl is unavailable" {
   export INSTALL_TELCO_OPERATORS=true
   rm "$TEST_ROOT/bin/kubectl"
-  export PATH="$TEST_ROOT/bin:/usr/bin:/bin"
 
-  run /bin/bash "$SCRIPT"
+  run env PATH="$TEST_ROOT/bin" /bin/bash "$SCRIPT"
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"kubectl is not installed"* ]]
