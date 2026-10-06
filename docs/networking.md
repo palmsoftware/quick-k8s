@@ -124,3 +124,5 @@ steps:
 ```
 
 See [Optional Features - MetalLB](optional-features.md#metallb) for details.
+
+MetalLB uses the configured `ipFamily` to build its address pool. `ipv4` keeps the existing IPv4 range; `dual` configures IPv4 and IPv6 addresses in one pool; `ipv6` configures IPv6 only. When the detected IPv6 subnet is larger than `/120`, quick-k8s uses its last `/120` slice instead of allocating the entire subnet. If the container network has no IPv6 subnet, it uses the last `/120` slice of the Docker IPv6 network configured by quick-k8s: `2001:db8:1:0:ffff:ffff:ffff:ff00/120`.

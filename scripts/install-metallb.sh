@@ -4,6 +4,8 @@ set -euo pipefail
 METALLB_VERSION="${1:-v0.16.0}"
 CLUSTER_PROVIDER="${2:-kind}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+IP_FAMILY="${IP_FAMILY:-ipv4}"
+SCRIPT_DIR="$(dirname "$0")"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
@@ -18,6 +20,11 @@ echo "Installing MetalLB version $METALLB_VERSION"
 # Verify required tools are available
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "::error::kubectl is not installed." >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "::error::python3 is required to calculate MetalLB address pools." >&2
   exit 1
 fi
 
@@ -75,33 +82,19 @@ else
   NETWORK_NAME="bridge"
 fi
 
-# Use the first IPv4 subnet (skip any IPv6 entries in dual-stack networks)
-SUBNET=$($CONTAINER_RUNTIME network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null \
-  | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1) || {
-  echo "::warning::Could not detect container network subnet, using default 172.18.255.200-172.18.255.250" >&2
-  SUBNET=""
+SUBNETS=$($CONTAINER_RUNTIME network inspect "$NETWORK_NAME" -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null) || {
+  echo "::warning::Could not detect container network subnets; using address pool defaults" >&2
+  SUBNETS=""
 }
 
-if [ -n "$SUBNET" ]; then
-  # Extract base network and construct a range in the .255.200-.255.250 space
-  # For example, 172.18.0.0/16 -> 172.18.255.200-172.18.255.250
-  #              192.168.49.0/24 -> 192.168.49.200-192.168.49.250
-  IFS='/' read -r NETWORK_ADDR PREFIX_LEN <<< "$SUBNET"
-  IFS='.' read -r O1 O2 O3 _O4 <<< "$NETWORK_ADDR"
+POOL_ADDRESSES=$(python3 "$SCRIPT_DIR/metallb-address-pool.py" "$IP_FAMILY" "$SUBNETS") || {
+  echo "::error::Could not calculate MetalLB address pools for IP family '$IP_FAMILY'" >&2
+  exit 1
+}
+POOL_ADDRESS_YAML=$(printf '%s\n' "$POOL_ADDRESSES" | sed 's/^/    - /')
 
-  if [ "$PREFIX_LEN" -le 16 ]; then
-    POOL_START="${O1}.${O2}.255.200"
-    POOL_END="${O1}.${O2}.255.250"
-  else
-    POOL_START="${O1}.${O2}.${O3}.200"
-    POOL_END="${O1}.${O2}.${O3}.250"
-  fi
-else
-  POOL_START="172.18.255.200"
-  POOL_END="172.18.255.250"
-fi
-
-echo "Configuring MetalLB address pool: ${POOL_START}-${POOL_END}"
+echo "Configuring MetalLB address pool for IP family '$IP_FAMILY':"
+printf '%s\n' "$POOL_ADDRESSES"
 
 # Webhook may not be ready immediately after pods report Ready
 apply_metallb_pool() {
@@ -114,7 +107,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-    - ${POOL_START}-${POOL_END}
+${POOL_ADDRESS_YAML}
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -133,4 +126,5 @@ retry_with_backoff 5 2 apply_metallb_pool || {
 }
 
 echo "MetalLB $METALLB_VERSION installed successfully!"
-echo "LoadBalancer IP range: ${POOL_START}-${POOL_END}"
+echo "LoadBalancer address pool:"
+printf '%s\n' "$POOL_ADDRESSES"

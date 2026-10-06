@@ -1179,6 +1179,7 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+        IP_FAMILY: ${{ inputs.clusterProvider == 'kind' && inputs.ipFamily || 'ipv4' }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
