@@ -49,6 +49,7 @@ All inputs have sensible defaults. See the [Configuration Reference](docs/config
 | **ingress-nginx** controller | `installIngressNginx: true` | [Guide](docs/optional-features.md#ingress-nginx) |
 | **metrics-server** (HPA) | `installMetricsServer: true` | [Guide](docs/optional-features.md#metrics-server) |
 | **operator-sdk** CLI | `installOperatorSdk: true` | [Guide](docs/optional-features.md#operator-sdk) |
+| **TLS Compliance + Image Cert Info Operators** | `installTelcoOperators: true` (default: `false`) | [Guide](docs/optional-features.md#telco-operators) |
 | **MetalLB** load balancer | `installMetalLB: true` | [Guide](docs/optional-features.md#metallb) |
 | **Monitoring** (Prometheus/Thanos/Grafana) | `enableClusterMonitoring: true` | [Guide](docs/optional-features.md#cluster-monitoring-kube-prometheus--thanos) |
 | **CNI selection** (Calico/Cilium/none) | `cniPlugin: cilium` | [Guide](docs/optional-features.md#choosing-a-cni-plugin) |

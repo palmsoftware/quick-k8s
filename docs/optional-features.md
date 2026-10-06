@@ -7,6 +7,7 @@
 - [ingress-nginx](#ingress-nginx)
 - [metrics-server](#metrics-server)
 - [operator-sdk](#operator-sdk)
+- [Telco Operators](#telco-operators)
 - [MetalLB](#metallb)
 - [Cluster Monitoring (kube-prometheus + Thanos)](#cluster-monitoring-kube-prometheus--thanos)
 - [Choosing a CNI Plugin](#choosing-a-cni-plugin)
@@ -218,6 +219,20 @@ steps:
 - operator-sdk is a CLI tool only — it does not deploy any pods to the cluster
 - Requires approximately 100MB disk space for the binary
 - For full operator development workflows, consider also enabling OLM (`installOLM: true`)
+
+## Telco Operators
+
+Enable installation of the latest TLS Compliance Operator and Image Cert Info Operator releases:
+
+```yaml
+steps:
+  - name: Set up Quick-K8s with telco operators
+    uses: palmsoftware/quick-k8s@v0
+    with:
+      installTelcoOperators: true
+```
+
+The input is disabled by default. When enabled, Quick-K8s applies each operator's `install.yaml` from its latest GitHub release. No release version inputs are needed.
 
 ## MetalLB
 
