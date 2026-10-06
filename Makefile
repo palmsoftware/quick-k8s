@@ -1,12 +1,14 @@
 # Makefile for quick-k8s GitHub Action
 
-.PHONY: lint help clean tool-precheck
+.PHONY: lint test help clean tool-precheck bats-precheck
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  lint          - Run shellcheck on all shell scripts"
-	@echo "  tool-precheck - Check for required tools (shellcheck)"
+	@echo "  test          - Run Docker-free BATS tests for shell helpers"
+	@echo "  tool-precheck - Check for shellcheck"
+	@echo "  bats-precheck - Check for BATS"
 	@echo "  clean         - Remove temporary files"
 	@echo "  help          - Show this help message"
 
@@ -26,6 +28,25 @@ tool-precheck:
 		exit 1; \
 	fi
 	@echo "✅ shellcheck found"
+
+# Check for required test runner
+bats-precheck:
+	@echo "🔍 Checking for BATS installation..."
+	@if ! command -v bats >/dev/null 2>&1; then \
+		echo "❌ BATS is not installed!"; \
+		echo ""; \
+		echo "📦 To install BATS:"; \
+		echo "  • macOS:  brew install bats"; \
+		echo "  • Ubuntu: sudo apt-get install bats"; \
+		echo "  • Or visit: https://bats-core.readthedocs.io/"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "✅ BATS found"
+
+# Run fast tests for sourceable shell helpers
+test: bats-precheck
+	@bats tests/*.bats
 
 # Lint all shell scripts using shellcheck
 lint: tool-precheck

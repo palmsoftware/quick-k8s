@@ -14,12 +14,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Lint all shell scripts with shellcheck
 make lint
 
+# Run Docker-free tests for shell helpers (requires BATS)
+make test
+
 # Check shellcheck installation
 make tool-precheck
 
 # Clean temporary files
 make clean
 ```
+
+Install the local test tools with `brew install shellcheck bats` on macOS or
+`sudo apt-get install shellcheck bats` on Ubuntu.
 
 ## Architecture
 
