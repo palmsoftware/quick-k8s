@@ -37,6 +37,8 @@ steps:
       metricsServerVersion: v0.9.0
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
+      installTLSComplianceOperator: false # Install latest TLS Compliance Operator
+      installImageCertInfoOperator: false # Install latest Image Cert Info Operator
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
@@ -104,6 +106,8 @@ steps:
       metricsServerVersion: v0.9.0
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
+      installTLSComplianceOperator: false # Install latest TLS Compliance Operator
+      installImageCertInfoOperator: false # Install latest Image Cert Info Operator
       removeDefaultStorageClass: false
       removeControlPlaneTaint: false
 
