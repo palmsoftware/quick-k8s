@@ -28,8 +28,14 @@ jobs:
             | tar -xJf - --strip-components=1 -C /tmp "shellcheck-${SHELLCHECK_VERSION}/shellcheck"
           sudo mv /tmp/shellcheck /usr/local/bin/shellcheck
 
+      - name: Install BATS
+        run: sudo apt-get update && sudo apt-get install --yes bats
+
       - name: Run shellcheck linting
         run: make lint
+
+      - name: Run shell helper tests
+        run: make test
 
   run-quick-k8s:
     needs: lint
