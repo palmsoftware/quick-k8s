@@ -159,8 +159,9 @@ dump_pod_status() {
   echo "$pod_table"
 
   local problem_pods
+  # Match wait-for-pods.sh: successful Job pods are healthy in Succeeded state.
   problem_pods=$(kubectl get pods -n "$namespace" --no-headers 2>/dev/null \
-    | awk '$3 != "Running" && $3 != "Completed" {print $1}') || true
+    | awk '$3 != "Running" && $3 != "Completed" && $3 != "Succeeded" {print $1}') || true
   local pod_events=""
   for pod in $problem_pods; do
     echo "--- Events for pod ${pod} ---"
