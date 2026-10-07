@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Generate a KinD configuration file from parameters
-# Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes> <output-file> [cluster-name]
+# Usage: generate-kind-config.sh <api-server-port> <api-server-address> <disable-default-cni> <ip-family> <default-node-image> <control-plane-nodes> <num-worker-nodes> <output-file> [cluster-name] [install-local-registry]
 
 # Set the default values
 API_SERVER_PORT=$1
@@ -14,6 +14,7 @@ CONTROL_PLANE_NODES=$6
 NUM_WORKER_NODES=$7
 FILE_NAME=$8
 CLUSTER_NAME=${9:-}
+INSTALL_LOCAL_REGISTRY=${10:-false}
 
 # Check if the file exists and delete it
 if [ -f "${FILE_NAME}" ]; then
@@ -40,6 +41,15 @@ networking:
   ipFamily: ${IP_FAMILY}
   disableDefaultCNI: ${DISABLE_DEFAULT_CNI}
 EOF
+
+if [ "${INSTALL_LOCAL_REGISTRY}" = "true" ]; then
+cat >> "${FILE_NAME}" <<EOF
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+EOF
+fi
 
 # Generate the nodes section of the file
 cat >> "${FILE_NAME}" <<EOF

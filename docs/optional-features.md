@@ -440,6 +440,15 @@ steps:
       kubectl create deployment my-app --image=localhost:5001/my-app:latest
 ```
 
+For KinD, Quick-K8s configures containerd to route `localhost:<port>` pulls to the registry container. This is added automatically when Quick-K8s generates the KinD config. If you provide `kindConfigPath`, add this top-level patch to your config so containerd reads the registry host configuration written into each node:
+
+```yaml
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"
+```
+
 **Benefits**:
 - Faster image pulls within the cluster
 - No need for external registry authentication
@@ -449,5 +458,5 @@ steps:
 **Registry Details**:
 - Accessible at `localhost:<port>` from both the host and cluster
 - Uses the standard Docker registry:2 image
-- Automatically connected to the KinD network
+- KinD nodes are configured to use the registry over the KinD network
 - ConfigMap created in `kube-public` namespace for discoverability
