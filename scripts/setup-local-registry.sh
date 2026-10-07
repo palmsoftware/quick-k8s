@@ -48,8 +48,26 @@ done
 
 # Provider-specific network configuration
 if [ "${CLUSTER_PROVIDER}" = "kind" ]; then
-  echo "Connecting registry to KinD network..."
-  docker network connect "${CLUSTER_NAME}" "${REGISTRY_NAME}" 2>/dev/null || true
+  echo "Connecting registry to the KinD network..."
+  docker network connect kind "${REGISTRY_NAME}" 2>/dev/null || true
+
+  echo "Configuring KinD nodes to use the local registry..."
+  registry_dir="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
+  if ! kind_nodes=$(kind get nodes --name "${CLUSTER_NAME}"); then
+    echo "::error::Failed to list KinD nodes for cluster '${CLUSTER_NAME}'"
+    exit 1
+  fi
+  if [ -z "${kind_nodes}" ]; then
+    echo "::error::No KinD nodes found for cluster '${CLUSTER_NAME}'"
+    exit 1
+  fi
+  while IFS= read -r node; do
+    [ -z "${node}" ] && continue
+    docker exec "${node}" mkdir -p "${registry_dir}"
+    cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${registry_dir}/hosts.toml"
+[host."http://${REGISTRY_NAME}:5000"]
+EOF
+  done <<< "${kind_nodes}"
 fi
 
 # Create ConfigMap for registry discoverability (all providers)

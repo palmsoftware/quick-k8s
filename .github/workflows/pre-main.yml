@@ -99,6 +99,9 @@ jobs:
           docker push localhost:5001/test-image:latest
           echo "Verifying image in registry..."
           curl -s http://localhost:5001/v2/_catalog | grep test-image
+          echo "Testing an in-cluster image pull..."
+          kubectl create deployment local-registry-pull --image=localhost:5001/test-image:latest -- /bin/sh -c 'sleep 300'
+          kubectl rollout status deployment/local-registry-pull --timeout=120s
           echo "Local registry test passed!"
 
   # Test local registry with Minikube

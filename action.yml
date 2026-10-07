@@ -900,7 +900,8 @@ runs:
         NUM_CONTROL_PLANE_NODES: ${{ inputs.numControlPlaneNodes }}
         NUM_WORKER_NODES: ${{ inputs.numWorkerNodes }}
         CLUSTER_NAME: ${{ inputs.clusterName }}
-      run: ${{ github.action_path }}/scripts/generate-kind-config.sh "$API_SERVER_PORT" "$API_SERVER_ADDRESS" "$DISABLE_DEFAULT_CNI" "$IP_FAMILY" "$DEFAULT_NODE_IMAGE" "$NUM_CONTROL_PLANE_NODES" "$NUM_WORKER_NODES" ${{ github.action_path }}/kind-config.yaml "$CLUSTER_NAME"
+        INSTALL_LOCAL_REGISTRY: ${{ inputs.installLocalRegistry }}
+      run: ${{ github.action_path }}/scripts/generate-kind-config.sh "$API_SERVER_PORT" "$API_SERVER_ADDRESS" "$DISABLE_DEFAULT_CNI" "$IP_FAMILY" "$DEFAULT_NODE_IMAGE" "$NUM_CONTROL_PLANE_NODES" "$NUM_WORKER_NODES" ${{ github.action_path }}/kind-config.yaml "$CLUSTER_NAME" "$INSTALL_LOCAL_REGISTRY"
 
     - name: Use custom KinD config file
       if: ${{ inputs.clusterProvider == 'kind' && inputs.kindConfigPath != '' && inputs.dryRun != 'true' }}

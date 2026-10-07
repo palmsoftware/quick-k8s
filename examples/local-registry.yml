@@ -14,6 +14,8 @@ jobs:
       - name: Create cluster with local registry
         uses: palmsoftware/quick-k8s@v0
         with:
+          # Generated KinD configs include the containerd registry setup.
+          # Custom kindConfigPath files need the containerdConfigPatches stanza from docs/optional-features.md.
           installLocalRegistry: true
           localRegistryPort: 5001
 
