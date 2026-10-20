@@ -372,12 +372,17 @@ jobs:
           waitForPodsReady: true
 
       - name: Verify local registry
-        run: |
-          docker ps | grep quick-k8s-registry
-          curl -s http://localhost:5001/v2/ || exit 1
-          docker pull busybox:latest
-          docker tag busybox:latest localhost:5001/test-image:latest
-          docker push localhost:5001/test-image:latest
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 10
+          retry_wait_seconds: 15
+          command: |
+            docker ps | grep quick-k8s-registry
+            curl -s http://localhost:5001/v2/ || exit 1
+            docker pull busybox:latest
+            docker tag busybox:latest localhost:5001/test-image:latest
+            docker push localhost:5001/test-image:latest
 
   # Different Kubernetes versions test (KinD only as it supports explicit versions easily)
   kubernetes-versions-test:
