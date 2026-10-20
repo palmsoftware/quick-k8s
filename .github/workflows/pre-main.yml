@@ -22,14 +22,25 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install shellcheck
-        run: |
-          SHELLCHECK_VERSION=v0.11.0
-          curl -sSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
-            | tar -xJf - --strip-components=1 -C /tmp "shellcheck-${SHELLCHECK_VERSION}/shellcheck"
-          sudo mv /tmp/shellcheck /usr/local/bin/shellcheck
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          retry_wait_seconds: 10
+          command: |
+            SHELLCHECK_VERSION=v0.11.0
+            curl -sSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+              | tar -xJf - --strip-components=1 -C /tmp "shellcheck-${SHELLCHECK_VERSION}/shellcheck"
+            sudo mv /tmp/shellcheck /usr/local/bin/shellcheck
 
       - name: Install BATS
-        run: sudo apt-get update && sudo apt-get install --yes bats
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update && sudo apt-get install --yes bats
 
       - name: Run shellcheck linting
         run: make lint
@@ -88,21 +99,27 @@ jobs:
           installIstio: false
 
       - name: Verify local registry is running
-        run: |
-          echo "Checking registry container..."
-          docker ps | grep quick-k8s-registry
-          echo "Testing registry connectivity..."
-          curl -s http://localhost:5001/v2/ || exit 1
-          echo "Testing push to registry..."
-          docker pull busybox:latest
-          docker tag busybox:latest localhost:5001/test-image:latest
-          docker push localhost:5001/test-image:latest
-          echo "Verifying image in registry..."
-          curl -s http://localhost:5001/v2/_catalog | grep test-image
-          echo "Testing an in-cluster image pull..."
-          kubectl create deployment local-registry-pull --image=localhost:5001/test-image:latest -- /bin/sh -c 'sleep 300'
-          kubectl rollout status deployment/local-registry-pull --timeout=120s
-          echo "Local registry test passed!"
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 10
+          retry_wait_seconds: 15
+          command: |
+            echo "Checking registry container..."
+            docker ps | grep quick-k8s-registry
+            echo "Testing registry connectivity..."
+            curl -s http://localhost:5001/v2/ || exit 1
+            echo "Testing push to registry..."
+            docker pull busybox:latest
+            docker tag busybox:latest localhost:5001/test-image:latest
+            docker push localhost:5001/test-image:latest
+            echo "Verifying image in registry..."
+            curl -s http://localhost:5001/v2/_catalog | grep test-image
+            echo "Testing an in-cluster image pull..."
+            kubectl delete deployment local-registry-pull --ignore-not-found
+            kubectl create deployment local-registry-pull --image=localhost:5001/test-image:latest -- /bin/sh -c 'sleep 300'
+            kubectl rollout status deployment/local-registry-pull --timeout=120s
+            echo "Local registry test passed!"
 
   # Test local registry with Minikube
   test-local-registry-minikube:
@@ -126,18 +143,23 @@ jobs:
           installIstio: false
 
       - name: Verify local registry is running
-        run: |
-          echo "Checking registry container..."
-          docker ps | grep quick-k8s-registry
-          echo "Testing registry connectivity..."
-          curl -s http://localhost:5001/v2/ || exit 1
-          echo "Testing push to registry..."
-          docker pull busybox:latest
-          docker tag busybox:latest localhost:5001/test-image:latest
-          docker push localhost:5001/test-image:latest
-          echo "Verifying image in registry..."
-          curl -s http://localhost:5001/v2/_catalog | grep test-image
-          echo "Local registry Minikube test passed!"
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 10
+          retry_wait_seconds: 15
+          command: |
+            echo "Checking registry container..."
+            docker ps | grep quick-k8s-registry
+            echo "Testing registry connectivity..."
+            curl -s http://localhost:5001/v2/ || exit 1
+            echo "Testing push to registry..."
+            docker pull busybox:latest
+            docker tag busybox:latest localhost:5001/test-image:latest
+            docker push localhost:5001/test-image:latest
+            echo "Verifying image in registry..."
+            curl -s http://localhost:5001/v2/_catalog | grep test-image
+            echo "Local registry Minikube test passed!"
 
   # Test skipping CNI installation (for projects that bring their own CNI)
   test-skip-cni:
