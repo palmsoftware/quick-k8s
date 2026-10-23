@@ -201,6 +201,76 @@ jobs:
           kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=120s
           echo "Manual CNI installation successful!"
 
+  # Test Calico dual-stack pod addressing. The Calico manifest ships a CNI
+  # config template without assign_ipv4/assign_ipv6, so calico-ipam used to
+  # hand out IPv4 addresses only even when the IPv6 pool and FELIX_IPV6SUPPORT
+  # were in place. Assert the addresses and a working IPv6 path, not the
+  # rendered conflist, so the test survives changes to how the flags are set.
+  test-calico-dual-stack:
+    needs: lint
+    if: ${{ needs.lint.result == 'success' }}
+    runs-on: ubuntu-24.04
+    env:
+      SHELL: /bin/bash
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v7
+
+      - name: Run the action with dual-stack Calico
+        uses: ./
+        with:
+          clusterProvider: kind
+          ipFamily: dual
+          cniPlugin: calico
+          waitForPodsReady: true
+          installOLM: false
+          installIstio: false
+
+      - name: Verify pods receive an IPv4 and an IPv6 address
+        run: |
+          kubectl create deployment dualstack-address --image=nginx:latest
+          kubectl wait --for=condition=available deployment/dualstack-address \
+            --timeout=180s
+          POD=$(kubectl get pod -l app=dualstack-address \
+            -o jsonpath='{.items[0].metadata.name}')
+          IPS=$(kubectl get pod "$POD" -o jsonpath='{.status.podIPs[*].ip}')
+          echo "Pod ${POD} addresses: ${IPS}"
+          IPS_SPLIT=$(echo "$IPS" | tr ' ' '\n')
+          V4=$(grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' <<<"$IPS_SPLIT" || true)
+          V6=$(grep ':' <<<"$IPS_SPLIT" || true)
+          if [ -z "$V4" ] || [ -z "$V6" ]; then
+            echo "::error::Pod ${POD} is missing an address family"
+            echo "Expected both IPv4 and IPv6; got: ${IPS}"
+            kubectl get pod "$POD" -o yaml
+            exit 1
+          fi
+          echo "Dual-stack address assignment verified!"
+
+      - name: Verify pods reach each other over IPv6
+        run: |
+          TARGET_IPS=$(kubectl get pod -l app=dualstack-address \
+            -o jsonpath='{.items[0].status.podIPs[*].ip}')
+          TARGET_V6=$(echo "$TARGET_IPS" | tr ' ' '\n' | grep ':' | head -n 1)
+          echo "Target IPv6 address: ${TARGET_V6}"
+          kubectl run dualstack-source --image=busybox:1.36 --restart=Never \
+            --command -- sleep 600
+          kubectl wait --for=condition=Ready pod/dualstack-source --timeout=120s
+          SOURCE_IPS=$(kubectl get pod dualstack-source \
+            -o jsonpath='{.status.podIPs[*].ip}')
+          SOURCE_V6=$(echo "$SOURCE_IPS" | tr ' ' '\n' | grep ':' | head -n 1)
+          echo "Source IPv6 address: ${SOURCE_V6}"
+          test -n "$TARGET_V6" && test -n "$SOURCE_V6" \
+            || { echo "::error::One of the pods has no IPv6 address"; exit 1; }
+          kubectl exec dualstack-source -- ping -6 -c 3 -W 2 "$TARGET_V6"
+          echo "IPv6 pod-to-pod connectivity verified!"
+
+      - name: Show network state on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide
+          kubectl get nodes -o wide
+          kubectl get ippools.crd.projectcalico.org -o yaml || true
+
   # Test custom KIND config
   test-custom-kind-config:
     needs: lint

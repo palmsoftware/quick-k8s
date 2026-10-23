@@ -72,6 +72,19 @@ if [ "$IP_FAMILY" != "ipv4" ]; then
               value: \"hash\"
   }" "$MANIFEST_FILE"
 
+  # The manifest's CNI config template carries no address-family flags, so
+  # calico-ipam assigns IPv4 addresses only even when the IPv6 pool exists and
+  # Felix has IPv6 enabled. install-cni renders this template into the node's
+  # CNI conflist, so the flags have to be set here.
+  if [ "$IP_FAMILY" = "ipv6" ]; then
+    ASSIGN_IPV4="false"
+  else
+    ASSIGN_IPV4="true"
+  fi
+  sed -i \
+    "s|\"type\": \"calico-ipam\"|\"type\": \"calico-ipam\",\n              \"assign_ipv4\": \"${ASSIGN_IPV4}\",\n              \"assign_ipv6\": \"true\"|" \
+    "$MANIFEST_FILE"
+
   # Note: CALICO_IPV4POOL_CIDR is intentionally left commented out (unset) in the
   # manifest. calico-node will auto-create a default IPv4 pool; for IPv6-only mode,
   # we delete it after calico-node is ready (see below).
