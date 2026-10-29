@@ -47,16 +47,21 @@ Each script handles a single responsibility:
 - `install-kind.sh`, `install-minikube.sh` - Binary installation with fallback URLs
 - `generate-kind-config.sh` - Creates KinD YAML config from action inputs
 - `start-minikube.sh` - Starts Minikube with appropriate flags
-- `install-calico.sh`, `install-cilium.sh`, `install-istio.sh`, `install-olm.sh`, `install-metallb.sh` - Component installers
+- `install-{calico,cilium,istio,olm,metallb,cert-manager,ingress-nginx,metrics-server,prometheus,thanos,operator-sdk,telco-operators}.sh` - Component installers
+- `install-oc-tools.sh` - Installs `kubectl`/`oc` at the requested OpenShift release level
+- `wait-for-pods.sh`, `diagnose-failure.sh`, `log-timing.sh` - Readiness waiting and failure diagnostics
 - `setup-local-registry.sh` - Docker registry setup with cluster connectivity
-- `pre-cluster-optimization.sh` - Disk space management
-- `check-github-status.sh` - GitHub API availability check
+- `pre-cluster-optimization.sh`, `pre-flight-check.sh` - Disk space management
+- `check-github-status.sh`, `validate-github-version.sh` - External service checks
+- `update-docs-version.sh` - Keeps pinned-version snippets in docs/examples in sync
+- `lib/` - Sourceable helpers (`retry.sh`, `cert-manager.sh`, shell utilities), covered by `tests/*.bats`
 
 ### Version Management
 
 Nightly workflows auto-update dependency versions in `action.yml`:
-- `version-updates.yml` - Calico, Istio, Minikube, cert-manager, ingress-nginx, metrics-server
+- `version-updates.yml` - Calico, Cilium, KinD, Minikube, Istio, cert-manager, ingress-nginx, metrics-server, operator-sdk, kube-prometheus, Thanos, MetalLB
 - `olm-update.yml` - Operator Lifecycle Manager
+- `ocp-version-update.yml` - OpenShift release level for the oc/oc-tools bootstrap
 - `kind-node-image-update.yml` - KinD default node image
 
 Updates fetch latest versions from GitHub API, validate semver format, and create PRs via `peter-evans/create-pull-request`.
@@ -94,8 +99,8 @@ K8S_VERSION=$(echo "$NODE_IMAGE" | sed -E 's/.*:([^@]+)@.*/\1/')
 ### `pre-main.yml` - Primary CI
 - Triggers: Push to main, PRs, manual dispatch
 - **Lint job blocks all other jobs** - Must pass before tests run
-- Matrix: 6 OS (ubuntu-{22,24,26}.04 × {x86,arm}) × 2 providers (KinD, Minikube)
-- Tests: Basic cluster, OLM, Istio, local registry, custom config, CNI skip
+- `run-quick-k8s`: the full matrix — 6 OS (ubuntu-{22,24,26}.04 × {x86,arm}) × 2 providers (KinD, Minikube) — with OLM, Istio (minimal) and cert-manager enabled
+- Feature jobs (`ubuntu-24.04` only): local registry (both providers), CNI skip, Calico dual-stack, custom KinD config, input validation, cert-manager, ingress-nginx, cluster name, worker node labels, metrics-server, operator-sdk, cluster monitoring, MetalLB, Cilium
 
 ### `nightly.yml` - Extended Testing
 - Triggers: Daily at midnight UTC

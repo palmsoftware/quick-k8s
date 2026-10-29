@@ -4,7 +4,9 @@ This document lists tested and known-compatible version combinations for quick-k
 
 ## Component Compatibility
 
-| Kubernetes | Calico | Cilium | Istio | cert-manager | OLM | MetalLB | Notes |
+The Cilium column is the CNI version installed by the pinned `ciliumVersion` cilium-cli (`v0.20.1`); the action validates the CLI version against `cilium/cilium-cli`, not the CNI tag.
+
+| Kubernetes | Calico | Cilium CNI | Istio | cert-manager | OLM | MetalLB | Notes |
 |------------|--------|--------|-------|--------------|-----|---------|-------|
 | 1.37.x | v3.32.0+ | v1.17.0+ | 1.31.0+ | v1.21.0+ | v0.46.0+ | v0.15.0+ | Current default (v1.37.0) |
 | 1.36.x | v3.32.0+ | v1.17.0+ | 1.30.0+ | v1.20.0+ | v0.46.0+ | v0.15.0+ | Fully tested |
@@ -41,22 +43,19 @@ OLM v0.46.0 or later is recommended for Kubernetes 1.36+. Older OLM versions may
 
 ## CI Test Matrix
 
-Cilium is tested in `pre-main.yml` (PR and push CI). The following combinations are tested nightly:
+`pre-main.yml` (PRs and pushes to `main`):
+- `run-quick-k8s` — the full matrix, ubuntu-{22.04,24.04,26.04} × {x86, arm} × {KinD, Minikube}, with OLM, Istio (`minimal`) and cert-manager enabled
+- one job per feature on `ubuntu-24.04`: local registry (both providers), CNI skip, Calico dual-stack, custom KinD config, input validation, cert-manager, ingress-nginx, cluster name, worker node labels, metrics-server, operator-sdk, cluster monitoring, MetalLB, Cilium
 
-| Runner | Provider | Configuration |
-|--------|----------|--------------|
-| ubuntu-22.04 | KinD | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-22.04-arm | KinD | Basic + Calico |
-| ubuntu-24.04 | KinD | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-24.04-arm | KinD | Basic + Calico |
-| ubuntu-26.04 | KinD | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-26.04-arm | KinD | Basic + Calico |
-| ubuntu-22.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-22.04-arm | Minikube | Basic + Calico |
-| ubuntu-24.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-24.04-arm | Minikube | Basic + Calico |
-| ubuntu-26.04 | Minikube | Basic + Calico + OLM + Istio + cert-manager |
-| ubuntu-26.04-arm | Minikube | Basic + Calico |
+`nightly.yml`:
+
+| Runners | Jobs |
+|---------|------|
+| ubuntu-{22.04,24.04,26.04} × {x86, arm} | `basic-cluster-tests`, `cert-manager-tests`, `ingress-nginx-tests`, `metrics-server-tests`, `operator-sdk-tests`, `local-registry-tests` — each × KinD, Minikube |
+| ubuntu-{22.04,24.04,26.04} (x86) | `multi-node-tests`, `olm-tests`, `istio-tests`, `combined-features-tests`, `monitoring-tests`, `cilium-tests`, `kubernetes-versions-test`, `minikube-driver-tests`, `ip-family-tests` |
+| ubuntu-24.04 | `dry-run-test`, `cleanup-script-test`, `persistent-volumes-test`, `node-taints-test`, `skip-disk-cleanup-test`, `extra-port-mappings-test`, `ipv6-test` |
+
+Cilium is covered in `pre-main.yml` (`test-cilium`) and nightly (`cilium-tests`).
 
 ## Upstream Compatibility References
 
