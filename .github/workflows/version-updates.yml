@@ -179,7 +179,7 @@ jobs:
 
           get_version
 
-      - name: Update version in action.yml
+      - name: Update version in action.yml and docs
         if: steps.should_run.outputs.run == 'true'
         id: update_version
         run: |
@@ -208,6 +208,14 @@ jobs:
           sed -i.bak -E "/^  ${{ matrix.field }}:$/,/^  [a-zA-Z]+:/{s/(default: ')[^']+(')/\1$version\2/}" action.yml
           rm action.yml.bak
 
+          echo "Updating ${{ matrix.component }} version in the docs (${current_version} -> ${version})..."
+          ./scripts/update-docs-version.sh "${{ matrix.field }}" "$current_version" "$version" docs README.md
+
+          if ! ./scripts/update-docs-version.sh --check "${{ matrix.field }}" "$current_version" docs README.md; then
+            echo "::error::Stale ${{ matrix.component }} version $current_version remains in the docs. Update the snippet(s) above so the bump PR does not leave them behind."
+            exit 1
+          fi
+
           echo "Successfully updated ${{ matrix.component }} version from $current_version to $version"
           echo "updated=true" >> $GITHUB_OUTPUT
 
@@ -218,6 +226,9 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           commit-message: "Update ${{ matrix.component }} version to ${{ steps.get_version.outputs.version }}"
           title: "Update ${{ matrix.component }} version to ${{ steps.get_version.outputs.version }}"
-          body: "Automated PR to update default ${{ matrix.field }} in action.yml to the latest release."
+          body: |
+            Automated PR to update default `${{ matrix.field }}` in `action.yml` to the latest release.
+
+            The pinned version snippets in `docs/` and `README.md` are updated by `scripts/update-docs-version.sh`; the job fails instead of opening this PR if a stale occurrence of the previous version is left behind.
           branch: "update-${{ matrix.field }}-${{ steps.get_version.outputs.version }}"
           delete-branch: true

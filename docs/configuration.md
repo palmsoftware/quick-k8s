@@ -19,15 +19,15 @@ steps:
       ipFamily: dual
       defaultNodeImage: 'kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5'
       kindVersion: v0.33.0
-      calicoVersion: v3.32.2
-      ciliumVersion: v0.20.0        # Cilium CLI version (when cniPlugin: cilium)
+      calicoVersion: v3.33.0
+      ciliumVersion: v0.20.1        # Cilium CLI version (when cniPlugin: cilium)
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.31.0
+      istioVersion: 1.31.3
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.3
@@ -44,8 +44,8 @@ steps:
 
       # Monitoring
       enableClusterMonitoring: false
-      kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.4
+      kubePrometheusVersion: v0.19.0
+      thanosVersion: v0.42.5
 
       # MetalLB
       installMetalLB: false
@@ -86,8 +86,8 @@ steps:
       minikubeDriver: docker
       apiServerPort: 6443
       disableDefaultCni: true
-      calicoVersion: v3.32.2
-      ciliumVersion: v0.20.0        # Cilium CLI version (when cniPlugin: cilium)
+      calicoVersion: v3.33.0
+      ciliumVersion: v0.20.1        # Cilium CLI version (when cniPlugin: cilium)
       clusterCPUs: 2                # CPUs to allocate (Minikube only)
       clusterMemory: ''             # Memory in MB (empty = provider default, Minikube only)
 
@@ -96,7 +96,7 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.31.0
+      istioVersion: 1.31.3
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.3
@@ -113,8 +113,8 @@ steps:
 
       # Monitoring
       enableClusterMonitoring: false
-      kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.4
+      kubePrometheusVersion: v0.19.0
+      thanosVersion: v0.42.5
 
       # MetalLB
       installMetalLB: false
