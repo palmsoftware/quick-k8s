@@ -70,6 +70,8 @@ steps:
       workerNodeTaints: ''          # Comma-separated taints for worker nodes
       extraPortMappings: ''         # Comma-separated host:container port mappings (KinD only)
       componentTimeout: 300         # Timeout in seconds for component installs
+      ocpReleaseLevel: '4.22'       # OpenShift release level for the oc/oc-tools bootstrap
+      skipDiskCleanup: false        # Skip disk cleanup (useful for self-hosted runners)
       enableCleanup: false          # Generate cleanup script at /tmp/quick-k8s-cleanup.sh
 ```
 
@@ -134,6 +136,7 @@ steps:
       enableCleanup: false          # Generate cleanup script at /tmp/quick-k8s-cleanup.sh
       dryRun: false                 # Preview configuration without executing
       componentTimeout: 300         # Timeout in seconds for component installs
+      ocpReleaseLevel: '4.22'       # OpenShift release level for the oc/oc-tools bootstrap
       controlPlaneTaints: ''        # Comma-separated taints for control-plane nodes
       workerNodeTaints: ''          # Comma-separated taints for worker nodes
 ```

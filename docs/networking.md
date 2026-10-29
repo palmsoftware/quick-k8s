@@ -55,13 +55,14 @@ steps:
   - name: Set up with custom port mappings
     uses: palmsoftware/quick-k8s@v0
     with:
-      extraPortMappings: '30000:30000,30001:30001,8080:8080'
+      extraPortMappings: '30000:30000,80:30080,8080:8080'
 ```
 
-This maps:
-- Container port 30000 → Host port 30000
-- Container port 30001 → Host port 30001
-- Container port 8080 → Host port 8080
+Entries are `host:container` — the first port is the port on the runner, the second is the port inside the KinD node, so `80:30080` forwards host port 80 to container port 30080. The example maps:
+
+- Host port 30000 → container port 30000
+- Host port 80 → container port 30080
+- Host port 8080 → container port 8080
 
 **Common Use Cases**:
 - Exposing NodePort services for external testing

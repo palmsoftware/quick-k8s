@@ -3,25 +3,26 @@
 #
 # .github/workflows/version-updates.yml bumps a component's `default:` in
 # action.yml only. The docs repeat those defaults in YAML snippets
-# (docs/configuration.md, docs/optional-features.md, README.md), so they used to
-# drift on every automated bump — e.g. action.yml said certManagerVersion
-# v1.21.3 while the docs still said v1.21.2.
+# (docs/configuration.md, docs/optional-features.md, README.md, examples/*.yml),
+# so they used to drift on every automated bump — e.g. action.yml said
+# certManagerVersion v1.21.3 while the docs still said v1.21.2.
 #
 # Usage:
 #   update-docs-version.sh <field> <old-version> <new-version> [path...]
 #   update-docs-version.sh --check <field> <old-version> [path...]
 #
-# With no paths, docs/ and README.md are searched. Directories are scanned for
-# *.md files. Only lines of the form `<field>: <old-version>` (optionally
-# followed by a `#` comment) are rewritten, so a coincidental match of the same
-# version string under a different key is left alone.
+# With no paths, docs/, README.md and examples/ are searched. Directories are
+# scanned for *.md, *.yml and *.yaml files. Only lines of the form
+# `<field>: <old-version>` (optionally followed by a `#` comment) are rewritten,
+# so a coincidental match of the same version string under a different key is
+# left alone.
 #
 # --check turns the "stale version left behind" case into a failure: it reports
 # every line that still pairs <field> with <old-version> in any form (wider than
 # the rewrite pattern, so oddly formatted snippets are caught) and exits 1.
 set -euo pipefail
 
-DEFAULT_PATHS=(docs README.md)
+DEFAULT_PATHS=(docs README.md examples)
 
 usage() {
   cat >&2 <<'EOF'
@@ -30,7 +31,7 @@ Usage:
   update-docs-version.sh --check <field> <old-version> [path...]
 
 Rewrites `<field>: <old-version>` to `<field>: <new-version>` in the given
-markdown files/directories (default: docs README.md).
+markdown/YAML files and directories (default: docs README.md examples).
 
   --check   Report lines that still pair <field> with <old-version> and exit 1.
 EOF
@@ -79,7 +80,7 @@ collect_files() {
   local path
   for path in "$@"; do
     if [ -d "$path" ]; then
-      find "$path" -type f -name '*.md' -print0
+      find "$path" -type f \( -name '*.md' -o -name '*.yml' -o -name '*.yaml' \) -print0
     elif [ -f "$path" ]; then
       printf '%s\0' "$path"
     else

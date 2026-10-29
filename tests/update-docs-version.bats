@@ -13,6 +13,12 @@ EOF
   cat > "$TEST_TMPDIR/README.md" <<'EOF'
 minikubeVersion: v1.39.0
 EOF
+  mkdir -p "$TEST_TMPDIR/examples"
+  cat > "$TEST_TMPDIR/examples/istio.yml" <<'EOF'
+        with:
+          installIstio: true
+          istioVersion: 1.31.0
+EOF
 }
 
 teardown() {
@@ -48,6 +54,20 @@ teardown() {
 
   [ "$status" -eq 0 ]
   grep -qx 'minikubeVersion: v1.40.0' "$TEST_TMPDIR/README.md"
+}
+
+@test "rewrites pinned versions in example workflows by default" {
+  cd "$TEST_TMPDIR" || return 1
+
+  run "$SCRIPT" istioVersion 1.31.0 1.31.3
+
+  [ "$status" -eq 0 ]
+  grep -qx '          istioVersion: 1.31.3' "$TEST_TMPDIR/examples/istio.yml"
+  grep -qx '      istioVersion: 1.31.3' "$TEST_TMPDIR/docs/configuration.md"
+
+  run "$SCRIPT" --check istioVersion 1.31.0
+
+  [ "$status" -eq 0 ]
 }
 
 @test "reports no changes when the old version is not present" {

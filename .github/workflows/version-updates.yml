@@ -209,9 +209,9 @@ jobs:
           rm action.yml.bak
 
           echo "Updating ${{ matrix.component }} version in the docs (${current_version} -> ${version})..."
-          ./scripts/update-docs-version.sh "${{ matrix.field }}" "$current_version" "$version" docs README.md
+          ./scripts/update-docs-version.sh "${{ matrix.field }}" "$current_version" "$version" docs README.md examples
 
-          if ! ./scripts/update-docs-version.sh --check "${{ matrix.field }}" "$current_version" docs README.md; then
+          if ! ./scripts/update-docs-version.sh --check "${{ matrix.field }}" "$current_version" docs README.md examples; then
             echo "::error::Stale ${{ matrix.component }} version $current_version remains in the docs. Update the snippet(s) above so the bump PR does not leave them behind."
             exit 1
           fi
@@ -229,6 +229,6 @@ jobs:
           body: |
             Automated PR to update default `${{ matrix.field }}` in `action.yml` to the latest release.
 
-            The pinned version snippets in `docs/` and `README.md` are updated by `scripts/update-docs-version.sh`; the job fails instead of opening this PR if a stale occurrence of the previous version is left behind.
+            The pinned version snippets in `docs/`, `README.md` and `examples/` are updated by `scripts/update-docs-version.sh`; the job fails instead of opening this PR if a stale occurrence of the previous version is left behind.
           branch: "update-${{ matrix.field }}-${{ steps.get_version.outputs.version }}"
           delete-branch: true
