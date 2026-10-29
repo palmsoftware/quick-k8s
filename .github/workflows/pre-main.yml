@@ -372,31 +372,55 @@ jobs:
           installIstio: false
 
       - name: Verify cert-manager is running
-        run: |
-          echo "Checking cert-manager namespace..."
-          kubectl get namespace cert-manager
-          echo "Checking cert-manager pods..."
-          kubectl get pods -n cert-manager
-          echo "Verifying all cert-manager pods are running..."
-          kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=60s
-          echo "Checking cert-manager CRDs..."
-          kubectl get crd | grep cert-manager
-          echo "cert-manager installation verified!"
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          retry_wait_seconds: 15
+          command: |
+            set -e
+            echo "Checking cert-manager namespace..."
+            kubectl get namespace cert-manager
+            echo "Checking cert-manager pods..."
+            kubectl get pods -n cert-manager
+            echo "Verifying all cert-manager pods are running..."
+            kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=120s
+            echo "Checking cert-manager CRDs..."
+            kubectl get crd | grep -q cert-manager
+            echo "cert-manager installation verified!"
 
+      # Asserts the ClusterIssuer created by the action (rather than re-creating
+      # it), then proves admission actually works by issuing a Certificate.
       - name: Test cert-manager functionality with self-signed issuer
-        run: |
-          echo "Creating a self-signed ClusterIssuer..."
-          cat <<EOF | kubectl apply --timeout=5m -f -
-          apiVersion: cert-manager.io/v1
-          kind: ClusterIssuer
-          metadata:
-            name: selfsigned-issuer
-          spec:
-            selfSigned: {}
-          EOF
-          echo "Waiting for ClusterIssuer to be ready..."
-          kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=60s
-          echo "cert-manager functionality test passed!"
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          retry_wait_seconds: 15
+          command: |
+            set -e
+            echo "Verifying the pre-configured ClusterIssuer is ready..."
+            kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=120s
+            kubectl get clusterissuer selfsigned-issuer -o wide
+            echo "Issuing a test certificate through the webhook..."
+            cat <<EOF | kubectl apply --timeout=2m -f -
+            apiVersion: cert-manager.io/v1
+            kind: Certificate
+            metadata:
+              name: test-selfsigned
+              namespace: default
+            spec:
+              secretName: test-selfsigned-tls
+              dnsNames:
+                - test.example.com
+              issuerRef:
+                name: selfsigned-issuer
+                kind: ClusterIssuer
+            EOF
+            echo "Waiting for the certificate to be issued..."
+            kubectl wait --for=condition=ready certificate/test-selfsigned -n default --timeout=120s
+            kubectl get secret test-selfsigned-tls -n default
+            echo "cert-manager functionality test passed!"
 
   # Test ingress-nginx installation
   test-ingress-nginx:

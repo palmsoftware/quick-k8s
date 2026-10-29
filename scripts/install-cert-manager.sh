@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CERT_MANAGER_VERSION="${1:-v1.19.3}"
+CERT_MANAGER_VERSION="${1:-v1.21.3}"
 TIMEOUT="${COMPONENT_TIMEOUT:-300}"
+CA_TIMEOUT="${CERT_MANAGER_CA_TIMEOUT:-120}"
 
 # shellcheck source=diagnose-failure.sh
 source "$(dirname "$0")/diagnose-failure.sh"
 # shellcheck source=lib/retry.sh
 source "$(dirname "$0")/lib/retry.sh"
+# shellcheck source=lib/cert-manager.sh
+source "$(dirname "$0")/lib/cert-manager.sh"
 
 echo "::group::Installing cert-manager $CERT_MANAGER_VERSION"
 trap 'echo "::endgroup::"' EXIT
@@ -48,8 +51,21 @@ echo "$wait_output"
 kubectl get pods -n cert-manager
 echo "cert-manager $CERT_MANAGER_VERSION installed successfully!"
 
-echo "Creating self-signed ClusterIssuer for TLS testing..."
-kubectl apply -f - <<EOF
+# Pod readiness does not imply the admission webhook is usable: cainjector still
+# has to populate the caBundle, otherwise any cert-manager resource is rejected.
+echo "Waiting for cert-manager webhook caBundle injection (timeout ${CA_TIMEOUT}s)..."
+ca_wait_output=$(wait_for_cert_manager_webhook_ca "$CA_TIMEOUT" 2>&1) || {
+  echo "$ca_wait_output"
+  echo "::error::cert-manager webhook caBundle was not injected within ${CA_TIMEOUT}s. Check cainjector: kubectl logs -n cert-manager deploy/cert-manager-cainjector" >&2
+  kubectl get validatingwebhookconfiguration cert-manager-webhook -o yaml 2>/dev/null || true
+  kubectl get mutatingwebhookconfiguration cert-manager-webhook -o yaml 2>/dev/null || true
+  diagnose_failure "cert-manager" "$ca_wait_output"
+  exit 1
+}
+echo "$ca_wait_output"
+
+apply_selfsigned_issuer() {
+  kubectl apply --timeout=1m -f - <<'EOF'
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -57,6 +73,15 @@ metadata:
 spec:
   selfSigned: {}
 EOF
+}
+
+echo "Creating self-signed ClusterIssuer for TLS testing..."
+issuer_output=$(retry_with_backoff 3 5 apply_selfsigned_issuer 2>&1) || {
+  echo "$issuer_output"
+  diagnose_failure "cert-manager" "$issuer_output"
+  exit 1
+}
+echo "$issuer_output"
 
 echo "Waiting for ClusterIssuer to be ready..."
 kubectl wait --for=condition=Ready clusterissuer/selfsigned-issuer --timeout=60s || {
