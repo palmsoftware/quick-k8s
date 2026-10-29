@@ -31,12 +31,17 @@
 
 ## Add-on Issues
 
-**"cert-manager webhook not ready"**
-- Webhook startup is slow on CI runners. Add a wait step:
-  ```yaml
-  - name: Wait for cert-manager webhook
-    run: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=webhook -n cert-manager --timeout=120s
+**"cert-manager webhook not ready" / `x509: certificate signed by unknown authority`**
+- cert-manager ships its admission webhook configurations with an empty `caBundle`; `cainjector` injects it asynchronously after the webhook generates its serving certificate. Waiting for the webhook pod to be Ready is **not** sufficient — any cert-manager resource applied before injection is rejected with `x509: certificate signed by unknown authority`.
+- The action waits for the injected `caBundle` before creating the pre-configured `selfsigned-issuer` ClusterIssuer. If you create cert-manager resources manually right after install, wait for the caBundle yourself:
+  ```bash
+  for resource in validatingwebhookconfiguration/cert-manager-webhook mutatingwebhookconfiguration/cert-manager-webhook; do
+    until [ -n "$(kubectl get "$resource" -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null)" ]; do
+      sleep 2
+    done
+  done
   ```
+- If injection never happens, check the injector: `kubectl logs -n cert-manager deploy/cert-manager-cainjector`.
 
 **Istio installation timeout**
 - Reduce worker nodes, use `istioProfile: minimal`, or increase pod readiness timeout

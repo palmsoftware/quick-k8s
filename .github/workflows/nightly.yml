@@ -270,10 +270,17 @@ jobs:
           waitForPodsReady: true
 
       - name: Verify cert-manager
-        run: |
-          kubectl get namespace cert-manager
-          kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=60s
-          kubectl get crd | grep cert-manager
+        uses: nick-fields/retry@v4.0.0
+        with:
+          max_attempts: 3
+          timeout_minutes: 5
+          retry_wait_seconds: 15
+          command: |
+            set -e
+            kubectl get namespace cert-manager
+            kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=120s
+            kubectl get crd | grep -q cert-manager
+            kubectl wait --for=condition=ready clusterissuer/selfsigned-issuer --timeout=120s
 
   ingress-nginx-tests:
     strategy:

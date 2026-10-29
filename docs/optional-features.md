@@ -55,7 +55,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installCertManager: true
-      certManagerVersion: v1.21.2
+      certManagerVersion: v1.21.3
 ```
 
 **Features**:
@@ -64,7 +64,7 @@ steps:
 - Integrates with Ingress controllers for automatic certificate management
 - CRDs installed automatically with cert-manager
 
-**Pre-configured ClusterIssuer**: A `selfsigned-issuer` ClusterIssuer is automatically created during installation — no manual setup needed.
+**Pre-configured ClusterIssuer**: A `selfsigned-issuer` ClusterIssuer is automatically created during installation — no manual setup needed. The installer waits for `cainjector` to populate the admission webhook `caBundle` before creating it, so the issuer is usable as soon as the action completes.
 
 **Example: Create a Certificate using the pre-configured issuer**:
 ```yaml

@@ -30,7 +30,7 @@ steps:
       istioVersion: 1.31.0
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.2
+      certManagerVersion: v1.21.3
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
@@ -99,7 +99,7 @@ steps:
       istioVersion: 1.31.0
       istioProfile: minimal
       installCertManager: false
-      certManagerVersion: v1.21.2
+      certManagerVersion: v1.21.3
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
