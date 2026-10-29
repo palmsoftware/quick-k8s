@@ -27,7 +27,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installIstio: true
-      istioVersion: 1.31.0
+      istioVersion: 1.31.3
       istioProfile: minimal
 ```
 
@@ -281,8 +281,8 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       enableClusterMonitoring: true
-      kubePrometheusVersion: v0.18.0
-      thanosVersion: v0.42.4
+      kubePrometheusVersion: v0.19.0
+      thanosVersion: v0.42.5
 ```
 
 **Features**:
