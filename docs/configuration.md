@@ -20,7 +20,7 @@ steps:
       defaultNodeImage: 'kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5'
       kindVersion: v0.33.0
       calicoVersion: v3.33.0
-      ciliumVersion: v0.20.1        # Cilium CLI version (when cniPlugin: cilium)
+      ciliumVersion: v0.20.2        # Cilium CLI version (when cniPlugin: cilium)
 
       numControlPlaneNodes: 1
       numWorkerNodes: 1
@@ -89,7 +89,7 @@ steps:
       apiServerPort: 6443
       disableDefaultCni: true
       calicoVersion: v3.33.0
-      ciliumVersion: v0.20.1        # Cilium CLI version (when cniPlugin: cilium)
+      ciliumVersion: v0.20.2        # Cilium CLI version (when cniPlugin: cilium)
       clusterCPUs: 2                # CPUs to allocate (Minikube only)
       clusterMemory: ''             # Memory in MB (empty = provider default, Minikube only)
 
