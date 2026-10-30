@@ -81,6 +81,7 @@ EOF
   run "$BATS_TEST_DIRNAME/../scripts/setup-local-registry.sh" 5010 kind custom
 
   [ "$status" -eq 0 ]
+  grep -Eq 'run -d .*registry:[0-9]+\.[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}' "$DOCKER_CALLS"
   grep -Fq 'network connect kind quick-k8s-registry' "$DOCKER_CALLS"
   grep -Fq 'custom-control-plane mkdir -p /etc/containerd/certs.d/localhost:5010' "$DOCKER_CALLS"
   grep -Fq 'custom-worker mkdir -p /etc/containerd/certs.d/localhost:5010' "$DOCKER_CALLS"

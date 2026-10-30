@@ -1,0 +1,186 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=e6]:
+      - heading "Navigation Menu" [level=2] [ref=e7]
+      - generic [ref=e8]:
+        - link "Homepage" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e13]:
+          - navigation "Global" [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - button "Platform" [ref=e20] [cursor=pointer]
+              - listitem [ref=e23]:
+                - button "Solutions" [ref=e25] [cursor=pointer]
+              - listitem [ref=e28]:
+                - button "Resources" [ref=e30] [cursor=pointer]
+              - listitem [ref=e33]:
+                - button "Open Source" [ref=e35] [cursor=pointer]
+              - listitem [ref=e38]:
+                - button "Enterprise" [ref=e40] [cursor=pointer]
+              - listitem [ref=e43]:
+                - link "Pricing" [ref=e44] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=e46]:
+            - button "Search or jump to…" [ref=e49] [cursor=pointer]
+            - link "Sign in" [ref=e54] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fpalmsoftware%2Fquick-k8s%2Factions%2Fruns%2F30787097877
+            - link "Sign up" [ref=e55] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Factions%2Fworkflow_runs%2Fshow&source=header-repo&source_repo=palmsoftware%2Fquick-k8s
+            - button "Appearance settings" [disabled] [ref=e58]
+  - main [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e67]:
+            - link "palmsoftware" [ref=e71] [cursor=pointer]:
+              - /url: /palmsoftware
+            - generic [ref=e72]: /
+            - strong [ref=e73]:
+              - link "quick-k8s" [ref=e74] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s
+            - generic [ref=e75]: Public
+          - generic [ref=e76]:
+            - list:
+              - listitem [ref=e77]:
+                - link "You must be signed in to change notification settings" [ref=e78] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fpalmsoftware%2Fquick-k8s
+                  - text: Notifications
+              - listitem [ref=e81]:
+                - link "Fork 0" [ref=e82] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fpalmsoftware%2Fquick-k8s
+                  - text: Fork
+                  - generic "0" [ref=e85]
+              - listitem [ref=e86]:
+                - link "You must be signed in to star a repository" [ref=e88] [cursor=pointer]:
+                  - /url: /login?return_to=%2Fpalmsoftware%2Fquick-k8s
+                  - text: Star
+                  - generic "0 users starred this repository" [ref=e91]: "0"
+        - navigation "Repository" [ref=e92]:
+          - list [ref=e93]:
+            - listitem [ref=e94]:
+              - link "Code" [ref=e95] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s
+            - listitem [ref=e99]:
+              - link "Issues 22" [ref=e100] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/issues
+                - generic [ref=e104]: Issues
+                - generic "22" [ref=e105]
+            - listitem [ref=e106]:
+              - link "Pull requests" [ref=e107] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/pulls
+            - listitem [ref=e111]:
+              - link "Actions" [ref=e112] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/actions
+            - listitem [ref=e116]:
+              - link "Projects" [ref=e117] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/projects
+            - listitem [ref=e121]:
+              - link "Security and quality" [ref=e122] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/security
+            - listitem [ref=e126]:
+              - link "Insights" [ref=e127] [cursor=pointer]:
+                - /url: /palmsoftware/quick-k8s/pulse
+      - generic [ref=e135]:
+        - generic [ref=e138]:
+          - link "Version Updates Nightly" [ref=e141] [cursor=pointer]:
+            - /url: /palmsoftware/quick-k8s/actions/workflows/version-updates.yml
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - img "failed:" [ref=e150]
+              - 'heading "Version Updates Nightly #31" [level=1] [ref=e152]'
+            - link "Sign in to view logs" [ref=e156] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fpalmsoftware%2Fquick-k8s%2Factions%2Fruns%2F30787097877
+        - generic [ref=e157]:
+          - navigation "Workflow run" [ref=e163]:
+            - list [ref=e164]:
+              - listitem [ref=e165]:
+                - link "Summary" [ref=e166] [cursor=pointer]:
+                  - /url: /palmsoftware/quick-k8s/actions/runs/30787097877
+              - generic [ref=e169]:
+                - heading "All jobs" [level=4] [ref=e170]
+                - button "Filter by job status" [ref=e171] [cursor=pointer]
+              - listitem [ref=e174]
+              - listitem [ref=e175]:
+                - list [ref=e176]:
+                  - listitem [ref=e177]:
+                    - generic "Loading" [ref=e178]
+              - listitem [ref=e187]
+              - listitem [ref=e188]:
+                - heading "Run details" [level=3] [ref=e190]
+                - list "Run details" [ref=e191]:
+                  - listitem [ref=e192]:
+                    - link "Usage" [ref=e193] [cursor=pointer]:
+                      - /url: /palmsoftware/quick-k8s/actions/runs/30787097877/usage
+                  - listitem [ref=e196]:
+                    - link "Workflow file" [ref=e197] [cursor=pointer]:
+                      - /url: /palmsoftware/quick-k8s/actions/runs/30787097877/workflow
+          - generic [ref=e201]:
+            - region "Workflow run summary" [ref=e202]:
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]: Triggered via schedule August 3, 2026 05:2416 hours ago
+                  - generic [ref=e206]:
+                    - link [ref=e207] [cursor=pointer]:
+                      - /url: /sebrandon1
+                      - img "@sebrandon1" [ref=e208]
+                      - text: sebrandon1
+                    - generic [ref=e209]:
+                      - text: ⁠
+                      - link "1fa8e86" [ref=e210] [cursor=pointer]:
+                        - /url: /palmsoftware/quick-k8s/commit/1fa8e862e92cb0c7639008a1e611bc7831bd081e
+                    - link "main" [ref=e213] [cursor=pointer]:
+                      - /url: /palmsoftware/quick-k8s/tree/refs/heads/main
+                - generic [ref=e214]:
+                  - generic [ref=e215]: Status
+                  - text: Failure
+                - generic [ref=e216]:
+                  - generic [ref=e217]: Total duration
+                  - link "1m 16s" [ref=e218] [cursor=pointer]:
+                    - /url: /palmsoftware/quick-k8s/actions/runs/30787097877/usage
+                - generic [ref=e219]:
+                  - generic [ref=e220]: Artifacts
+                  - text: –
+            - region "Workflow run graph" [ref=e221]:
+              - generic [ref=e223]:
+                - generic [ref=e225]:
+                  - heading [level=2] [ref=e226]:
+                    - link "version-updates.yml" [ref=e227] [cursor=pointer]:
+                      - /url: /palmsoftware/quick-k8s/actions/runs/30787097877/workflow
+                  - generic [ref=e228]: "on: schedule"
+                - generic [ref=e230]:
+                  - generic [ref=e233]:
+                    - generic [ref=e234]: "Matrix: update-version"
+                    - 'button "failed: 12 jobs completed Show all jobs" [ref=e237] [cursor=pointer]':
+                      - generic [ref=e238]:
+                        - img "failed:" [ref=e240]
+                        - generic [ref=e242]: 12 jobs completed
+                      - generic [ref=e243]: Show all jobs
+                  - generic [ref=e244]:
+                    - paragraph [ref=e245]: Oh hello! Nice to see you.
+                    - paragraph [ref=e246]:
+                      - text: Made with ❤️ by
+                      - link [ref=e247] [cursor=pointer]:
+                        - /url: https://actions.github.io/humans.txt
+                        - text: humans.txt
+                - generic [ref=e248]:
+                  - button "Fit to window" [disabled] [ref=e249]
+                  - generic [ref=e250]:
+                    - button "Zoom out" [disabled] [ref=e252]
+                    - button "Zoom in" [disabled] [ref=e254]
+            - region "Annotations" [ref=e255]:
+              - generic [ref=e256]:
+                - generic [ref=e258]:
+                  - heading "Annotations" [level=2] [ref=e259]
+                  - generic [ref=e260]: 1 error
+                - table [ref=e261]:
+                  - rowgroup [ref=e262]:
+                    - row [ref=e263]:
+                      - cell "update-version (MetalLB, metallb/metallb, metalLBVersion, ^v[0-9]+\\.[0-9]+\\.[0-9]+$) Process completed with exit code 1." [ref=e264]:
+                        - generic [ref=e269]:
+                          - link [ref=e270] [cursor=pointer]:
+                            - /url: /palmsoftware/quick-k8s/actions/runs/30787097877/job/91602652952#step:4:56
+                            - strong [ref=e271]: update-version (MetalLB, metallb/metallb, metalLBVersion, ^v[0-9]+\.[0-9]+\.[0-9]+$)
+                          - generic [ref=e272]: Process completed with exit code 1.

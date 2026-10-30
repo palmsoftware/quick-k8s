@@ -457,6 +457,6 @@ containerdConfigPatches:
 
 **Registry Details**:
 - Accessible at `localhost:<port>` from both the host and cluster
-- Uses the standard Docker registry:2 image
+- Runs the official `registry` image pinned to a release and digest (`REGISTRY_IMAGE` in `scripts/setup-local-registry.sh`), so workflow runs are reproducible and a republished tag cannot change what runs
 - KinD nodes are configured to use the registry over the KinD network
 - ConfigMap created in `kube-public` namespace for discoverability
