@@ -4,7 +4,7 @@ This document lists tested and known-compatible version combinations for quick-k
 
 ## Component Compatibility
 
-The Cilium column is the CNI version installed by the pinned `ciliumVersion` cilium-cli (`v0.20.1`); the action validates the CLI version against `cilium/cilium-cli`, not the CNI tag.
+The Cilium column is the CNI version installed by the `ciliumVersion` cilium-cli (see `action.yml` for the pinned release); the action validates the CLI version against `cilium/cilium-cli`, not the CNI tag.
 
 | Kubernetes | Calico | Cilium CNI | Istio | cert-manager | OLM | MetalLB | Notes |
 |------------|--------|--------|-------|--------------|-----|---------|-------|
