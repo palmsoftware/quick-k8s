@@ -153,7 +153,7 @@ steps:
     uses: palmsoftware/quick-k8s@v0
     with:
       installMetricsServer: true
-      metricsServerVersion: v0.9.0
+      metricsServerVersion: v0.9.1
 ```
 
 **Features**:
