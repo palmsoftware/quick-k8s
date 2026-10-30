@@ -34,7 +34,7 @@ steps:
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
-      metricsServerVersion: v0.9.0
+      metricsServerVersion: v0.9.1
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
       installTLSComplianceOperator: false # Install latest TLS Compliance Operator
@@ -105,7 +105,7 @@ steps:
       installIngressNginx: false
       ingressNginxVersion: v1.15.1
       installMetricsServer: false
-      metricsServerVersion: v0.9.0
+      metricsServerVersion: v0.9.1
       installOperatorSdk: false
       operatorSdkVersion: v1.42.3
       installTLSComplianceOperator: false # Install latest TLS Compliance Operator
