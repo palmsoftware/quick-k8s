@@ -120,7 +120,7 @@ GitHub Actions free-tier runners have limited disk. The action:
 ### Local Registry Setup
 
 When `installLocalRegistry: true`:
-- Starts `registry:2` container on specified port
+- Starts the pinned `registry` image (`REGISTRY_IMAGE` — release + digest) on the specified port
 - Connects to KinD network (for KinD provider)
 - Creates ConfigMap in `kube-public` for discoverability
 - Accessible at `localhost:<port>` from host and cluster

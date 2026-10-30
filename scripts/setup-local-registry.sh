@@ -10,6 +10,11 @@ CLUSTER_PROVIDER="${2:-kind}"
 CLUSTER_NAME="${3:-kind}"
 REGISTRY_NAME="quick-k8s-registry"
 
+# Pinned release and digest. `registry:2` / `registry:3` are mutable tags, so an
+# upstream republish (or a compromised tag) would silently change what runs here
+# between workflow runs. Bump the version and digest together.
+REGISTRY_IMAGE="registry:3.1.2@sha256:d4032d4cc323c1731c707931ecada07a53076eac38e3b61ae57533f170f2c6c3"
+
 echo "::group::Setting up local Docker registry on port ${REGISTRY_PORT}"
 trap 'echo "::endgroup::"' EXIT
 
@@ -27,7 +32,7 @@ docker run -d \
   --restart=always \
   --name "${REGISTRY_NAME}" \
   -p "127.0.0.1:${REGISTRY_PORT}:5000" \
-  registry:2
+  "${REGISTRY_IMAGE}"
 
 # Wait for registry to be ready
 echo "Waiting for registry to be ready..."

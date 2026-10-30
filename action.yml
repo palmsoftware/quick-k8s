@@ -286,6 +286,16 @@ runs:
           exit 1
         fi
 
+    - name: Validate clusterName input
+      shell: bash
+      env:
+        CLUSTER_NAME: ${{ inputs.clusterName }}
+      run: |
+        if [ "${#CLUSTER_NAME}" -gt 63 ] || ! [[ "$CLUSTER_NAME" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
+          echo "::error::Invalid clusterName: $CLUSTER_NAME. Must be 1-63 lowercase letters, digits or '-', and start and end with an alphanumeric character."
+          exit 1
+        fi
+
     - name: Validate IP family input
       shell: bash
       env:
@@ -468,12 +478,15 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "OLM" "operator-framework/operator-lifecycle-manager" "${{ inputs.olmVersion }}"
+        OLM_VERSION: ${{ inputs.olmVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "OLM" "operator-framework/operator-lifecycle-manager" "$OLM_VERSION"
 
     - name: Validate waitForPodsTimeout input
       shell: bash
+      env:
+        PODS_TIMEOUT: ${{ inputs.waitForPodsTimeout }}
       run: |
-        TIMEOUT="${{ inputs.waitForPodsTimeout }}"
+        TIMEOUT="$PODS_TIMEOUT"
         if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -lt 60 ] || [ "$TIMEOUT" -gt 7200 ]; then
           echo "::error::Invalid waitForPodsTimeout: $TIMEOUT. Must be a number between 60 and 7200 (1 minute to 2 hours)."
           exit 1
@@ -508,7 +521,8 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: ${{ github.action_path }}/scripts/validate-github-version.sh "MetalLB" "metallb/metallb" "${{ inputs.metalLBVersion }}"
+        METALLB_VERSION: ${{ inputs.metalLBVersion }}
+      run: ${{ github.action_path }}/scripts/validate-github-version.sh "MetalLB" "metallb/metallb" "$METALLB_VERSION"
 
     - name: Validate operator-sdk version input
       if: ${{ inputs.installOperatorSdk == 'true' }}
@@ -550,8 +564,10 @@ runs:
 
     - name: Validate cniPlugin input
       shell: bash
+      env:
+        EFFECTIVE_CNI: ${{ steps.resolve-cni.outputs.effective-cni }}
       run: |
-        CNI="${{ steps.resolve-cni.outputs.effective-cni }}"
+        CNI="$EFFECTIVE_CNI"
         if [[ "$CNI" != "calico" && "$CNI" != "cilium" && "$CNI" != "none" ]]; then
           echo "::error::Invalid cniPlugin value: $CNI. Must be 'calico', 'cilium', or 'none'."
           exit 1
@@ -560,8 +576,10 @@ runs:
     - name: Validate persistentVolumeCount input
       if: ${{ inputs.createPersistentVolumes == 'true' }}
       shell: bash
+      env:
+        PV_COUNT: ${{ inputs.persistentVolumeCount }}
       run: |
-        COUNT="${{ inputs.persistentVolumeCount }}"
+        COUNT="$PV_COUNT"
         if ! [[ "$COUNT" =~ ^[0-9]+$ ]] || [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 100 ]; then
           echo "::error::Invalid persistentVolumeCount: $COUNT. Must be a number between 1 and 100."
           exit 1
@@ -570,8 +588,10 @@ runs:
     - name: Validate persistentVolumeSize input
       if: ${{ inputs.createPersistentVolumes == 'true' }}
       shell: bash
+      env:
+        PV_SIZE: ${{ inputs.persistentVolumeSize }}
       run: |
-        SIZE="${{ inputs.persistentVolumeSize }}"
+        SIZE="$PV_SIZE"
         if ! [[ "$SIZE" =~ ^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei)?$ ]]; then
           echo "::error::Invalid persistentVolumeSize: $SIZE. Must be a valid Kubernetes quantity (e.g., 10Gi, 1Gi, 500Mi)."
           exit 1
@@ -602,8 +622,10 @@ runs:
 
     - name: Validate clusterCPUs input
       shell: bash
+      env:
+        CLUSTER_CPUS: ${{ inputs.clusterCPUs }}
       run: |
-        CPUS="${{ inputs.clusterCPUs }}"
+        CPUS="$CLUSTER_CPUS"
         if ! [[ "$CPUS" =~ ^[0-9]+$ ]] || [ "$CPUS" -lt 1 ]; then
           echo "::error::Invalid clusterCPUs: $CPUS. Must be a positive integer."
           exit 1
@@ -612,8 +634,10 @@ runs:
     - name: Validate clusterMemory input
       if: ${{ inputs.clusterMemory != '' }}
       shell: bash
+      env:
+        CLUSTER_MEMORY: ${{ inputs.clusterMemory }}
       run: |
-        MEMORY="${{ inputs.clusterMemory }}"
+        MEMORY="$CLUSTER_MEMORY"
         if ! [[ "$MEMORY" =~ ^[0-9]+$ ]] || [ "$MEMORY" -lt 1 ]; then
           echo "::error::Invalid clusterMemory: $MEMORY. Must be a positive integer (MB)."
           exit 1
@@ -1128,11 +1152,12 @@ runs:
       shell: bash
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
+        OLM_VERSION: ${{ inputs.olmVersion }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
         start_timer "Install OLM"
-        ${{ github.action_path }}/scripts/install-olm.sh ${{ inputs.olmVersion }}
+        "${{ github.action_path }}/scripts/install-olm.sh" "$OLM_VERSION"
         end_timer "Install OLM"
 
     - name: Install Istio
@@ -1195,11 +1220,13 @@ runs:
       env:
         COMPONENT_TIMEOUT: ${{ inputs.componentTimeout }}
         IP_FAMILY: ${{ inputs.clusterProvider == 'kind' && inputs.ipFamily || 'ipv4' }}
+        METALLB_VERSION: ${{ inputs.metalLBVersion }}
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
         start_timer "Install MetalLB"
-        ${{ github.action_path }}/scripts/install-metallb.sh ${{ inputs.metalLBVersion }} ${{ inputs.clusterProvider }}
+        "${{ github.action_path }}/scripts/install-metallb.sh" "$METALLB_VERSION" "$CLUSTER_PROVIDER"
         end_timer "Install MetalLB"
 
     - name: Install operator-sdk
@@ -1270,11 +1297,14 @@ runs:
     - name: Create persistent volumes
       if: ${{ inputs.createPersistentVolumes == 'true' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        PV_COUNT: ${{ inputs.persistentVolumeCount }}
+        PV_SIZE: ${{ inputs.persistentVolumeSize }}
       run: |
         # shellcheck source=scripts/log-timing.sh
         source "${{ github.action_path }}/scripts/log-timing.sh"
         start_timer "Create persistent volumes"
-        ${{ github.action_path }}/scripts/create-persistent-volumes.sh "${{ inputs.persistentVolumeCount }}" "${{ inputs.persistentVolumeSize }}"
+        "${{ github.action_path }}/scripts/create-persistent-volumes.sh" "$PV_COUNT" "$PV_SIZE"
         end_timer "Create persistent volumes"
 
     - name: Remove the control plane taint
@@ -1474,11 +1504,14 @@ runs:
     - name: Generate cleanup script
       if: ${{ inputs.enableCleanup == 'true' && inputs.dryRun != 'true' }}
       shell: bash
+      env:
+        CLUSTER_PROVIDER: ${{ inputs.clusterProvider }}
+        CLUSTER_NAME: ${{ inputs.clusterName }}
       run: |
         cp "${{ github.action_path }}/scripts/cleanup-cluster.sh" /tmp/quick-k8s-cleanup.sh
         chmod +x /tmp/quick-k8s-cleanup.sh
-        echo "QUICK_K8S_PROVIDER=${{ inputs.clusterProvider }}" >> "$GITHUB_ENV"
-        echo "QUICK_K8S_CLUSTER_NAME=${{ inputs.clusterName }}" >> "$GITHUB_ENV"
+        echo "QUICK_K8S_PROVIDER=$CLUSTER_PROVIDER" >> "$GITHUB_ENV"
+        echo "QUICK_K8S_CLUSTER_NAME=$CLUSTER_NAME" >> "$GITHUB_ENV"
 
     - name: Remove temporary files
       if: ${{ inputs.dryRun != 'true' }}
