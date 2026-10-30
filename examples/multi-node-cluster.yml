@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create multi-node cluster
-        uses: palmsoftware/quick-k8s@v0
+        uses: palmsoftware/quick-k8s@v1
         with:
           numControlPlaneNodes: 1
           numWorkerNodes: 2

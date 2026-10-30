@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create cluster with Istio
-        uses: palmsoftware/quick-k8s@v0
+        uses: palmsoftware/quick-k8s@v1
         with:
           installIstio: true
           istioVersion: 1.31.3

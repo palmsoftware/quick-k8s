@@ -24,7 +24,7 @@ Enable Istio installation to test service mesh functionality:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Istio
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installIstio: true
       istioVersion: 1.31.3
@@ -52,7 +52,7 @@ Enable cert-manager for automatic TLS certificate management:
 ```yaml
 steps:
   - name: Set up Quick-K8s with cert-manager
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installCertManager: true
       certManagerVersion: v1.21.3
@@ -99,7 +99,7 @@ Enable NGINX Ingress controller for HTTP/HTTPS routing to your services:
 ```yaml
 steps:
   - name: Set up Quick-K8s with ingress-nginx
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installIngressNginx: true
       ingressNginxVersion: v1.15.1
@@ -150,7 +150,7 @@ Enable metrics-server for resource monitoring and HPA (Horizontal Pod Autoscaler
 ```yaml
 steps:
   - name: Set up Quick-K8s with metrics-server
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installMetricsServer: true
       metricsServerVersion: v0.9.1
@@ -194,7 +194,7 @@ Enable operator-sdk CLI installation for building and testing Kubernetes operato
 ```yaml
 steps:
   - name: Set up Quick-K8s with operator-sdk
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installOperatorSdk: true
       operatorSdkVersion: v1.42.3
@@ -227,7 +227,7 @@ Enable either operator independently. Each input is disabled by default, and bot
 ```yaml
 steps:
   - name: Set up Quick-K8s with telco operators
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installTLSComplianceOperator: true
       installImageCertInfoOperator: true
@@ -242,7 +242,7 @@ Enable MetalLB for LoadBalancer service support on local clusters:
 ```yaml
 steps:
   - name: Set up Quick-K8s with MetalLB
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installMetalLB: true
       metalLBVersion: v0.16.0
@@ -278,7 +278,7 @@ Enable the full monitoring stack with Prometheus, Thanos, Alertmanager, and more
 ```yaml
 steps:
   - name: Set up Quick-K8s with monitoring
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       enableClusterMonitoring: true
       kubePrometheusVersion: v0.19.0
@@ -330,17 +330,17 @@ The action supports multiple CNI plugins. Use the `cniPlugin` input to select on
 ```yaml
 steps:
   # Calico (default)
-  - uses: palmsoftware/quick-k8s@v0
+  - uses: palmsoftware/quick-k8s@v1
     with:
       cniPlugin: calico
 
   # Cilium
-  - uses: palmsoftware/quick-k8s@v0
+  - uses: palmsoftware/quick-k8s@v1
     with:
       cniPlugin: cilium
 
   # No CNI (bring your own)
-  - uses: palmsoftware/quick-k8s@v0
+  - uses: palmsoftware/quick-k8s@v1
     with:
       cniPlugin: none
       waitForPodsReady: false
@@ -359,7 +359,7 @@ For projects that need to install their own CNI (e.g., Multus, OVN-Kubernetes), 
 ```yaml
 steps:
   - name: Set up Quick-K8s without CNI
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       disableDefaultCni: true
       cniPlugin: none             # Skip CNI installation
@@ -404,7 +404,7 @@ steps:
       EOF
 
   - name: Set up Quick-K8s with custom config
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       kindConfigPath: ${{ github.workspace }}/my-kind-config.yaml
 ```
@@ -425,7 +425,7 @@ Enable a local Docker registry for faster image pulls and testing:
 ```yaml
 steps:
   - name: Set up Quick-K8s with local registry
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installLocalRegistry: true
       localRegistryPort: 5001  # Default port

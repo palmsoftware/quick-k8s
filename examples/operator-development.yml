@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create cluster for operator development
-        uses: palmsoftware/quick-k8s@v0
+        uses: palmsoftware/quick-k8s@v1
         with:
           installOLM: true
           installOperatorSdk: true

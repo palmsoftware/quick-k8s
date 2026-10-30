@@ -6,7 +6,7 @@ The action installs `kubectl` (and `oc` on Linux) and configures kubeconfig auto
 
 ```yaml
 steps:
-  - uses: palmsoftware/quick-k8s@v0
+  - uses: palmsoftware/quick-k8s@v1
 
   - name: Verify cluster
     run: |

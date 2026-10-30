@@ -23,7 +23,7 @@ A GitHub Action that deploys Kubernetes clusters on GitHub Actions runners for t
 ```yaml
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
 ```
 
 This creates a 1 control-plane + 1 worker cluster with Calico CNI. To use Minikube instead:
@@ -31,7 +31,7 @@ This creates a 1 control-plane + 1 worker cluster with Calico CNI. To use Miniku
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       clusterProvider: minikube
       minikubeVersion: v1.39.0
