@@ -11,7 +11,7 @@ The action supports multiple IP family configurations for Kubernetes clusters:
 ```yaml
 steps:
   - name: Set up Quick-K8s with IP family
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       ipFamily: dual  # Options: dual, ipv4, ipv6
 ```
@@ -35,7 +35,7 @@ The API server can be configured to listen on specific addresses and ports:
 ```yaml
 steps:
   - name: Configure API server
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       apiServerAddress: 0.0.0.0  # Listen on all interfaces (default)
       apiServerPort: 6443        # API server port (default)
@@ -53,7 +53,7 @@ KinD supports mapping container ports to host ports for NodePort services and te
 ```yaml
 steps:
   - name: Set up with custom port mappings
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       extraPortMappings: '30000:30000,80:30080,8080:8080'
 ```
@@ -105,7 +105,7 @@ Enable sample network policies for testing:
 ```yaml
 steps:
   - name: Set up with network policies
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installSampleNetworkPolicies: true
 ```
@@ -119,7 +119,7 @@ For LoadBalancer service support in local clusters, enable MetalLB:
 ```yaml
 steps:
   - name: Set up with MetalLB
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       installMetalLB: true
 ```

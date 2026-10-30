@@ -9,7 +9,7 @@ All inputs have sensible defaults. The basic usage requires no configuration at 
 ```yaml
 steps:
   - name: Set up Quick-K8s
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       clusterProvider: kind
       clusterName: kind
@@ -80,7 +80,7 @@ steps:
 ```yaml
 steps:
   - name: Set up Quick-K8s with Minikube
-    uses: palmsoftware/quick-k8s@v0
+    uses: palmsoftware/quick-k8s@v1
     with:
       clusterProvider: minikube
       clusterName: minikube
