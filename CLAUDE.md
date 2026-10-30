@@ -66,7 +66,7 @@ Nightly workflows auto-update dependency versions in `action.yml`:
 
 Updates fetch latest versions from GitHub API, validate semver format, and create PRs via `peter-evans/create-pull-request`.
 
-The pinned-version snippets in `docs/`, `README.md` and `examples/` are kept in step with `action.yml` by `scripts/update-docs-version.sh`, which the version-update job runs after bumping the default; the job fails rather than opening a PR if a stale occurrence of the previous version survives.
+The pinned-version snippets in `docs/`, `README.md`, `COMPATIBILITY.md` and `examples/` are kept in step with `action.yml` by `scripts/update-docs-version.sh`, which the version-update job runs after bumping the default; the job fails rather than opening a PR if a stale occurrence of the previous version survives. A version that appears only in prose (not as `<field>: <version>`) cannot be rewritten, so the job fails on it by design — drop the literal version from the prose instead of pinning it twice.
 
 ## Key Patterns
 

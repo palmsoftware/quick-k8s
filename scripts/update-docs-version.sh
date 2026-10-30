@@ -2,17 +2,17 @@
 # Keep the pinned versions shown in the docs in sync with action.yml.
 #
 # .github/workflows/version-updates.yml bumps a component's `default:` in
-# action.yml only. The docs repeat those defaults in YAML snippets
-# (docs/configuration.md, docs/optional-features.md, README.md, examples/*.yml),
-# so they used to drift on every automated bump — e.g. action.yml said
-# certManagerVersion v1.21.3 while the docs still said v1.21.2.
+# action.yml only. The docs repeat those defaults in YAML snippets and in prose
+# (docs/configuration.md, docs/optional-features.md, README.md, examples/*.yml,
+# COMPATIBILITY.md), so they used to drift on every automated bump — e.g.
+# action.yml said certManagerVersion v1.21.3 while the docs still said v1.21.2.
 #
 # Usage:
 #   update-docs-version.sh <field> <old-version> <new-version> [path...]
 #   update-docs-version.sh --check <field> <old-version> [path...]
 #
-# With no paths, docs/, README.md and examples/ are searched. Directories are
-# scanned for *.md, *.yml and *.yaml files. Only lines of the form
+# With no paths, docs/, README.md, COMPATIBILITY.md and examples/ are searched.
+# Directories are scanned for *.md, *.yml and *.yaml files. Only lines of the form
 # `<field>: <old-version>` (optionally followed by a `#` comment) are rewritten,
 # so a coincidental match of the same version string under a different key is
 # left alone.
@@ -22,7 +22,7 @@
 # the rewrite pattern, so oddly formatted snippets are caught) and exits 1.
 set -euo pipefail
 
-DEFAULT_PATHS=(docs README.md examples)
+DEFAULT_PATHS=(docs README.md COMPATIBILITY.md examples)
 
 usage() {
   cat >&2 <<'EOF'
@@ -31,7 +31,8 @@ Usage:
   update-docs-version.sh --check <field> <old-version> [path...]
 
 Rewrites `<field>: <old-version>` to `<field>: <new-version>` in the given
-markdown/YAML files and directories (default: docs README.md examples).
+markdown/YAML files and directories
+(default: docs README.md COMPATIBILITY.md examples).
 
   --check   Report lines that still pair <field> with <old-version> and exit 1.
 EOF

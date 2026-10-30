@@ -19,6 +19,9 @@ EOF
           installIstio: true
           istioVersion: 1.31.0
 EOF
+  cat > "$TEST_TMPDIR/COMPATIBILITY.md" <<'EOF'
+| 1.37.x | v3.32.0+ | v1.17.0+ | 1.31.0+ |
+EOF
 }
 
 teardown() {
@@ -95,6 +98,29 @@ teardown() {
   [[ "$output" == *"configuration.md"* ]]
   [[ "$output" == *"The istioVersion default is 1.31.0 today."* ]]
   [[ "$output" == *"still documented at 1.31.0"* ]]
+}
+
+@test "rewrites pinned versions in a root-level COMPATIBILITY.md by default" {
+  cd "$TEST_TMPDIR" || return 1
+  printf 'minikubeVersion: v1.39.0\n' > "$TEST_TMPDIR/COMPATIBILITY.md"
+
+  run "$SCRIPT" minikubeVersion v1.39.0 v1.40.0
+
+  [ "$status" -eq 0 ]
+  grep -qx 'minikubeVersion: v1.40.0' "$TEST_TMPDIR/COMPATIBILITY.md"
+
+  run "$SCRIPT" --check minikubeVersion v1.39.0
+
+  [ "$status" -eq 0 ]
+}
+
+@test "check flags a prose mention in COMPATIBILITY.md" {
+  printf 'installed by the `istioVersion` pin (`1.31.0`).\n' >> "$TEST_TMPDIR/COMPATIBILITY.md"
+
+  run "$SCRIPT" --check istioVersion 1.31.0 "$TEST_TMPDIR/COMPATIBILITY.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"COMPATIBILITY.md"* ]]
 }
 
 @test "usage error when arguments are missing" {
