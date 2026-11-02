@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -o errtrace
 
 echo "::group::Installing OpenShift CLI tools"
 trap 'echo "::endgroup::"' EXIT
+trap 'echo "::error::install-oc-tools.sh failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # shellcheck source=verify-checksum.sh
 source "$(dirname "$0")/verify-checksum.sh"
 # shellcheck source=lib/retry.sh
 source "$(dirname "$0")/lib/retry.sh"
+# shellcheck source=lib/release-txt.sh
+source "$(dirname "$0")/lib/release-txt.sh"
 
 for cmd in curl tar; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -147,9 +151,9 @@ check_prereq(){
 restore(){
 
   if [[ "$1" == "" ]]; then
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/release.txt"    | grep 'Name:' | awk '{ print $NF }')
+    VERSION=$(release_name "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/release.txt") || exit 1
   else
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
+    VERSION=$(release_name "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt") || exit 1
   fi
 
   if ls "${BIN_PATH}/oc.${VERSION}.bak" 1> /dev/null 2>&1 && ls "${BIN_PATH}/openshift-install.${VERSION}.bak" 1> /dev/null 2>&1 && ls "${BIN_PATH}/kubectl.${VERSION}.bak" 1> /dev/null 2>&1
@@ -195,47 +199,34 @@ restore_version(){
 
 }
 
-verify_version(){
-
-  if ! retry_with_backoff 3 10 curl -f --silent --output /dev/null "$1"; then
-    echo "::error::Version $2 does not exist or mirror is unreachable" >&2
-    exit 1
-  fi
-
-}
-
 version_info(){
 
   if [[ $1 =~ ^4+\.[0-9]+\.[0-9]+$ ]]; then
-    status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt")
     releasetext="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt"
   else
-    status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/latest-$1/release.txt")
     releasetext="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/latest-$1/release.txt"
   fi
 
-  if [[ "$status_code" -ne 200 ]]; then
-    echo "Version $1 does not exist"
-    exit 1
-  else
-    ver_name=$(curl --silent "${releasetext}" 2>/dev/null | grep Name | sed -e 's/Name:      //' | sed -e 's/^[ \t]*//')
-    created_date=$(curl --silent "${releasetext}" 2>/dev/null | grep Created | sed -e 's/Created:   //' | sed -e 's/^[ \t]*//')
-    errata_url=$(curl --silent "${releasetext}" 2>/dev/null | grep url | sed -e 's/    url: //')
-    k8s_ver=$(curl --silent "${releasetext}" 2>/dev/null | grep -m1 kubernetes | sed -e 's/kubernetes //' | sed -e 's/^[ \t]*//')
-    upgrades=$(curl --silent "${releasetext}" 2>/dev/null | grep Upgrades | sed -e 's/  Upgrades: //')
-    rhcos_ver=$(curl --silent "${releasetext}" 2>/dev/null | grep machine-os -m1 | sed -e 's/  machine-os //' | sed -e 's/ Red Hat Enterprise Linux CoreOS//')
+  local body
+  body=$(fetch_release_txt "${releasetext}") || exit 1
 
-    echo "$ver_name Version Info:"
-    echo -e "\nCreated Date: $created_date"
-    echo -e "\nKubernetes Version: $k8s_ver"
-    echo -e "\nRHCOS Version: $rhcos_ver"
-    echo -e "\n$ver_name can be upgraded from the following versions:"
-    echo -e "\n$upgrades"
-    echo -e "\nErrata: $errata_url"
-    echo -e "\nRelease File: $releasetext"
-    echo -e "\n"
-    exit 0
-  fi
+  ver_name=$(grep Name <<<"$body" | sed -e 's/Name:      //' | sed -e 's/^[ \t]*//' || true)
+  created_date=$(grep Created <<<"$body" | sed -e 's/Created:   //' | sed -e 's/^[ \t]*//' || true)
+  errata_url=$(grep url <<<"$body" | sed -e 's/    url: //' || true)
+  k8s_ver=$(grep -m1 kubernetes <<<"$body" | sed -e 's/kubernetes //' | sed -e 's/^[ \t]*//' || true)
+  upgrades=$(grep Upgrades <<<"$body" | sed -e 's/  Upgrades: //' || true)
+  rhcos_ver=$(grep machine-os -m1 <<<"$body" | sed -e 's/  machine-os //' | sed -e 's/ Red Hat Enterprise Linux CoreOS//' || true)
+
+  echo "$ver_name Version Info:"
+  echo -e "\nCreated Date: $created_date"
+  echo -e "\nKubernetes Version: $k8s_ver"
+  echo -e "\nRHCOS Version: $rhcos_ver"
+  echo -e "\n$ver_name can be upgraded from the following versions:"
+  echo -e "\n$upgrades"
+  echo -e "\nErrata: $errata_url"
+  echo -e "\nRelease File: $releasetext"
+  echo -e "\n"
+  exit 0
 
 }
 
@@ -251,22 +242,15 @@ version() {
     exit 1
   fi
 
-  status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt")
-
-  if [[ "$status_code" -ne 200 ]]; then
-    echo "Version $1 does not exist"
-    exit 1
-  else
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
-    CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
-    if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
-      echo "${VERSION} already installed."
-      exit 0
-    fi
-    CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-client-${OS}.tar.gz"
-    INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
-    download "$CLIENT" "$INSTALL"
+  VERSION=$(release_name "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/release.txt") || exit 1
+  CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
+  if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
+    echo "${VERSION} already installed."
+    exit 0
   fi
+  CLIENT="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-client-${OS}.tar.gz"
+  INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$1/openshift-install-${OS}.tar.gz"
+  download "$CLIENT" "$INSTALL"
 
 }
 
@@ -283,8 +267,8 @@ release() {
     exit 0
   fi
 
+  # restore() already resolved VERSION from this channel's release.txt.
   if [[ "$1" == "" ]]; then
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} is installed."
@@ -295,8 +279,6 @@ release() {
     INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   else
-    verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" "$1"
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp/$2-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "${VERSION} already installed."
@@ -315,7 +297,7 @@ nightly() {
   check_root
 
   if [[ "$1" == "" ]]; then
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/release.txt" | grep 'Name:' | awk '{ print $NF }')
+    VERSION=$(release_name "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/release.txt") || exit 1
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
       if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
         echo "${VERSION} is installed."
@@ -326,8 +308,7 @@ nightly() {
     INSTALL="${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest/openshift-install-${OS}.tar.gz"
     download "$CLIENT" "$INSTALL"
   else
-    verify_version "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" "$1"
-    VERSION=$(curl -s "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt" | grep 'Name:' | awk '{ print $NF }')
+    VERSION=$(release_name "${MIRROR_DOMAIN}${MIRROR_PATH}/ocp-dev-preview/latest-$1/release.txt") || exit 1
     CUR_VERSION=$(oc version 2>/dev/null | grep Client | sed -e 's/Client Version: //' || true)
     if [ "$VERSION" == "$CUR_VERSION" ] && command -v kubectl >/dev/null 2>&1; then
       echo "$VERSION already installed."

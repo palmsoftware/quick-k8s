@@ -29,7 +29,7 @@ retry_with_backoff() {
     if [ "$attempt" -eq "$max_attempts" ]; then
       return 1
     fi
-    echo "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..."
+    echo "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..." >&2
     sleep "$delay"
     delay=$((delay * 2))
     attempt=$((attempt + 1))
