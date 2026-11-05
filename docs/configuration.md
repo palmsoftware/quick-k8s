@@ -49,7 +49,7 @@ steps:
 
       # MetalLB
       installMetalLB: false
-      metalLBVersion: v0.16.0
+      metalLBVersion: v0.16.2
 
       # Advanced options
       cniPlugin: calico             # calico, cilium, or none
@@ -120,7 +120,7 @@ steps:
 
       # MetalLB
       installMetalLB: false
-      metalLBVersion: v0.16.0
+      metalLBVersion: v0.16.2
 
       # Advanced options
       cniPlugin: calico             # calico, cilium, or none
