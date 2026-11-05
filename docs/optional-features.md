@@ -245,7 +245,7 @@ steps:
     uses: palmsoftware/quick-k8s@v1
     with:
       installMetalLB: true
-      metalLBVersion: v0.16.0
+      metalLBVersion: v0.16.2
 ```
 
 **Features**:
