@@ -27,7 +27,7 @@ steps:
     uses: palmsoftware/quick-k8s@v1
     with:
       installIstio: true
-      istioVersion: 1.31.3
+      istioVersion: 1.31.4
       istioProfile: minimal
 ```
 
