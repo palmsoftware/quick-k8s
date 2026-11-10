@@ -139,7 +139,7 @@ inputs:
   metalLBVersion:
     description: 'The version of MetalLB to install'
     required: false
-    default: 'v0.16.0'
+    default: 'v0.16.2'
   workerNodeLabels:
     description: 'Comma-separated list of key=value labels to apply to worker nodes (e.g., "node-role.kubernetes.io/worker=worker,env=test")'
     required: false
