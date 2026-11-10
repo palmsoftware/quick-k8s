@@ -29,7 +29,26 @@ jobs:
       - name: Get latest OCP GA release level
         id: get_ocp_version
         run: |
-          # Scan upward from current version to find the latest GA channel.
+          # The client-tools mirror can lag the upgrade graph by hours or days.
+          # Only a release level whose mirror directory exists is usable:
+          # scripts/install-oc-tools.sh fetches release.txt from
+          # https://mirror.openshift.com/pub/openshift-v4/<arch>/clients/ocp/latest-<X.Y>/release.txt
+          # Selecting a level early fails every cluster job in CI (see #508).
+          mirror_publishes() {
+            local version=$1
+            local arch url
+            for arch in x86_64 arm64; do
+              url="https://mirror.openshift.com/pub/openshift-v4/${arch}/clients/ocp/latest-${version}/release.txt"
+              if ! curl -fsS --max-time 20 --retry 3 --retry-delay 5 -o /dev/null "$url"; then
+                echo "Mirror has not published ${version} for ${arch} yet" >&2
+                return 1
+              fi
+            done
+            return 0
+          }
+
+          # Scan upward from current version to find the latest GA channel
+          # that the mirror has published.
           # Handles the 4.22 -> 5.0 major version transition.
           find_latest_ocp_version() {
             local current
@@ -61,7 +80,11 @@ jobs:
 
                 if [ "$node_count" -gt 0 ]; then
                   echo "Found GA channel: ${channel} with ${node_count} versions" >&2
-                  latest="${major}.${minor}"
+                  if mirror_publishes "${major}.${minor}"; then
+                    latest="${major}.${minor}"
+                  else
+                    echo "Skipping ${major}.${minor}: GA channel exists but the client-tools mirror does not" >&2
+                  fi
                 else
                   echo "No versions in ${channel}, stopping scan for ${major}.x" >&2
                   break
