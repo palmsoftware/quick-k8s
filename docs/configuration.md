@@ -27,7 +27,7 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.31.3
+      istioVersion: 1.32.0
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.3
@@ -98,7 +98,7 @@ steps:
       workerNodeLabels: ''          # Comma-separated key=value labels for worker nodes
       installOLM: false
       installIstio: false
-      istioVersion: 1.31.3
+      istioVersion: 1.32.0
       istioProfile: minimal
       installCertManager: false
       certManagerVersion: v1.21.3
